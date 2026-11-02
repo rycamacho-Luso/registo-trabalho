@@ -283,7 +283,7 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
-const VERSAO='2026.11.02-d';
+const VERSAO='2026.11.02-e';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -308,11 +308,12 @@ async function persist(){
 let snap=new Map(),snapCfg='';
 const chave=r=>{const{upd,...x}=r;return JSON.stringify(x)};
 function inicializarSnap(){snap=new Map();for(const c of COLS)for(const r of S[c]){if(!r.upd)r.upd=1;snap.set(c+':'+r.id,chave(r))}snapCfg=chave(S.cfg)}
-function carimbar(){const agora=Date.now(),vistos=new Set();
-  for(const c of COLS)for(const r of S[c]){const k=c+':'+r.id,j=chave(r);vistos.add(k);if(snap.get(k)!==j){r.upd=agora;snap.set(k,j)}}
-  for(const k of [...snap.keys()])if(!vistos.has(k)){S.apagados[k]=agora;snap.delete(k)}
-  const cj=chave(S.cfg);if(cj!==snapCfg){S.cfg.upd=agora;snapCfg=cj}}
-function save(){carimbar();persist();agendarSync()}
+function carimbar(){const agora=Date.now(),vistos=new Set(),mud=[];
+  for(const c of COLS)for(const r of S[c]){const k=c+':'+r.id,j=chave(r);vistos.add(k);if(snap.get(k)!==j){r.upd=agora;snap.set(k,j);mud.push(k)}}
+  for(const k of [...snap.keys()])if(!vistos.has(k)){S.apagados[k]=agora;snap.delete(k);mud.push(k)}
+  const cj=chave(S.cfg);if(cj!==snapCfg){S.cfg.upd=agora;snapCfg=cj;mud.push('cfg:cfg')}
+  return mud}
+function save(){const mud=carimbar();persist();fbMarcar(mud);agendarSync()}
 function juntar(remoto){
   const R=normalizar(remoto);let n=0;const apag={...S.apagados};
   // colaboradores e locais com o mesmo nome passam a ser o mesmo registo (evita duplicados)
@@ -327,7 +328,7 @@ function juntar(remoto){
     S[c]=[...m.values()].filter(r=>!(apag[c+':'+r.id]>=(r.upd||1)));}
   S.apagados=apag;
   if((R.cfg.upd||0)>(S.cfg.upd||0))S.cfg={...S.cfg,...R.cfg};
-  inicializarSnap();persist();return n;
+  inicializarSnap();persist();fbReconciliar();return n;
 }
 
 /* =================== Utilitários =================== */
@@ -477,7 +478,7 @@ function vPonto(){
   let h=cab('Ponto',saud+(S.cfg.empresa?' · '+esc(S.cfg.empresa):''),`${botaoSync()}${LOC.pinHash?`<button class="btn" onclick="bloquear()" aria-label="Bloquear">${ic('lock')}</button>`:''}<button class="btn hm" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`);
   h+=`<div class="hero"><div><div class="d" id="heroD"></div><div class="t" id="heroT">--:--</div></div><div class="live-n"><b>${emCurso.length}</b>${emCurso.length===1?'turno em curso':'turnos em curso'}</div></div>`;
   const semCopia=S.turnos.length>=5&&(!LOC.ultimoBackup||Date.now()-LOC.ultimoBackup>7*864e5)&&(!LOC.ultimaSync||Date.now()-LOC.ultimaSync>7*864e5);
-  if(temPasta()&&pastaH&&!permPasta)h+=`<div class="banner"><span>${ic('sync')} A sincronização com o Drive está em pausa: o Chrome pede autorização sempre que a app é aberta.</span><button class="btn s p" onclick="sincPasta(false)">${ic('sync')}Retomar sincronização</button></div>`;
+  if(!fbAtivo()&&temPasta()&&pastaH&&!permPasta)h+=`<div class="banner"><span>${ic('sync')} A sincronização com o Drive está em pausa: o Chrome pede autorização sempre que a app é aberta.</span><button class="btn s p" onclick="sincPasta(false)">${ic('sync')}Retomar sincronização</button></div>`;
   if(semCopia)h+=`<div class="banner"><span>${LOC.ultimoBackup?'Já passou mais de uma semana desde a última cópia de segurança.':'Ainda não fez nenhuma cópia de segurança.'}</span><button class="btn s" onclick="ir('config')">${ic('cloud')}Fazer cópia</button></div>`;
   h+=`<div class="stats">
     <div class="stat hl"><div class="k">Hoje</div><div class="v">${hfmt(H.min)}</div><div class="x">${eur(H.val)}</div></div>
@@ -965,17 +966,19 @@ async function vConfig(){
   const fmtD=v=>v?new Date(v).toLocaleString('pt-PT',{dateStyle:'medium',timeStyle:'short'}):'nunca';
   let h=cab('Definições','Sincronização, cópias de segurança e segurança');
   const https=location.protocol==='https:';
-  const metodo=usaAPI()?'Ligação direta à conta Google (automática)':temPasta()?'Pasta do Google Drive no PC':'Ficheiro do Drive escolhido à mão (telemóvel)';
+  const metodo=fbAtivo()?`Firebase — tempo real (${fb.online?'<b style="color:var(--accent)">ligado</b>':'<b style="color:var(--warn)">sem internet</b>'})`:LOC.fbConfig?'<b style="color:var(--warn)">Firebase configurado, mas sem sessão iniciada</b>':usaAPI()?'Ligação direta à conta Google (automática)':temPasta()?'Pasta do Google Drive no PC':'Ficheiro do Drive escolhido à mão (telemóvel)';
   let autor='—';if(!usaAPI()&&temPasta()&&pastaH){permPasta=await permissaoPasta(false);autor=permPasta?'<b style="color:var(--accent)">sim</b>':'<b style="color:var(--warn)">não — toque em Sincronizar agora</b>'}
   h+=`<div class="card"><h2>Diagnóstico da sincronização</h2><div class="fgrid" style="font-size:.92rem">
     <div><div class="lbl">Endereço</div>${esc(location.protocol==='file:'?'ficheiro local':location.origin+location.pathname)}</div>
     <div><div class="lbl">Versão da app</div>${VERSAO}</div>
     <div><div class="lbl">Dispositivo</div>${tipoDisp()==='PC'?'PC':'Telemóvel'}</div>
     <div><div class="lbl">Método</div>${metodo}</div>
-    ${!usaAPI()&&temPasta()?`<div><div class="lbl">Pasta escolhida</div>${pastaH?esc(pastaH.name):'<b style="color:var(--warn)">nenhuma — escolha em baixo</b>'}</div><div><div class="lbl">Autorização da pasta</div>${autor}</div>`:''}
+    ${!usaAPI()&&temPasta()?`<div><div class="lbl">${fbAtivo()?'Pasta das cópias (Drive)':'Pasta escolhida'}</div>${pastaH?esc(pastaH.name):'<b style="color:var(--warn)">nenhuma — escolha em baixo</b>'}</div><div><div class="lbl">Autorização da pasta</div>${autor}</div>`:''}
+    ${fbAtivo()?`<div><div class="lbl">Conta Firebase</div>${esc(fb.user.email||'')}</div><div><div class="lbl">Por enviar</div>${fbFila.size?fbFila.size+' alterações':'nada'}</div>`:''}
     <div><div class="lbl">Última sincronização</div>${LOC.ultimaSync?quando(LOC.ultimaSync):'<b style="color:var(--warn)">nunca</b>'}</div>
     <div><div class="lbl">Dados neste dispositivo</div>${S.turnos.length} serviços · ${S.colab.length} colaboradores</div></div></div>`;
-  h+=`<div class="card"><h2>Sincronização PC ↔ telemóvel pelo Google Drive</h2>
+  h+=cartaoFirebase();
+  h+=`<div class="card" ${fbAtivo()?'style="display:none"':''}><h2>Sincronização PC ↔ telemóvel pelo Google Drive</h2>
     <p class="muted" style="margin-top:0">Os dois dispositivos partilham um ficheiro numa pasta do seu Google Drive. Nada se perde: em cada registo fica a versão mais recente. Última sincronização: <b>${fmtD(LOC.ultimaSync)}</b>.</p>
     ${temPasta()?`
     <div class="set-row"><div><div class="t">Pasta de sincronização</div><div class="d">${pastaH?`<b>${esc(pastaH.name)}</b> — escolha uma pasta dentro do Google Drive (ex.: O meu disco › Registo de Trabalho).`:'Ainda não escolhida. Escolha uma pasta dentro do Google Drive do PC.'}</div></div>
@@ -992,8 +995,8 @@ async function vConfig(){
       <div class="set-row"><div><div class="t">Sincronizar pela conta Google</div><div class="d">Requer o ID de cliente Google (em Geral).</div></div><button class="btn s" onclick="sincronizar(false)">${ic('sync')}Sincronizar</button></div></details>`:''}
   </div>`;
   h+=`<div class="card"><h2>Cópia de segurança</h2>
-    <p class="muted" style="margin-top:0">Última cópia: <b>${fmtD(LOC.ultimoBackup)}</b>. ${temPasta()?(pastaH?`No PC a cópia é gravada no Google Drive, em <b>${esc(pastaH.name)} › ${PASTA_COPIAS}</b> (ficam as últimas 30). Com a sincronização ligada, é feita também uma cópia automática por dia.`:'Escolha a pasta do Google Drive (em Sincronização) para as cópias irem diretamente para o Drive.'):'Abre a lista de partilha — escolha <b>Drive</b> e a pasta “Registo de Trabalho”.'}</p>
-    <div class="row"><button class="btn p" onclick="backupFicheiro()">${ic('up')}Guardar cópia no Drive</button>
+    <p class="muted" style="margin-top:0">Última cópia: <b>${fmtD(LOC.ultimoBackup)}</b>. ${temPasta()?(pastaH?`No PC a cópia é gravada no Google Drive, em <b>${esc(pastaH.name)} › ${PASTA_COPIAS}</b> (ficam as últimas 30). Com a sincronização ligada, é feita também uma cópia automática por dia.`:'Escolha a pasta do Google Drive para as cópias irem diretamente para o Drive.'):'Abre a lista de partilha — escolha <b>Drive</b> e a pasta “Registo de Trabalho”.'}</p>
+    <div class="row">${temPasta()&&!pastaH?`<button class="btn" onclick="escolherPasta()">${ic('cloud')}Escolher pasta do Drive</button>`:''}<button class="btn p" onclick="backupFicheiro()">${ic('up')}Guardar cópia no Drive</button>
     ${https?`<button class="btn" onclick="driveGuardar()">${ic('cloud')}Guardar no Drive</button><button class="btn" onclick="driveRestaurar()">${ic('down')}Restaurar do Drive</button>`:''}
     <label class="btn" style="color:inherit;font-size:.95rem;font-weight:600">${ic('sync')}Juntar dados de ficheiro<input type="file" accept=".json,application/json" id="juntF" hidden></label>
     <label class="btn" style="color:inherit;font-size:.95rem;font-weight:600">${ic('down')}Restaurar de ficheiro<input type="file" accept=".json,application/json" id="impF" hidden></label></div></div>`;
@@ -1014,6 +1017,7 @@ async function vConfig(){
   $('#main').innerHTML=h;
   $('#impF').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>restaurarTexto(t,'substituir'));e.target.value=''};
   $('#juntF').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>restaurarTexto(t,'juntar'));e.target.value=''};
+  ligarFormsFirebase();
   if($('#sAuto'))$('#sAuto').onchange=e=>{LOC.syncAuto=e.target.checked;persist();if(LOC.syncAuto)sincronizarAgora()};
   $('#fCfg').onsubmit=e=>{e.preventDefault();S.cfg.empresa=$('#sE').value.trim();S.cfg.valorHora=Math.max(0,parseFloat(String($('#sV').value).replace(',','.'))||0);if($('#sG'))LOC.clientId=$('#sG').value.trim();save();toast('Definições guardadas')};
   try{const est=await navigator.storage?.estimate?.();const per=await navigator.storage?.persisted?.();
@@ -1045,7 +1049,7 @@ async function restaurarTexto(txt,modo){
   if(modo==='juntar'){const n=juntar(d);render();toast(n?`Dados juntos: ${n} registos novos ou atualizados`:'Nada de novo nesse ficheiro');return}
   const rec=S.turnos.some(t=>recente(t.data));
   if(!await confirmar(`Substituir TODOS os dados atuais por esta cópia? (${d.colab.length} colaboradores, ${d.turnos.length} serviços)`+(rec?`\n\nOs registos atuais que não estejam na cópia perdem-se. ${AVISO_LEGAL}\nSe quer apenas acrescentar, use “Juntar dados de ficheiro”.`:''),'Substituir',true))return;
-  S=normalizar(d);inicializarSnap();await persist();render();toast('Dados restaurados')}
+  S=normalizar(d);inicializarSnap();await persist();fbReconciliar();render();toast('Dados restaurados')}
 
 /* Google Drive (Google Identity Services + Drive API v3, permissão drive.file) */
 let token=null,tokenExp=0;
@@ -1147,14 +1151,18 @@ async function enviarSync(){
   baixar(json,SYNC_TLM,'application/json');LOC.ultimaSync=Date.now();persist();
   toast('Ficheiro descarregado — carregue-o na pasta “Registo de Trabalho” do Drive');}
 function sincronizarAgora(){
+  if(fbAtivo()){fbReconciliar();toast(fb.online?'Firebase: sincronização em tempo real ativa':'Sem internet — envia tudo quando a ligação voltar');return}
+  if(LOC.fbConfig&&!fb.user){ir('config');toast('Entre na conta do Firebase em Definições');return}
   if(usaAPI())return sincronizar(false);
   if(temPasta()){if(pastaH)return sincPasta(false);ir('config');return escolherPasta()}
   $('#sincF').click();
 }
-function agendarSync(){if(!LOC.syncAuto)return;clearTimeout(syncT);
+function agendarSync(){if(fbAtivo()||!LOC.syncAuto)return;clearTimeout(syncT);
   if(usaAPI()){if(tokenValido())syncT=setTimeout(()=>sincronizar(true),8000);return}
   if(pastaH)syncT=setTimeout(()=>sincPasta(true),5000)}
-function syncSilenciosa(){if(!LOC.syncAuto)return;if(usaAPI()){if(tokenValido())sincronizar(true)}else if(pastaH)sincPasta(true)}
+function syncSilenciosa(){
+  if(fbAtivo()){if(temPasta()&&pastaH&&(!LOC.ultimoBackup||Date.now()-LOC.ultimoBackup>864e5))copiaNaPasta(true);return}
+  if(!LOC.syncAuto)return;if(usaAPI()){if(tokenValido())sincronizar(true)}else if(pastaH)sincPasta(true)}
 async function driveGuardar(){
   try{await driveToken()}catch(e){return}
   try{await driveEnviar(nomeBackup(),JSON.stringify(S),null);marcarBackup();toast('Cópia guardada no Google Drive')}catch(e){toast('Erro ao enviar para o Drive')}
@@ -1170,6 +1178,104 @@ async function driveRestaurar(){
     restaurarTexto(await f.text(),'substituir');
   }catch(e){toast('Sem ligação à internet')}
 }
+
+/* =================== Firebase (sincronização em tempo real) =================== */
+const FB_V='10.12.2';
+let fb={app:null,auth:null,db:null,user:null,unsub:null,remoto:new Map(),online:navigator.onLine,primeiro:false,iniciado:false};
+const fbAtivo=()=>!!(fb.user&&LOC.fbConfig);
+const fbFila=new Map();let fbT=null;
+async function carregarFirebase(){
+  if(window.firebase&&firebase.firestore&&firebase.auth)return;
+  for(const m of ['app','auth','firestore'])await carregarScript(`https://www.gstatic.com/firebasejs/${FB_V}/firebase-${m}-compat.js`);
+}
+function lerConfigFirebase(txt){const o={};const re=/["']?(apiKey|authDomain|projectId|storageBucket|messagingSenderId|appId)["']?\s*:\s*["']([^"']+)["']/g;let m;
+  while((m=re.exec(txt||'')))o[m[1]]=m[2];return o.apiKey&&o.projectId&&o.authDomain?o:null}
+async function fbIniciar(){
+  if(!LOC.fbConfig||fb.iniciado)return;
+  try{await carregarFirebase()}catch(e){if(view==='config')toast('Sem ligação ao Firebase — verifique a internet');return}
+  try{
+    fb.app=firebase.apps&&firebase.apps.length?firebase.app():firebase.initializeApp(LOC.fbConfig);
+    fb.auth=firebase.auth();fb.db=firebase.firestore();
+    try{await fb.db.enablePersistence({synchronizeTabs:true})}catch(e){}
+    fb.iniciado=true;
+    fb.auth.onAuthStateChanged(u=>{fb.user=u;if(u)fbOuvir();else fbParar();if(pronto&&$('#lock').hidden&&!document.querySelector('dialog[open]'))render()});
+  }catch(e){toast('Configuração do Firebase inválida: '+(e.message||e))}
+}
+const fbCol=()=>fb.db.collection('utilizadores').doc(fb.user.uid).collection('registos');
+const docId=(c,id)=>(c+'__'+id).replace(/\//g,'_');
+function fbOuvir(){fbParar();fb.primeiro=true;
+  fb.unsub=fbCol().onSnapshot(snap=>{let mud=0;
+    snap.docChanges().forEach(ch=>{if(ch.type==='removed')return;const d=ch.doc.data();if(!d||!d.col)return;
+      fb.remoto.set(d.col+':'+d.id,d.upd||0);mud+=aplicarRemoto(d)});
+    if(mud){inicializarSnap();persist();if(pronto&&$('#lock').hidden&&!document.querySelector('dialog[open]'))render()}
+    if(fb.primeiro){fb.primeiro=false;fbReconciliar();if(mud)toast(`Firebase: ${mud} registos recebidos`)}
+    LOC.ultimaSync=Date.now();persist();
+  },err=>{toast('Firebase: '+(err.code==='permission-denied'?'sem permissão — verifique as regras de segurança':(err.message||err.code)))})}
+function fbParar(){if(fb.unsub){fb.unsub();fb.unsub=null}fb.remoto.clear()}
+function aplicarRemoto(d){
+  if(d.col==='cfg'){if((d.upd||0)>(S.cfg.upd||0)){S.cfg={...S.cfg,...(d.dados||{}),upd:d.upd};return 1}return 0}
+  if(!COLS.includes(d.col))return 0;
+  const k=d.col+':'+d.id,arr=S[d.col],i=arr.findIndex(r=>r.id===d.id),loc=i>=0?arr[i]:null;
+  if(d.apagado){if(!(S.apagados[k]>=d.upd))S.apagados[k]=d.upd;if(loc&&(loc.upd||0)<=d.upd){arr.splice(i,1);return 1}return 0}
+  if(S.apagados[k]>=d.upd)return 0;
+  if(!loc){arr.push({...d.dados,upd:d.upd});return 1}
+  if(d.upd>(loc.upd||0)){arr[i]={...d.dados,upd:d.upd};return 1}
+  return 0}
+function fbMarcar(chaves){if(!fbAtivo()||!chaves||!chaves.length)return;for(const k of chaves)fbFila.set(k,1);clearTimeout(fbT);fbT=setTimeout(fbEnviar,400)}
+async function fbEnviar(){
+  if(!fbAtivo()||!fbFila.size)return;const ks=[...fbFila.keys()];fbFila.clear();
+  for(let i=0;i<ks.length;i+=400){const b=fb.db.batch();
+    for(const k of ks.slice(i,i+400)){const p=k.indexOf(':'),c=k.slice(0,p),id=k.slice(p+1);let d=null;
+      if(c==='cfg'){const{upd,...x}=S.cfg;d={col:'cfg',id:'cfg',upd:upd||0,dados:JSON.parse(JSON.stringify(x))}}
+      else{const rr=(S[c]||[]).find(x=>x.id===id);
+        if(rr){const{upd,...x}=rr;d={col:c,id,upd:upd||1,dados:JSON.parse(JSON.stringify(x))}}
+        else if(S.apagados[k])d={col:c,id,upd:S.apagados[k],apagado:true}}
+      if(!d)continue;b.set(fbCol().doc(docId(c,id)),d);fb.remoto.set(k,d.upd)}
+    try{await b.commit()}catch(e){ks.slice(i).forEach(k=>fbFila.set(k,1));toast('Firebase: não foi possível gravar ('+(e.code||e.message)+')');return}}
+  LOC.ultimaSync=Date.now();persist();
+}
+function fbReconciliar(){if(!fbAtivo())return;const ks=[];
+  for(const c of COLS)for(const rr of S[c]){const k=c+':'+rr.id;if((fb.remoto.get(k)||0)<(rr.upd||1))ks.push(k)}
+  for(const[k,v]of Object.entries(S.apagados))if((fb.remoto.get(k)||0)<v)ks.push(k);
+  if((fb.remoto.get('cfg:cfg')||0)<(S.cfg.upd||0))ks.push('cfg:cfg');
+  fbMarcar(ks)}
+window.addEventListener('online',()=>{fb.online=true;fbReconciliar();if(view==='config')vConfig()});
+window.addEventListener('offline',()=>{fb.online=false;if(view==='config')vConfig()});
+const ERROS_FB={'auth/invalid-credential':'Email ou palavra-passe errados.','auth/wrong-password':'Email ou palavra-passe errados.','auth/user-not-found':'Não existe nenhum utilizador com esse email no Firebase.',
+  'auth/invalid-email':'O email não é válido.','auth/network-request-failed':'Sem ligação à internet.','auth/too-many-requests':'Demasiadas tentativas. Aguarde alguns minutos.',
+  'auth/operation-not-allowed':'Ative “Email/palavra-passe” em Authentication › Sign-in method, na consola do Firebase.','auth/unauthorized-domain':'Autorize o domínio da app em Authentication › Settings › Authorized domains.'};
+function cartaoFirebase(){
+  const cfgOk=!!LOC.fbConfig;
+  let h=`<div class="card"><h2>Firebase — sincronização em tempo real</h2>`;
+  if(fbAtivo())h+=`<div class="info ok">${ic('check')}<span style="flex:1">Ligado como <b>${esc(fb.user.email||'')}</b>. O PC e o telemóvel ficam iguais em segundos, mesmo depois de períodos sem internet.</span></div>
+    <div class="row"><button class="btn" onclick="sincronizarAgora()">${ic('sync')}Verificar agora</button><button class="btn" onclick="fbSair()">Terminar sessão</button><button class="btn g" onclick="fbMudarConfig()">Mudar configuração</button></div>`;
+  else if(cfgOk)h+=`<p class="muted" style="margin-top:0">Projeto <b>${esc(LOC.fbConfig.projectId)}</b>. Entre com o email e a palavra-passe criados no Firebase (os mesmos no PC e no telemóvel).</p>
+    <form id="fbLogin" class="fgrid"><div class="f"><label for="fbE">Email</label><input id="fbE" type="email" autocomplete="username" value="${esc(LOC.fbEmail||'')}"></div>
+    <div class="f"><label for="fbP">Palavra-passe</label><input id="fbP" type="password" autocomplete="current-password"></div>
+    <div class="err full" id="fbErr" hidden></div>
+    <div class="row full"><button class="btn p">${ic('unlock')}Entrar</button><button type="button" class="btn g" onclick="fbRepor()">Esqueci-me da palavra-passe</button><button type="button" class="btn g" onclick="fbMudarConfig()">Mudar configuração</button></div></form>`;
+  else h+=`<p class="muted" style="margin-top:0">Cole aqui o bloco <b>firebaseConfig</b> copiado da consola do Firebase (Definições do projeto › As suas apps). Pode colar o código todo — a app retira o que precisa.</p>
+    <form id="fbCfgF"><textarea id="fbCfg" rows="7" style="font-family:ui-monospace,Consolas,monospace;font-size:.85rem" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;…&quot;,&#10;  authDomain: &quot;….firebaseapp.com&quot;,&#10;  projectId: &quot;…&quot;,&#10;  …&#10;};"></textarea>
+    <div class="err" id="fbErr" hidden></div><div class="row" style="margin-top:.7rem"><button class="btn p">${ic('check')}Guardar configuração</button></div></form>`;
+  return h+`</div>`;
+}
+function ligarFormsFirebase(){
+  const err=m=>{const e=$('#fbErr');if(e){e.textContent=m;e.hidden=!m}};
+  if($('#fbCfgF'))$('#fbCfgF').onsubmit=async e=>{e.preventDefault();const c=lerConfigFirebase($('#fbCfg').value);
+    if(!c)return err('Não encontrei apiKey, authDomain e projectId nesse texto. Copie o bloco firebaseConfig completo.');
+    LOC.fbConfig=c;await persist();toast('Configuração guardada — a ligar…');await fbIniciar();vConfig()};
+  if($('#fbLogin'))$('#fbLogin').onsubmit=async e=>{e.preventDefault();const em=$('#fbE').value.trim(),pw=$('#fbP').value;if(!em||!pw)return err('Indique o email e a palavra-passe.');
+    try{await fbIniciar();if(!fb.auth)return err('Não foi possível ligar ao Firebase. Verifique a internet e a configuração.');
+      LOC.fbEmail=em;persist();await fb.auth.signInWithEmailAndPassword(em,pw);toast('Sessão iniciada — a sincronizar…')}
+    catch(x){err(ERROS_FB[x.code]||('Erro: '+(x.message||x.code)))}};
+}
+async function fbSair(){if(!await confirmar('Terminar a sessão do Firebase neste aparelho? Os dados ficam no aparelho, mas deixam de sincronizar até voltar a entrar.','Terminar sessão'))return;
+  try{await fb.auth.signOut()}catch(e){}fb.user=null;fbParar();vConfig()}
+async function fbMudarConfig(){if(!await confirmar('Apagar a configuração do Firebase deste aparelho? Os dados ficam no aparelho e no Firebase.','Apagar configuração',true))return;
+  try{if(fb.auth)await fb.auth.signOut()}catch(e){}fbParar();fb.user=null;LOC.fbConfig=null;await persist();
+  toast('Configuração removida — a app vai recarregar');setTimeout(()=>location.reload(),900)}
+async function fbRepor(){const em=$('#fbE')?.value.trim();if(!em){toast('Escreva primeiro o email');return}
+  try{await fbIniciar();await fb.auth.sendPasswordResetEmail(em);toast('Enviámos um email para repor a palavra-passe')}catch(x){toast(ERROS_FB[x.code]||'Não foi possível enviar o email')}}
 
 /* PIN e biometria */
 async function hashPin(p,s){const t=s+':'+p;
@@ -1245,6 +1351,7 @@ async function arrancar(){
   if(usaIDB&&temPasta()){try{pastaH=await DB.get('pastaSync')||null;if(pastaH)permPasta=await permissaoPasta(false)}catch(e){}}
   pronto=true;
   if(LOC.pinHash)bloquear();else{render();syncSilenciosa()}
+  fbIniciar();
 }
 arrancar();
 </script>
