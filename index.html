@@ -1,0 +1,1226 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0E7C6B">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Registo de Trabalho</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F2F5F4; --surface:#FFFFFF; --surface-2:#F5F8F7; --ink:#13202A; --muted:#5D6D75; --line:#E0E7E4;
+  --accent:#0E7C6B; --accent-d:#0A6356; --accent-2:#E3F3EF; --ring:rgba(14,124,107,.22);
+  --warn:#C2570C; --warn-2:#FDEFE3; --danger:#C0362C; --danger-2:#FCEBE9;
+  --side:#13202A; --side-ink:#E8EFED;
+  --shadow:0 1px 2px rgba(19,32,42,.04),0 6px 18px rgba(19,32,42,.05);
+  color-scheme:light; box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root{--bg:#0D1519; --surface:#152127; --surface-2:#1B2A31; --ink:#E5EDEB; --muted:#93A5AA; --line:#25363E;
+    --accent:#34B39F; --accent-d:#2A9886; --accent-2:#163A35; --ring:rgba(52,179,159,.28);
+    --warn:#F0904F; --warn-2:#3B2718; --danger:#F07467; --danger-2:#3A1D1A; --side:#091013; --side-ink:#DDE7E5;
+    --shadow:0 1px 2px rgba(0,0,0,.3); color-scheme:dark;}
+}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{background:var(--bg);color:var(--ink);font:16px/1.5 "Barlow",system-ui,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ring);outline-offset:2px}
+svg.i{width:20px;height:20px;flex:none}
+.cond{font-family:"Barlow Condensed","Arial Narrow",sans-serif}
+
+/* Estrutura */
+.app{display:grid;grid-template-columns:250px minmax(0,1fr);min-height:100%}
+.side{position:sticky;top:0;height:100vh;background:var(--side);color:var(--side-ink);padding:1.4rem .9rem;display:flex;flex-direction:column;gap:.25rem}
+.logo{display:flex;gap:.7rem;align-items:center;margin:0 .5rem 1.8rem}
+.logo .mark{width:40px;height:40px;border-radius:12px;background:var(--accent);display:grid;place-items:center;color:#fff}
+.logo b{font-family:"Barlow Condensed",sans-serif;font-size:1.3rem;line-height:1.05;font-weight:700}
+.nb{display:flex;align-items:center;gap:.8rem;padding:.72rem .9rem;border-radius:12px;border:0;background:none;color:inherit;opacity:.7;cursor:pointer;font-weight:600;text-align:left;width:100%;transition:background .15s,opacity .15s}
+.nb:hover{opacity:1;background:rgba(255,255,255,.06)}
+.nb.on{opacity:1;background:rgba(255,255,255,.12)}
+.nb.on svg{color:#5ED3BF}
+.side .foot{margin-top:auto;font-size:.8rem;opacity:.5;padding:.5rem}
+main{padding:1.8rem clamp(1rem,3.5vw,2.8rem) 5rem;max-width:1180px;width:100%;min-width:0}
+.card,.tw{min-width:0;max-width:100%}
+.head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.4rem}
+.head h1{font-family:"Barlow Condensed",sans-serif;font-size:2.1rem;margin:0;line-height:1.05;font-weight:700}
+.head .sub{color:var(--muted);margin-top:.15rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+
+/* Botões */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;border:1px solid var(--line);background:var(--surface);padding:.64rem 1.05rem;border-radius:12px;cursor:pointer;font-weight:600;font-size:.95rem;transition:transform .08s,background .15s,border-color .15s;white-space:nowrap}
+.btn:hover{border-color:var(--muted)}
+.btn:active{transform:scale(.97)}
+.btn svg.i{width:18px;height:18px}
+.btn.p{background:var(--accent);border-color:transparent;color:#fff}
+.btn.p:hover{background:var(--accent-d)}
+.btn.w{background:var(--warn);border-color:transparent;color:#fff}
+.btn.d{background:var(--danger-2);border-color:transparent;color:var(--danger)}
+.btn.g{background:transparent;border-color:transparent}
+.btn.g:hover{background:var(--surface-2)}
+.btn.s{padding:.4rem .75rem;font-size:.86rem;border-radius:10px}
+.btn.big{padding:.85rem 1.3rem;font-size:1rem}
+
+/* Cartões */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:1.2rem 1.3rem;box-shadow:var(--shadow);margin-bottom:1.1rem}
+.card h2,.sec-t{font-family:"Barlow Condensed",sans-serif;font-size:1.35rem;margin:0 0 .85rem;font-weight:700}
+.sec-t{margin-top:1.6rem;display:flex;align-items:center;gap:.5rem}
+.sec-t .count{font-family:"Barlow",sans-serif;font-size:.8rem;background:var(--accent-2);color:var(--accent);border-radius:99px;padding:.05rem .55rem}
+.hero{background:linear-gradient(135deg,#0E7C6B 0%,#0B5247 100%);color:#fff;border-radius:22px;padding:1.4rem 1.6rem;display:flex;justify-content:space-between;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1.1rem;position:relative;overflow:hidden}
+.hero::after{content:"";position:absolute;right:-60px;top:-60px;width:220px;height:220px;border-radius:50%;border:28px solid rgba(255,255,255,.07)}
+.hero .d{opacity:.85}
+.hero .d::first-letter{text-transform:uppercase}
+.hero .t{font-family:"Barlow Condensed",sans-serif;font-size:3.4rem;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.hero .live-n{text-align:right;position:relative;z-index:1}
+.hero .live-n b{font-family:"Barlow Condensed",sans-serif;font-size:2.6rem;display:block;line-height:1}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:.8rem;margin-bottom:1.1rem}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:.95rem 1.1rem;box-shadow:var(--shadow)}
+.stat .k{font-size:.76rem;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em}
+.stat .v{font-family:"Barlow Condensed",sans-serif;font-size:1.95rem;font-weight:700;line-height:1.15;font-variant-numeric:tabular-nums}
+.stat .x{font-size:.9rem;color:var(--muted)}
+.stat.hl{background:var(--accent-2);border-color:transparent}
+.stat.hl .v{color:var(--accent)}
+.banner{display:flex;gap:.8rem;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--warn-2);color:var(--warn);border-radius:14px;padding:.75rem 1rem;margin-bottom:1.1rem;font-weight:600}
+
+/* Início rápido */
+.qs{display:grid;grid-template-columns:1fr 1fr 1.6fr auto;gap:.75rem;align-items:end}
+
+/* Turnos em curso */
+.live{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem}
+.lc{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:1.1rem 1.2rem;position:relative;overflow:hidden;box-shadow:var(--shadow)}
+.lc::before{content:"";position:absolute;inset:0 auto 0 0;width:5px;background:var(--accent)}
+.lc.pausa::before{background:var(--warn)}
+.lc .top{display:flex;gap:.7rem;align-items:center}
+.lc .top .nm{font-weight:700;flex:1;min-width:0;line-height:1.2}
+.timer{font-family:"Barlow Condensed",sans-serif;font-size:3.1rem;font-weight:700;font-variant-numeric:tabular-nums;line-height:1;margin:.75rem 0 .35rem}
+.lc.pausa .timer{color:var(--warn)}
+.lc .acts{display:flex;gap:.45rem;flex-wrap:wrap;margin-top:.85rem}
+
+/* Elementos */
+.av{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-weight:700;color:#fff;flex:none;font-size:.92rem;letter-spacing:.02em}
+.av.lg{width:52px;height:52px;font-size:1.1rem}
+img.av{object-fit:cover;background:var(--surface-2)}
+.av.xl{width:88px;height:88px;font-size:1.7rem}
+.ph{grid-column:1/-1;display:flex;gap:1rem;align-items:center;flex-wrap:wrap}
+.ph .row{gap:.4rem}
+.chip{display:inline-flex;align-items:center;gap:.35rem;font-size:.76rem;font-weight:700;padding:.16rem .6rem;border-radius:99px;background:var(--surface-2);color:var(--muted);white-space:nowrap}
+.chip.curso{background:var(--accent-2);color:var(--accent)}
+.chip.pausa{background:var(--warn-2);color:var(--warn)}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;animation:pulse 1.6s infinite}
+@keyframes pulse{50%{opacity:.25}}
+.times{display:flex;flex-wrap:wrap;gap:.35rem;margin:.3rem 0}
+.tm{font-variant-numeric:tabular-nums;font-size:.84rem;font-weight:600;background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:.05rem .5rem}
+.tm em{font-style:normal;color:var(--muted);font-weight:500;margin-right:.3rem}
+.meta{font-size:.88rem;color:var(--muted);display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
+.meta svg.i{width:14px;height:14px}
+
+/* Lista de serviços */
+.day-h{font-size:.78rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin:1.3rem 0 .5rem;display:flex;justify-content:space-between}
+.svc{display:grid;grid-template-columns:auto 1fr auto;gap:.9rem;align-items:center;padding:.85rem 1rem;border-radius:16px;background:var(--surface);border:1px solid var(--line);margin-bottom:.5rem;cursor:pointer;transition:border-color .15s,transform .1s}
+.svc:hover{border-color:var(--accent)}
+.svc .nm{font-weight:700;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap}
+.svc .r{text-align:right}
+.svc .h{font-family:"Barlow Condensed",sans-serif;font-size:1.35rem;font-weight:700;line-height:1.1;font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--muted);padding:2rem 1rem}
+.empty svg.i{width:40px;height:40px;opacity:.4;display:block;margin:0 auto .6rem}
+
+/* Equipa */
+.team{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1rem}
+.tc{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:1.1rem;box-shadow:var(--shadow);display:flex;flex-direction:column;gap:.6rem}
+.tc .top{display:flex;gap:.8rem;align-items:center}
+.tc .mini{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.4rem;background:var(--surface-2);border-radius:12px;padding:.55rem .7rem;text-align:center}
+.tc .mini b{display:block;font-family:"Barlow Condensed",sans-serif;font-size:1.2rem}
+.tc .mini span{font-size:.72rem;color:var(--muted);font-weight:600;text-transform:uppercase}
+.list{list-style:none;margin:0;padding:0}
+.list li{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.65rem 0;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0}
+
+/* Formulários */
+.f{display:flex;flex-direction:column;gap:.3rem;min-width:0}
+label,.lbl{font-size:.8rem;font-weight:700;color:var(--muted)}
+input,select,textarea{width:100%;padding:.68rem .8rem;border:1.5px solid var(--line);border-radius:12px;background:var(--surface);font-size:1rem;transition:border-color .15s,box-shadow .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 4px var(--ring)}
+textarea{min-height:76px;resize:vertical}
+.fgrid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem}
+.full{grid-column:1/-1}
+.tb{grid-column:1/-1;background:var(--surface-2);border-radius:16px;padding:.9rem 1rem}
+.tb .tt{font-weight:700;margin-bottom:.6rem;display:flex;gap:.5rem;align-items:center}
+.tb .tt small{font-weight:500;color:var(--muted)}
+.tb .two{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.chk{grid-column:1/-1;display:flex;align-items:center;gap:.6rem;font-weight:600;cursor:pointer;font-size:.95rem}
+.chk input{width:20px;height:20px;accent-color:var(--accent)}
+.preview{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;background:var(--accent-2);color:var(--accent);border-radius:14px;padding:.75rem 1.1rem;font-weight:700}
+.preview b{font-family:"Barlow Condensed",sans-serif;font-size:1.5rem}
+.err{background:var(--danger-2);color:var(--danger);border-radius:12px;padding:.6rem .9rem;font-size:.92rem;font-weight:600;margin-top:.9rem}
+.filters{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.7rem;margin-bottom:1rem}
+
+/* Diálogos */
+dialog{border:0;border-radius:22px;padding:0;width:min(620px,94vw);max-height:92vh;background:var(--surface);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(8,16,20,.5);backdrop-filter:blur(3px)}
+dialog form{padding:1.4rem 1.5rem 1.5rem}
+.dh{display:flex;justify-content:space-between;align-items:center;margin-bottom:1.1rem}
+.dh h2{font-family:"Barlow Condensed",sans-serif;font-size:1.6rem;margin:0;font-weight:700}
+.dacts{display:flex;justify-content:space-between;gap:.5rem;margin-top:1.2rem;flex-wrap:wrap}
+.dmsg{font-size:1.05rem;margin:.2rem 0 0}
+#dlg2{width:min(440px,92vw)}
+
+/* Tabelas (relatórios) */
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:.93rem}
+th,td{padding:.55rem .6rem;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-weight:700;color:var(--muted);font-size:.76rem;text-transform:uppercase;letter-spacing:.05em}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;min-width:80px}
+.bar span{display:block;height:100%;background:var(--accent);border-radius:99px}
+.who{display:flex;gap:.6rem;align-items:center}
+.who .av{width:30px;height:30px;font-size:.75rem}
+
+.toast{position:fixed;left:50%;bottom:calc(1.5rem + env(safe-area-inset-bottom,0px));transform:translate(-50%,10px);background:var(--ink);color:var(--bg);padding:.7rem 1.1rem;border-radius:12px;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:100;font-weight:600;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+.fab{display:none}
+.fab[hidden]{display:none!important}
+
+@media (max-width:820px){
+  .qs{grid-template-columns:1fr 1fr}
+  .qs .grow,.qs .btn{grid-column:1/-1}
+}
+@media (max-width:760px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:.35rem .3rem calc(.35rem + env(safe-area-inset-bottom,0px));z-index:30;gap:0;box-shadow:0 -4px 20px rgba(0,0,0,.12)}
+  .logo,.side .foot{display:none}
+  .nb{flex-direction:column;gap:.15rem;font-size:.62rem;padding:.4rem .2rem;flex:1;align-items:center;text-align:center}
+  main{padding:1.1rem 1rem 8rem}
+  .head h1{font-size:1.75rem}
+  .hero{padding:1.1rem 1.2rem}.hero .t{font-size:2.7rem}
+  .hero .live-n{text-align:left;display:flex;gap:.5rem;align-items:baseline}.hero .live-n b{font-size:1.8rem}
+  .stats{grid-template-columns:repeat(3,minmax(0,1fr));gap:.5rem}
+  .stat{padding:.7rem .75rem;border-radius:14px}.stat .k{font-size:.64rem;letter-spacing:.03em}.stat .v{font-size:1.3rem}.stat .x{font-size:.8rem}
+  .hm,.hb{display:none}
+  .filters{grid-template-columns:1fr 1fr;gap:.55rem}
+  .who{white-space:nowrap}
+  .fab{display:grid;place-items:center;position:fixed;right:1rem;bottom:calc(5.2rem + env(safe-area-inset-bottom,0px));width:58px;height:58px;border-radius:18px;background:var(--accent);color:#fff;border:0;box-shadow:0 8px 24px rgba(14,124,107,.4);z-index:31;cursor:pointer}
+  .fab svg.i{width:26px;height:26px}
+  dialog{width:100vw;max-width:100vw;margin:auto 0 0;border-radius:22px 22px 0 0;max-height:94vh}
+  dialog form{padding-bottom:calc(1.5rem + env(safe-area-inset-bottom,0px))}
+  .toast{bottom:calc(5.5rem + env(safe-area-inset-bottom,0px))}
+  .svc{grid-template-columns:auto 1fr;}
+  .svc .r{grid-column:2;text-align:left;display:flex;gap:.8rem;align-items:baseline}
+}
+@media (max-width:420px){.fgrid{grid-template-columns:1fr}}
+@media print{
+  .side,.fab,.noprint,.toast,.head>.row{display:none!important}
+  .app{display:block} body{background:#fff;color:#000} main{padding:0}
+  .card,.stat{box-shadow:none;border-color:#ccc}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---- Novas funcionalidades ---- */
+.chip.pago{background:var(--accent-2);color:var(--accent)}
+.chip.porpagar{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.chip.lock{background:var(--surface-2);color:var(--muted);border:1px solid var(--line)}
+.chip svg.i{width:13px;height:13px}
+.info{display:flex;gap:.7rem;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--surface-2);border:1px solid var(--line);border-radius:14px;padding:.7rem 1rem;margin-bottom:1rem;font-weight:600}
+.info.ok{background:var(--accent-2);border-color:transparent;color:var(--accent)}
+.stat.warn .v{color:var(--warn)}
+.tools{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.1rem}
+.tools .sep{flex:1}
+.seg{display:inline-flex;background:var(--surface-2);border-radius:11px;padding:3px;gap:2px}
+.seg button{border:0;background:none;padding:.35rem .8rem;border-radius:9px;font-weight:600;font-size:.86rem;cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.charts{display:grid;grid-template-columns:1.5fr 1fr;gap:1rem}
+.chart-t{font-weight:700;margin:0 0 .6rem;font-size:.95rem}
+.chart svg{width:100%;height:auto;display:block}
+.chart text{font-family:"Barlow",system-ui,sans-serif}
+.hb-row{display:grid;grid-template-columns:minmax(90px,38%) 1fr auto;gap:.6rem;align-items:center;margin-bottom:.55rem;font-size:.9rem}
+.hb-row .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.hb-row .v{font-variant-numeric:tabular-nums;font-weight:700;white-space:nowrap}
+.sig{width:100%;height:190px;touch-action:none;border:1.5px dashed var(--line);border-radius:14px;background:#fff;display:block;cursor:crosshair}
+.sig-img{max-width:240px;width:100%;background:#fff;border-radius:10px;border:1px solid var(--line);display:block}
+.decl{background:var(--surface-2);border-radius:14px;padding:.85rem 1rem;margin-bottom:.9rem;line-height:1.55}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
+.arch{opacity:.7}
+.set-row{display:flex;justify-content:space-between;align-items:center;gap:1rem;padding:.75rem 0;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.set-row:last-child{border-bottom:0}
+.set-row .t{font-weight:600}
+.set-row .d{font-size:.88rem;color:var(--muted)}
+/* Ecrã de bloqueio */
+#lock{position:fixed;inset:0;z-index:300;background:var(--bg);display:grid;place-items:center;padding:1rem}
+#lock[hidden]{display:none}
+.lockbox{text-align:center;width:min(320px,92vw)}
+.lockbox .lk{width:64px;height:64px;border-radius:20px;background:var(--accent);color:#fff;display:grid;place-items:center;margin:0 auto 1rem}
+.lockbox h2{font-family:"Barlow Condensed",sans-serif;font-size:1.6rem;margin:0}
+.dots{display:flex;gap:.8rem;justify-content:center;margin:1.2rem 0 .4rem}
+.dots i{width:14px;height:14px;border-radius:50%;border:2px solid var(--accent)}
+.dots i.on{background:var(--accent)}
+.lmsg{min-height:1.5em;color:var(--danger);font-weight:600;margin-bottom:.8rem}
+.keys{display:grid;grid-template-columns:repeat(3,1fr);gap:.7rem}
+.keys button{height:64px;border-radius:18px;border:1px solid var(--line);background:var(--surface);font-size:1.5rem;font-weight:600;cursor:pointer;display:grid;place-items:center;color:var(--ink)}
+.keys button:active{background:var(--accent-2)}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@media (max-width:900px){.charts{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="app">
+  <nav class="side" id="nav" aria-label="Menu principal"></nav>
+  <main id="main"></main>
+</div>
+<button class="fab" id="fab" aria-label="Adicionar serviço" hidden></button>
+<dialog id="dlg"><form id="dlgForm" method="dialog"></form></dialog>
+<dialog id="dlg2"><form method="dialog"></form></dialog>
+<div id="lock" hidden></div>
+<datalist id="dlS"></datalist>
+<input type="file" id="sincF" accept=".json,application/json,text/plain" multiple hidden>
+<div class="toast" id="toast" role="status"></div>
+<script>
+/* =================== Dados =================== */
+const KEY='registoTrabalho_v1';
+const COLS=['colab','locais','turnos','fechos','assin'];
+const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
+const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
+function normalizar(d){const b=def(),arr=x=>Array.isArray(x)?x:[];d=d||{};
+  return{cfg:{...b.cfg,...(d.cfg||{})},colab:arr(d.colab),locais:arr(d.locais),
+    turnos:arr(d.turnos).filter(t=>t&&t.id&&t.estado!=='agendado'),fechos:arr(d.fechos),assin:arr(d.assin),
+    apagados:d.apagados&&typeof d.apagados==='object'&&!Array.isArray(d.apagados)?d.apagados:{}}}
+let S=def(),LOC=defLoc(),pronto=false;
+
+/* Base de dados do dispositivo (IndexedDB), com recurso ao localStorage se não existir */
+const DB={db:null,
+  abrir(){return this.db||(this.db=new Promise((ok,ko)=>{const r=indexedDB.open('registoTrabalho',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)}))},
+  async get(k){const db=await this.abrir();return new Promise((ok,ko)=>{const r=db.transaction('kv').objectStore('kv').get(k);r.onsuccess=()=>ok(r.result);r.onerror=()=>ko(r.error)})},
+  async set(k,v){const db=await this.abrir();return new Promise((ok,ko)=>{const tx=db.transaction('kv','readwrite');tx.objectStore('kv').put(v,k);tx.oncomplete=()=>ok();tx.onerror=()=>ko(tx.error);tx.onabort=()=>ko(tx.error)})}};
+let usaIDB=!!window.indexedDB;
+async function persist(){
+  if(usaIDB){try{await DB.set('estado',S);await DB.set('local',LOC);return}catch(e){usaIDB=false}}
+  try{localStorage.setItem(KEY,JSON.stringify(S));localStorage.setItem(KEY+'_local',JSON.stringify(LOC))}catch(e){toast('Sem espaço para guardar os dados')}
+}
+/* Carimbo de alterações (permite juntar dados de vários dispositivos sem perder nada) */
+let snap=new Map(),snapCfg='';
+const chave=r=>{const{upd,...x}=r;return JSON.stringify(x)};
+function inicializarSnap(){snap=new Map();for(const c of COLS)for(const r of S[c]){if(!r.upd)r.upd=1;snap.set(c+':'+r.id,chave(r))}snapCfg=chave(S.cfg)}
+function carimbar(){const agora=Date.now(),vistos=new Set();
+  for(const c of COLS)for(const r of S[c]){const k=c+':'+r.id,j=chave(r);vistos.add(k);if(snap.get(k)!==j){r.upd=agora;snap.set(k,j)}}
+  for(const k of [...snap.keys()])if(!vistos.has(k)){S.apagados[k]=agora;snap.delete(k)}
+  const cj=chave(S.cfg);if(cj!==snapCfg){S.cfg.upd=agora;snapCfg=cj}}
+function save(){carimbar();persist();agendarSync()}
+function juntar(remoto){
+  const R=normalizar(remoto);let n=0;const apag={...S.apagados};
+  // colaboradores e locais com o mesmo nome passam a ser o mesmo registo (evita duplicados)
+  const nn=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim();const remap={};
+  for(const c of ['colab','locais']){const ids=new Set(S[c].map(r=>r.id)),porNome=new Map(S[c].map(r=>[nn(r.nome),r.id]));
+    R[c]=R[c].filter(r=>{if(ids.has(r.id))return true;const j=porNome.get(nn(r.nome));if(j){remap[r.id]=j;return false}return true})}
+  if(Object.keys(remap).length){R.turnos.forEach(t=>{if(remap[t.colabId])t.colabId=remap[t.colabId];if(remap[t.localId])t.localId=remap[t.localId]});
+    R.assin.forEach(a=>{if(remap[a.colabId]){a.colabId=remap[a.colabId];a.id=a.colabId+'|'+a.mes}})}
+  for(const[k,v]of Object.entries(R.apagados))if(!(apag[k]>=v))apag[k]=v;
+  for(const c of COLS){const m=new Map(S[c].map(r=>[r.id,r]));
+    for(const r of R[c]){const a=m.get(r.id);if(!a||(r.upd||0)>(a.upd||0)){m.set(r.id,r);n++}}
+    S[c]=[...m.values()].filter(r=>!(apag[c+':'+r.id]>=(r.upd||1)));}
+  S.apagados=apag;
+  if((R.cfg.upd||0)>(S.cfg.upd||0))S.cfg={...S.cfg,...R.cfg};
+  inicializarSnap();persist();return n;
+}
+
+/* =================== Utilitários =================== */
+const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const hoje=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
+const agoraHM=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
+const m2=hm=>{if(!hm)return null;const[h,m]=hm.split(':').map(Number);return isNaN(h)?null:h*60+(m||0)};
+const eur=v=>(+v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+const hfmt=min=>{min=Math.max(0,Math.round(min||0));return Math.floor(min/60)+'h'+pad(min%60)};
+const dataPT=d=>d?d.split('-').reverse().join('/'):'';
+const dataLonga=d=>new Date(d+'T12:00').toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'});
+const diaSem=d=>['dom','seg','ter','qua','qui','sex','sáb'][new Date(d+'T12:00').getDay()];
+const MESES=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const colabN=id=>(S.colab.find(c=>c.id===id)||{}).nome||'(colaborador removido)';
+const localN=id=>(S.locais.find(l=>l.id===id)||{}).nome||'Sem local';
+const valorDe=c=>c&&typeof c.valor==='number'?c.valor:S.cfg.valorHora;
+const ativos=sel=>S.colab.filter(c=>!c.arquivado||c.id===sel);
+const CORES=['#0E7C6B','#2563EB','#9333EA','#C2570C','#BE185D','#0891B2','#4D7C0F','#B45309','#4F46E5','#DC2626'];
+function corDe(id){let h=0;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return CORES[h%CORES.length]}
+const iniciais=n=>String(n||'?').trim().split(/\s+/).filter(Boolean).map((p,i,a)=>i===0||i===a.length-1?p[0]:'').join('').slice(0,2).toUpperCase();
+function av(id,cls=''){const c=S.colab.find(x=>x.id===id);
+  if(c&&c.foto)return `<img class="av ${cls}" src="${c.foto}" alt="">`;
+  return `<div class="av ${cls}" style="background:${corDe(id)}" aria-hidden="true">${esc(iniciais(colabN(id)))}</div>`}
+function reduzirFoto(file){return new Promise((ok,ko)=>{
+  if(!file.type.startsWith('image/'))return ko(new Error('tipo'));
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{const L=256,cv=document.createElement('canvas');cv.width=cv.height=L;
+    const lado=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-lado)/2,sy=(img.naturalHeight-lado)/2;
+    const g=cv.getContext('2d');g.imageSmoothingQuality='high';g.drawImage(img,sx,sy,lado,lado,0,0,L,L);
+    URL.revokeObjectURL(url);ok(cv.toDataURL('image/jpeg',0.82))};
+  img.onerror=()=>{URL.revokeObjectURL(url);ko(new Error('leitura'))};img.src=url;})}
+
+const ICONS={
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ list:'<path d="M9 6h12M9 12h12M9 18h12M4 6h.01M4 12h.01M4 18h.01"/>',
+ users:'<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/>',
+ chart:'<path d="M3 3v18h18"/><path d="M7 15l4-4 3 3 5-6"/>',
+ cloud:'<path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ play:'<path d="M7 4.5l12 7.5-12 7.5z"/>',
+ pause:'<path d="M7 5h3v14H7zM14 5h3v14h-3z"/>',
+ stop:'<rect x="6" y="6" width="12" height="12" rx="2"/>',
+ edit:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ x:'<path d="M18 6L6 18M6 6l12 12"/>',
+ chat:'<path d="M21 11.5a8.4 8.4 0 0 1-12.6 7.3L3 20l1.3-5.1A8.4 8.4 0 1 1 21 11.5z"/>',
+ mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+ file:'<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6"/>',
+ grid:'<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/>',
+ print:'<path d="M6 9V3h12v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M6 14h12v7H6z"/>',
+ pin:'<path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/>',
+ copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>',
+ trash:'<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>',
+ down:'<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>',
+ up:'<path d="M12 21V9M7 14l5-5 5 5M5 3h14"/>',
+ phone:'<path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z"/>',
+ shield:'<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+ lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+ unlock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
+ sync:'<path d="M21 12a9 9 0 0 1-15.5 6.3L3 16"/><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8"/><path d="M21 3v5h-5M3 21v-5h5"/>',
+ check:'<path d="M5 12l5 5 9-10"/>',
+ euro:'<path d="M17 6.5A7 7 0 1 0 17 17.5"/><path d="M4 10h9M4 14h9"/>',
+ sign:'<path d="M3 17c3-3 4-9 6-9s-1 9 2 9 3-5 5-5 1 4 3 4h2"/><path d="M3 21h18"/>',
+ finger:'<path d="M12 11v3a8 8 0 0 1-1.5 4.5"/><path d="M8 11a4 4 0 0 1 8 0v2a12 12 0 0 1-.8 4.2"/><path d="M5 12a7 7 0 0 1 14 0v1"/><path d="M5 16c.3-1 .5-2 .5-3"/><path d="M18.6 16.5a17 17 0 0 0 .4-2.5"/>',
+ archive:'<rect x="3" y="4" width="18" height="5" rx="1"/><path d="M5 9v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V9M10 13h4"/>',
+ db:'<ellipse cx="12" cy="5" rx="8" ry="3"/><path d="M4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5"/><path d="M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3"/>'
+};
+const ic=(n,s)=>`<svg class="i" ${s?`style="width:${s}px;height:${s}px"`:''} viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]||''}</svg>`;
+
+function toast(t){const e=$('#toast');const host=[...document.querySelectorAll('dialog[open]')].pop()||document.body;
+  if(e.parentNode!==host)host.appendChild(e);e.textContent=t;e.classList.add('on');clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),2800)}
+function confirmar(msg,ok='Confirmar',perigo=false){return new Promise(res=>{
+  const d=$('#dlg2'),f=d.querySelector('form');let feito=false;const fim=v=>{if(feito)return;feito=true;d.close();res(v)};
+  f.innerHTML=`<p class="dmsg">${esc(msg).replace(/\n/g,'<br>')}</p><div class="dacts"><span></span><div class="row"><button type="button" class="btn" data-r="0">Cancelar</button><button type="button" class="btn ${perigo?'d':'p'}" data-r="1">${esc(ok)}</button></div></div>`;
+  f.onclick=e=>{const b=e.target.closest('[data-r]');if(b)fim(b.dataset.r==='1')};
+  f.onsubmit=e=>{e.preventDefault();fim(true)};d.oncancel=()=>fim(false);d.showModal();f.querySelector('[data-r="1"]').focus()})}
+function pedirTexto(titulo,valor='',tipo='texto'){return new Promise(res=>{
+  const d=$('#dlg2'),f=d.querySelector('form');let feito=false;const fim=v=>{if(feito)return;feito=true;d.close();res(v)};
+  const inp=tipo==='pin'?`<input id="ptI" type="password" inputmode="numeric" autocomplete="off" maxlength="6" style="font-size:1.4rem;letter-spacing:.4em;text-align:center">`:`<input id="ptI" value="${esc(valor)}">`;
+  f.innerHTML=`<div class="dh"><h2 style="font-size:1.3rem">${esc(titulo)}</h2></div>${inp}<div class="dacts"><span></span><div class="row"><button type="button" class="btn" data-r="0">Cancelar</button><button type="submit" class="btn p">Continuar</button></div></div>`;
+  f.onclick=e=>{if(e.target.closest('[data-r="0"]'))fim(null)};
+  f.onsubmit=e=>{e.preventDefault();const v=$('#ptI').value.trim();fim(v||null)};d.oncancel=()=>fim(null);d.showModal();$('#ptI').focus();if(tipo!=='pin')$('#ptI').select()})}
+
+/* =================== Cálculo de horas =================== */
+function dur(t,ateAgora){
+  const ini=m2(t.ini);if(ini==null)return 0;
+  const agora=()=>{let v=m2(agoraHM());if(t.data<hoje())v+=1440;return v};
+  const rel=v=>{v-=ini;while(v<0)v+=1440;return v};
+  const fRaw=t.fim?m2(t.fim):(ateAgora&&t.estado!=='concluido'?agora():null);
+  if(fRaw==null)return 0;
+  let total=t.fim?rel(fRaw):Math.max(0,fRaw-ini);
+  const pi=m2(t.pIni);
+  if(pi!=null){const pfRaw=t.pFim?m2(t.pFim):(ateAgora&&t.estado==='pausa'?agora():null);
+    if(pfRaw!=null){const a=rel(pi);let b=t.pFim?rel(pfRaw):Math.max(a,pfRaw-ini);if(b<a)b=a;total-=(b-a)}}
+  return Math.max(0,total);
+}
+const ganho=t=>dur(t)/60*(+t.valor||0);
+const sai1=t=>t.pIni||t.fim||'';
+const ent2=t=>t.pIni?(t.pFim||''):'';
+const sai2=t=>t.pIni?(t.fim||''):'';
+const aberto=t=>t.estado==='curso'||t.estado==='pausa';
+function soma(L){const r={n:L.length,min:0,val:0,pago:0};for(const t of L){const g=ganho(t);r.min+=dur(t);r.val+=g;if(t.pago)r.pago+=g}r.por=r.val-r.pago;return r}
+const concluidos=f=>S.turnos.filter(t=>t.estado==='concluido'&&(!f||f(t)));
+/* Meses fechados e prazo legal */
+const fechado=mes=>S.fechos.some(f=>f.id===mes);
+const turnoFechado=t=>fechado((t.data||'').slice(0,7));
+const recente=d=>d&&(Date.now()-new Date(d+'T12:00'))<5*365.25*864e5;
+const AVISO_LEGAL='O Código do Trabalho (art. 202.º) obriga o empregador a guardar o registo dos tempos de trabalho durante 5 anos.';
+
+/* Sugestões de serviço (textos já usados, os mais frequentes primeiro) */
+function atualizarSugestoes(){const cont=new Map();
+  for(const t of S.turnos){const v=(t.trabalho||'').trim();if(!v)continue;const k=v.toLowerCase();const a=cont.get(k)||{v,n:0,u:''};a.n++;if(t.data>a.u){a.u=t.data;a.v=v}cont.set(k,a)}
+  const L=[...cont.values()].sort((a,b)=>b.n-a.n||b.u.localeCompare(a.u)).slice(0,50);
+  $('#dlS').innerHTML=L.map(x=>`<option value="${esc(x.v)}">`).join('')}
+
+/* =================== Navegação =================== */
+const VIEWS=[['ponto','Ponto','clock'],['servicos','Serviços','list'],['equipa','Colaboradores','users'],['relatorios','Relatórios','chart'],['config','Definições','cloud']];
+let view='ponto';
+$('#nav').innerHTML=`<div class="logo"><div class="mark">${ic('clock',22)}</div><b>Registo de<br>Trabalho</b></div>`+
+  VIEWS.map(([v,n,i])=>`<button class="nb${v===view?' on':''}" data-v="${v}">${ic(i)}<span>${n}</span></button>`).join('')+
+  `<div class="foot" id="navFoot"></div>`;
+$('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b)ir(b.dataset.v)});
+$('#fab').innerHTML=ic('plus');$('#fab').onclick=()=>{if(pronto)editTurno()};
+function ir(v){if(!pronto)return;view=v;document.querySelectorAll('.nb').forEach(x=>x.classList.toggle('on',x.dataset.v===v));render();window.scrollTo(0,0)}
+function render(){
+  $('#fab').hidden=!['ponto','servicos'].includes(view);
+  ({ponto:vPonto,servicos:vServicos,equipa:vEquipa,relatorios:vRel,config:vConfig})[view]();
+  atualizarSugestoes();tick();
+  $('#navFoot').innerHTML=`${LOC.pinHash?`<button class="nb" onclick="bloquear()">${ic('lock')}<span>Bloquear</span></button>`:''}<div style="padding:.5rem">${LOC.ultimaSync?'Sincronizado '+new Date(LOC.ultimaSync).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'}):'Dados guardados neste dispositivo'}</div>`;
+}
+function cab(t,sub,extra=''){return `<div class="head"><div><h1>${t}</h1>${sub?`<div class="sub">${sub}</div>`:''}</div><div class="row">${extra}</div></div>`}
+function opts(arr,sel,vazio){return (vazio!=null?`<option value="">${esc(vazio)}</option>`:'')+arr.map(a=>`<option value="${a.id}" ${a.id===sel?'selected':''}>${esc(a.nome)}</option>`).join('')}
+const vazio=(icone,txt,btn='')=>`<div class="empty">${ic(icone)}<div>${txt}</div>${btn?`<div style="margin-top:1rem">${btn}</div>`:''}</div>`;
+function horasChips(t){let s=`<span class="tm"><em>Turno</em>${t.ini}–${sai1(t)||'…'}</span>`;
+  if(ent2(t))s+=`<span class="tm"><em>Retoma</em>${ent2(t)}–${sai2(t)||'…'}</span>`;return s}
+const chipEstado=t=>t.estado==='pausa'?`<span class="chip pausa">Em intervalo</span>`:t.estado==='curso'?`<span class="chip curso"><i class="dot"></i>A trabalhar</span>`
+  :t.pago?`<span class="chip pago">${ic('check')}Pago</span>`:`<span class="chip porpagar">Por pagar</span>`;
+const botaoSync=()=>`<button class="btn" onclick="sincronizarAgora()" title="Sincronizar com o Google Drive">${ic('sync')}<span class="hm">Sincronizar</span></button>`;
+
+/* =================== Ponto =================== */
+function vPonto(){
+  const emCurso=S.turnos.filter(aberto);const hj=hoje(),mes=hj.slice(0,7);
+  const H=soma(concluidos(t=>t.data===hj)),M=soma(concluidos(t=>t.data.startsWith(mes))),P=soma(concluidos());
+  const hr=new Date().getHours();const saud=hr<12?'Bom dia':hr<20?'Boa tarde':'Boa noite';
+  let h=cab('Ponto',saud+(S.cfg.empresa?' · '+esc(S.cfg.empresa):''),`${botaoSync()}${LOC.pinHash?`<button class="btn" onclick="bloquear()" aria-label="Bloquear">${ic('lock')}</button>`:''}<button class="btn hm" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`);
+  h+=`<div class="hero"><div><div class="d" id="heroD"></div><div class="t" id="heroT">--:--</div></div><div class="live-n"><b>${emCurso.length}</b>${emCurso.length===1?'turno em curso':'turnos em curso'}</div></div>`;
+  const semCopia=S.turnos.length>=5&&(!LOC.ultimoBackup||Date.now()-LOC.ultimoBackup>7*864e5)&&(!LOC.ultimaSync||Date.now()-LOC.ultimaSync>7*864e5);
+  if(semCopia)h+=`<div class="banner"><span>${LOC.ultimoBackup?'Já passou mais de uma semana desde a última cópia de segurança.':'Ainda não fez nenhuma cópia de segurança.'}</span><button class="btn s" onclick="ir('config')">${ic('cloud')}Fazer cópia</button></div>`;
+  h+=`<div class="stats">
+    <div class="stat hl"><div class="k">Hoje</div><div class="v">${hfmt(H.min)}</div><div class="x">${eur(H.val)}</div></div>
+    <div class="stat"><div class="k">Este mês</div><div class="v">${hfmt(M.min)}</div><div class="x">${eur(M.val)}</div></div>
+    <div class="stat ${P.por>0?'warn':''}" style="cursor:pointer" onclick="fT.pag='por';fT.mes='';ir('servicos')"><div class="k">Por pagar</div><div class="v">${eur(P.por)}</div><div class="x">${concluidos(t=>!t.pago).length} serviços</div></div></div>`;
+  if(!S.colab.length){
+    h+=`<div class="card"><h2>Bem-vindo, vamos começar</h2><p class="muted" style="margin-top:0">Adicione os colaboradores e os locais de trabalho. Depois pode iniciar turnos aqui com um toque.</p>
+      <button class="btn p big" onclick="ir('equipa')">${ic('users')}Adicionar colaboradores</button></div>`;
+  }else if(fechado(mes)){
+    h+=`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(mes))} está fechado. Reabra o mês em Relatórios para registar turnos.</span></div>`;
+  }else{
+    h+=`<div class="card"><h2>Iniciar turno</h2><div class="qs">
+      <div class="f"><label for="qC">Colaborador</label><select id="qC">${opts(ativos(),'')}</select></div>
+      <div class="f"><label for="qL">Local</label><select id="qL">${opts(S.locais,LOC.ultimoLocal,'Sem local')}</select></div>
+      <div class="f grow"><label for="qT">Serviço efetuado (opcional)</label><input id="qT" list="dlS" autocomplete="off" placeholder="Ex.: limpeza, manutenção…"></div>
+      <button class="btn p big" onclick="iniciarRapido()">${ic('play')}Iniciar agora</button></div></div>`;
+  }
+  h+=`<div class="sec-t">Em curso ${emCurso.length?`<span class="count">${emCurso.length}</span>`:''}</div>`;
+  h+=emCurso.length?`<div class="live">${emCurso.map(t=>`
+    <div class="lc ${t.estado}">
+      <div class="top">${av(t.colabId)}<div class="nm">${esc(colabN(t.colabId))}</div>${chipEstado(t)}</div>
+      <div class="timer" data-timer="${t.id}">${hfmt(dur(t,true))}</div>
+      <div class="times">${horasChips(t)}</div>
+      <div class="meta">${ic('pin')}${esc(localN(t.localId))}${t.data!==hj?' · desde '+dataPT(t.data):''}</div>
+      ${t.trabalho?`<div class="meta" style="margin-top:.2rem">${esc(t.trabalho)}</div>`:''}
+      <div class="acts">
+        ${t.estado==='curso'&&!t.pIni?`<button class="btn w s" onclick="pausa('${t.id}')">${ic('pause')}Registar saída (intervalo)</button>`:''}
+        ${t.estado==='pausa'?`<button class="btn p s" onclick="retomar('${t.id}')">${ic('play')}Retomar turno</button>`:''}
+        <button class="btn s" onclick="terminar('${t.id}')">${ic('stop')}Terminar turno</button>
+        <button class="btn g s" onclick="editTurno('${t.id}')" aria-label="Editar">${ic('edit')}</button>
+      </div></div>`).join('')}</div>`:`<div class="card">${vazio('clock','Nenhum turno em curso.')}</div>`;
+  const hojeL=concluidos(t=>t.data===hj).sort((a,b)=>b.ini.localeCompare(a.ini));
+  if(hojeL.length)h+=`<div class="sec-t">Concluídos hoje <span class="count">${hojeL.length}</span></div>${hojeL.map(linhaServico).join('')}`;
+  $('#main').innerHTML=h;
+}
+function iniciarRapido(){
+  const cid=$('#qC').value;if(!cid)return;
+  if(fechado(hoje().slice(0,7))){toast('Este mês está fechado');return}
+  if(S.turnos.some(t=>aberto(t)&&t.colabId===cid)){toast(colabN(cid)+' já tem um turno em curso');return}
+  const c=S.colab.find(x=>x.id===cid);const lid=$('#qL').value;
+  S.turnos.push({id:uid(),colabId:cid,localId:lid,data:hoje(),ini:agoraHM(),fim:'',pIni:'',pFim:'',trabalho:$('#qT').value.trim(),valor:valorDe(c),estado:'curso',pago:''});
+  LOC.ultimoLocal=lid;save();render();toast('Turno iniciado às '+agoraHM());
+}
+const achar=id=>S.turnos.find(x=>x.id===id);
+function podeAlterar(t){if(turnoFechado(t)){toast('O mês deste turno está fechado');return false}return true}
+function pausa(id){const t=achar(id);if(!t||!podeAlterar(t))return;t.pIni=agoraHM();t.pFim='';t.estado='pausa';save();render();toast('Saída para intervalo registada')}
+function retomar(id){const t=achar(id);if(!t||!podeAlterar(t))return;t.pFim=agoraHM();t.estado='curso';save();render();toast('Turno retomado')}
+async function terminar(id){const t=achar(id);if(!t||!podeAlterar(t))return;
+  if(!await confirmar(`Terminar o turno de ${colabN(t.colabId)} agora (${agoraHM()})?`,'Terminar turno'))return;
+  if(t.estado==='pausa'){t.fim=t.pIni;t.pIni='';t.pFim=''}else t.fim=agoraHM();
+  t.estado='concluido';save();render();toast('Turno terminado: '+hfmt(dur(t))+' · '+eur(ganho(t)))}
+function tick(){
+  const d=new Date();const hd=$('#heroD'),ht=$('#heroT');
+  if(hd)hd.textContent=d.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(ht)ht.textContent=d.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  document.querySelectorAll('[data-timer]').forEach(el=>{const t=achar(el.dataset.timer);if(t)el.textContent=hfmt(dur(t,true))});
+}
+setInterval(tick,1000);
+
+/* =================== Formulário de serviço =================== */
+function editTurno(id,base){
+  if(!S.colab.length){toast('Adicione primeiro um colaborador em Colaboradores');ir('equipa');return}
+  const orig=id?achar(id):null;if(id&&!orig)return;
+  const c0=ativos()[0]||S.colab[0];
+  const t=orig||base||{id:null,colabId:c0.id,localId:LOC.ultimoLocal||'',data:hoje(),ini:'',fim:'',pIni:'',pFim:'',trabalho:'',valor:valorDe(c0),estado:'concluido',pago:''};
+  const bloq=!!(orig&&turnoFechado(orig));
+  const f=$('#dlgForm');f.oninput=f.onchange=null;
+  f.innerHTML=`<div class="dh"><h2>${bloq?'Serviço':orig?'Editar serviço':'Adicionar serviço'}</h2><button type="button" class="btn g s" id="fX0" aria-label="Fechar">${ic('x')}</button></div>
+  ${bloq?`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(orig.data.slice(0,7)))} está fechado. Para alterar, reabra o mês.</span><button type="button" class="btn s" id="fReab">${ic('unlock')}Reabrir mês</button></div>`:''}
+  <fieldset ${bloq?'disabled':''}><div class="fgrid">
+    <div class="f"><label for="fC">Colaborador</label><select id="fC">${opts(ativos(t.colabId),t.colabId)}${S.colab.some(c=>c.id===t.colabId)?'':`<option value="${esc(t.colabId)}" selected>(colaborador removido)</option>`}</select></div>
+    <div class="f"><label for="fL">Local</label><select id="fL">${opts(S.locais,t.localId,'Sem local')}<option value="__novo">+ Novo local…</option></select>
+      <input id="fLn" placeholder="Nome do novo local" hidden></div>
+    <div class="f"><label for="fD">Data</label><input type="date" id="fD" value="${t.data}"></div>
+    <div class="f"><label for="fV">Valor por hora (€)</label><input type="number" inputmode="decimal" step="0.01" min="0" id="fV" value="${t.valor}"></div>
+    <div class="tb"><div class="tt">Turno</div><div class="two">
+      <div class="f"><label for="fI">Hora de entrada</label><input type="time" id="fI" value="${t.ini}"></div>
+      <div class="f"><label for="fS1">Hora de saída</label><input type="time" id="fS1" value="${sai1(t)}"></div></div></div>
+    <div class="tb"><div class="tt">Retoma de turno <small>(opcional)</small></div><div class="two">
+      <div class="f"><label for="fE2">Hora de entrada</label><input type="time" id="fE2" value="${ent2(t)}"></div>
+      <div class="f"><label for="fS2">Hora de saída</label><input type="time" id="fS2" value="${sai2(t)}"></div></div></div>
+    <div class="f full"><label for="fT">Serviço efetuado</label><input id="fT" list="dlS" autocomplete="off" value="${esc(t.trabalho)}" placeholder="Escreva ou escolha um serviço já usado"></div>
+    <label class="chk"><input type="checkbox" id="fA" ${aberto(t)?'checked':''}>Turno ainda a decorrer (sem hora de saída final)</label>
+    <label class="chk"><input type="checkbox" id="fP" ${t.pago?'checked':''}>Pago${t.pago?` <span class="muted" style="font-weight:500">em ${dataPT(t.pago)}</span>`:''}</label>
+    <div class="preview"><span>Total</span><span><b id="pvH">0h00</b> · <span id="pvV">0,00 €</span></span></div>
+  </div></fieldset>
+  <div class="err" id="fErr" hidden></div>
+  <div class="dacts"><div class="row">${orig&&!bloq?`<button type="button" class="btn d" id="fDel">${ic('trash')}Eliminar</button>`:''}${orig?`<button type="button" class="btn g" id="fDup">${ic('copy')}Duplicar</button>`:''}</div>
+  <div class="row"><button type="button" class="btn" id="fX">${bloq?'Fechar':'Cancelar'}</button>${bloq?'':'<button type="submit" class="btn p">Guardar</button>'}</div></div>`;
+  const dlg=$('#dlg');dlg.showModal();
+  const erro=m=>{const e=$('#fErr');e.textContent=m;e.hidden=!m;if(m)e.scrollIntoView({block:'nearest'})};
+  function ler(){
+    const s1=$('#fS1').value,e2=$('#fE2').value,s2=$('#fS2').value,ab=$('#fA').checked;
+    const n={...t,colabId:$('#fC').value,data:$('#fD').value,ini:$('#fI').value,valor:Math.max(0,parseFloat(String($('#fV').value).replace(',','.'))||0),trabalho:$('#fT').value.trim()};
+    if(!ab){n.estado='concluido';if(e2){n.pIni=s1;n.pFim=e2;n.fim=s2}else{n.pIni='';n.pFim='';n.fim=s1}}
+    else if(e2){n.estado='curso';n.pIni=s1;n.pFim=e2;n.fim=''}
+    else if(s1){n.estado='pausa';n.pIni=s1;n.pFim='';n.fim=''}
+    else{n.estado='curso';n.pIni='';n.pFim='';n.fim=''}
+    n.pago=(!ab&&$('#fP').checked)?(t.pago||hoje()):'';
+    return{n,s1,e2,s2,ab};
+  }
+  function previsao(){const{n,ab}=ler();const m=dur(n,ab);$('#pvH').textContent=hfmt(m);$('#pvV').textContent=eur(m/60*n.valor);$('#fP').disabled=bloq||ab;erro('')}
+  f.oninput=previsao;f.onchange=previsao;previsao();
+  $('#fC').addEventListener('change',e=>{const c=S.colab.find(x=>x.id===e.target.value);if(c&&!orig){$('#fV').value=valorDe(c);previsao()}});
+  $('#fL').addEventListener('change',e=>{const n=$('#fLn');n.hidden=e.target.value!=='__novo';if(!n.hidden)n.focus()});
+  $('#fX').onclick=$('#fX0').onclick=()=>dlg.close();
+  if(bloq)$('#fReab').onclick=async()=>{if(await reabrirMes(orig.data.slice(0,7)))editTurno(id)};
+  if(orig){
+    $('#fDup').onclick=()=>{const{n}=ler();dlg.close();editTurno(null,{...n,id:null,data:hoje(),estado:'concluido',pago:''});toast('Cópia pronta — confirme a data e as horas')};
+    if(!bloq)$('#fDel').onclick=async()=>{
+      const msg=recente(orig.data)?`Eliminar este serviço?\n\nAtenção: este registo tem menos de 5 anos. ${AVISO_LEGAL}`:'Eliminar este serviço? Esta ação não pode ser desfeita.';
+      if(await confirmar(msg,'Eliminar mesmo assim',true)){S.turnos=S.turnos.filter(x=>x.id!==id);save();dlg.close();render();toast('Serviço eliminado')}};
+  }
+  f.onsubmit=e=>{e.preventDefault();if(bloq)return;
+    const{n,s1,e2,s2,ab}=ler();
+    if(!n.data)return erro('Indique a data.');
+    if(fechado(n.data.slice(0,7)))return erro(`${cap(nomeMes(n.data.slice(0,7)))} está fechado. Reabra o mês em Relatórios para registar neste mês.`);
+    if(!n.ini)return erro('Indique a hora de entrada.');
+    const rel=x=>{let v=m2(x)-m2(n.ini);return v<0?v+1440:v};
+    if(!ab&&!s1)return erro('Indique a hora de saída, ou marque “Turno ainda a decorrer”.');
+    if(s2&&!e2)return erro('Indique a hora de entrada da retoma.');
+    if(e2&&!s1)return erro('Indique a hora de saída do turno antes da retoma.');
+    if(!ab&&e2&&!s2)return erro('Indique a hora de saída da retoma, ou marque “Turno ainda a decorrer”.');
+    if(s1&&rel(s1)===0)return erro('A hora de saída tem de ser diferente da hora de entrada.');
+    if(e2&&rel(e2)<rel(s1))return erro('A entrada da retoma tem de ser depois da saída do turno.');
+    if(s2&&rel(s2)<=rel(e2))return erro('A saída da retoma tem de ser depois da entrada da retoma.');
+    if(ab&&S.turnos.some(x=>aberto(x)&&x.colabId===n.colabId&&x.id!==n.id))return erro(colabN(n.colabId)+' já tem outro turno em curso.');
+    if($('#fL').value==='__novo'){const nome=$('#fLn').value.trim();if(!nome)return erro('Escreva o nome do novo local.');
+      const l={id:uid(),nome};S.locais.push(l);n.localId=l.id}else n.localId=$('#fL').value;
+    LOC.ultimoLocal=n.localId;
+    if(orig)Object.assign(orig,n);else{n.id=uid();S.turnos.push(n)}
+    save();dlg.close();render();toast('Serviço guardado');
+  };
+}
+
+/* =================== Serviços =================== */
+let fT={mes:hoje().slice(0,7),colab:'',estado:'',pag:'',q:''};
+function linhaServico(t){const ab=aberto(t);
+  return `<div class="svc" role="button" tabindex="0" onclick="editTurno('${t.id}')" onkeydown="if(event.key==='Enter')editTurno('${t.id}')">
+    ${av(t.colabId)}
+    <div style="min-width:0"><div class="nm">${esc(colabN(t.colabId))} ${chipEstado(t)}${turnoFechado(t)?`<span class="chip lock">${ic('lock')}</span>`:''}</div>
+      <div class="times">${horasChips(t)}</div>
+      <div class="meta">${ic('pin')}${esc(localN(t.localId))}${t.trabalho?' · '+esc(t.trabalho):''}</div></div>
+    <div class="r"><div class="h"${ab?` data-timer="${t.id}"`:''}>${hfmt(dur(t,ab))}</div><div class="meta">${ab?'a decorrer':eur(ganho(t))}</div></div></div>`}
+function vServicos(){
+  let h=cab('Serviços','Registos de trabalho por dia',`<button class="btn p hm" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`);
+  h+=`<div class="filters"><div class="f"><label for="tM">Mês</label><input type="month" id="tM" value="${fT.mes}"></div>
+   <div class="f"><label for="tC">Colaborador</label><select id="tC">${opts(S.colab,fT.colab,'Todos')}</select></div>
+   <div class="f"><label for="tE">Estado</label><select id="tE"><option value="">Todos</option>${[['curso','Em curso'],['concluido','Concluídos']].map(([v,n])=>`<option value="${v}" ${fT.estado===v?'selected':''}>${n}</option>`).join('')}</select></div>
+   <div class="f"><label for="tP">Pagamento</label><select id="tP"><option value="">Todos</option>${[['por','Por pagar'],['pago','Pagos']].map(([v,n])=>`<option value="${v}" ${fT.pag===v?'selected':''}>${n}</option>`).join('')}</select></div>
+   <div class="f"><label for="tQ">Pesquisar</label><input id="tQ" type="search" placeholder="Local ou serviço…" value="${esc(fT.q)}"></div></div>`;
+  if(fT.mes&&fechado(fT.mes))h+=`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(fT.mes))} está fechado — os serviços só podem ser consultados.</span></div>`;
+  const q=fT.q.toLowerCase();
+  const L=S.turnos.filter(t=>(!fT.mes||t.data.startsWith(fT.mes))&&(!fT.colab||t.colabId===fT.colab)
+      &&(!fT.estado||(fT.estado==='curso'?aberto(t):t.estado===fT.estado))
+      &&(!fT.pag||(t.estado==='concluido'&&(fT.pag==='pago'?!!t.pago:!t.pago)))
+      &&(!q||(t.trabalho||'').toLowerCase().includes(q)||localN(t.localId).toLowerCase().includes(q)||colabN(t.colabId).toLowerCase().includes(q)))
+    .sort((a,b)=>(b.data+b.ini).localeCompare(a.data+a.ini));
+  const T=soma(L.filter(t=>t.estado==='concluido'));
+  h+=`<div class="stats"><div class="stat"><div class="k">Horas</div><div class="v">${hfmt(T.min)}</div><div class="x">${L.length} serviços</div></div>
+    <div class="stat hl"><div class="k">Valor</div><div class="v">${eur(T.val)}</div></div>
+    <div class="stat ${T.por>0?'warn':''}"><div class="k">Por pagar</div><div class="v">${eur(T.por)}</div></div></div>`;
+  if(!L.length)h+=`<div class="card">${vazio('list','Sem serviços para estes filtros.',`<button class="btn p" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`)}</div>`;
+  let dia='';
+  L.forEach(t=>{if(t.data!==dia){dia=t.data;const sd=soma(L.filter(x=>x.data===dia&&x.estado==='concluido'));
+      h+=`<div class="day-h"><span>${dataLonga(dia)}${fT.mes?'':' '+dia.slice(0,4)}</span><span>${hfmt(sd.min)} · ${eur(sd.val)}</span></div>`}
+    h+=linhaServico(t)});
+  $('#main').innerHTML=h;
+  $('#tM').onchange=e=>{fT.mes=e.target.value;vServicos()};$('#tC').onchange=e=>{fT.colab=e.target.value;vServicos()};
+  $('#tE').onchange=e=>{fT.estado=e.target.value;vServicos()};$('#tP').onchange=e=>{fT.pag=e.target.value;vServicos()};
+  $('#tQ').oninput=e=>{fT.q=e.target.value;clearTimeout(vServicos._t);vServicos._t=setTimeout(()=>{vServicos();const i=$('#tQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)},300)};
+}
+
+/* =================== Colaboradores =================== */
+function cartaoColab(c){const mes=hoje().slice(0,7);
+  const M=soma(concluidos(t=>t.colabId===c.id&&t.data.startsWith(mes))),P=soma(concluidos(t=>t.colabId===c.id));
+  return `<div class="tc ${c.arquivado?'arch':''}"><div class="top">${av(c.id,'lg')}<div style="flex:1;min-width:0"><div style="font-weight:700">${esc(c.nome)}</div><div class="meta">${eur(valorDe(c))} / hora${c.arquivado?' · arquivado':''}</div></div>
+    <button class="btn g s" onclick="editColab('${c.id}')" aria-label="Editar ${esc(c.nome)}">${ic('edit')}</button></div>
+    ${c.tel||c.email?`<div class="meta">${c.tel?ic('phone')+esc(c.tel):''}${c.tel&&c.email?' · ':''}${c.email?ic('mail')+esc(c.email):''}</div>`:''}
+    <div class="mini"><div><b>${M.n}</b><span>Serviços mês</span></div><div><b>${hfmt(M.min)}</b><span>Horas mês</span></div><div><b style="${P.por>0?'color:var(--warn)':''}">${eur(P.por).replace(/\s?€/,'€')}</b><span>Por pagar</span></div></div></div>`}
+function vEquipa(){
+  const at=S.colab.filter(c=>!c.arquivado),ar=S.colab.filter(c=>c.arquivado);
+  let h=cab('Colaboradores','Colaboradores e locais de trabalho',`<button class="btn p" onclick="editColab()">${ic('plus')}Adicionar colaborador</button>`);
+  h+=at.length?`<div class="team">${at.map(cartaoColab).join('')}</div>`
+    :`<div class="card">${vazio('users','Ainda não há colaboradores ativos.',`<button class="btn p" onclick="editColab()">${ic('plus')}Adicionar o primeiro</button>`)}</div>`;
+  if(ar.length)h+=`<div class="sec-t">Arquivados <span class="count">${ar.length}</span></div><div class="team">${ar.map(cartaoColab).join('')}</div>`;
+  h+=`<div class="sec-t">Locais de trabalho</div><div class="card"><form class="row" id="fLoc" style="margin-bottom:.4rem"><input id="nL" placeholder="Nome do local" style="flex:1;min-width:180px"><button class="btn p">${ic('plus')}Adicionar</button></form>
+  <ul class="list">${S.locais.map(l=>`<li><span class="meta" style="color:var(--ink);font-size:1rem">${ic('pin',16)}${esc(l.nome)}</span><div class="row"><button class="btn g s" onclick="renLocal('${l.id}')" aria-label="Mudar nome">${ic('edit')}</button><button class="btn g s" onclick="delLocal('${l.id}')" aria-label="Eliminar" style="color:var(--danger)">${ic('trash')}</button></div></li>`).join('')||'<li class="muted">Sem locais registados.</li>'}</ul></div>`;
+  $('#main').innerHTML=h;
+  $('#fLoc').onsubmit=e=>{e.preventDefault();const n=$('#nL').value.trim();if(!n)return;
+    if(S.locais.some(l=>l.nome.toLowerCase()===n.toLowerCase())){toast('Esse local já existe');return}
+    S.locais.push({id:uid(),nome:n});save();vEquipa();toast('Local adicionado')};
+}
+function editColab(id){
+  const c=id?S.colab.find(x=>x.id===id):{nome:'',tel:'',email:'',valor:S.cfg.valorHora,foto:''};
+  let foto=c.foto||'';
+  const f=$('#dlgForm');f.oninput=f.onchange=null;
+  f.innerHTML=`<div class="dh"><h2>${id?'Editar colaborador':'Novo colaborador'}</h2><button type="button" class="btn g s" id="cX0" aria-label="Fechar">${ic('x')}</button></div><div class="fgrid">
+   <div class="ph"><div id="cPv"></div><div><div class="lbl" style="margin-bottom:.4rem">Fotografia</div><div class="row">
+     <label class="btn s" style="color:inherit;font-size:.86rem">${ic('up')}<span id="cFb">Carregar foto</span><input type="file" id="cF" accept="image/*" hidden></label>
+     <button type="button" class="btn g s" id="cFr" style="color:var(--danger)">${ic('trash')}Remover</button></div></div></div>
+   <div class="f full"><label for="cN">Nome</label><input id="cN" value="${esc(c.nome)}" autocomplete="name"></div>
+   <div class="f"><label for="cT">Telemóvel (WhatsApp)</label><input id="cT" type="tel" value="${esc(c.tel)}" placeholder="912 345 678"></div>
+   <div class="f"><label for="cE">Email</label><input id="cE" type="email" value="${esc(c.email)}" placeholder="nome@exemplo.pt"></div>
+   <div class="f"><label for="cV">Valor por hora (€)</label><input id="cV" type="number" inputmode="decimal" step="0.01" min="0" value="${valorDe(c)}"></div>
+   <div class="tb"><div class="tt">Assinatura <small>(opcional — para assinar os meses com um toque)</small></div>
+     <div id="cSigPv" style="margin-bottom:.6rem"></div>
+     <div class="row"><label class="btn s" style="color:inherit">${ic('up')}<span id="cSigB">Carregar assinatura</span><input type="file" id="cSig" accept="image/*" hidden></label>
+     <button type="button" class="btn g s" id="cSigR" style="color:var(--danger)">${ic('trash')}Remover</button></div></div></div>
+   <div class="err" id="cErr" hidden></div>
+   <div class="dacts"><div class="row">${id?`<button type="button" class="btn g" id="cArq">${ic('archive')}${c.arquivado?'Reativar':'Arquivar'}</button><button type="button" class="btn d" id="cDel">${ic('trash')}Eliminar</button>`:''}</div>
+   <div class="row"><button type="button" class="btn" id="cX">Cancelar</button><button type="submit" class="btn p">Guardar</button></div></div>`;
+  const dlg=$('#dlg');dlg.showModal();
+  const erro=m=>{const e=$('#cErr');e.textContent=m;e.hidden=!m};
+  const pv=()=>{const nome=$('#cN').value.trim()||'?';
+    $('#cPv').innerHTML=foto?`<img class="av xl" src="${foto}" alt="Fotografia">`:`<div class="av xl" style="background:${corDe(id||nome)}">${esc(iniciais(nome))}</div>`;
+    $('#cFr').hidden=!foto;$('#cFb').textContent=foto?'Trocar foto':'Carregar foto'};
+  pv();$('#cN').addEventListener('input',()=>{if(!foto)pv()});
+  $('#cF').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
+    try{foto=await reduzirFoto(file);pv();erro('')}catch(err){erro('Não foi possível ler esta imagem. Use uma foto JPG ou PNG.')}};
+  $('#cFr').onclick=()=>{foto='';pv()};
+  let assinatura=c.assinatura||'';
+  const pvSig=()=>{$('#cSigPv').innerHTML=assinatura?`<img class="sig-img" src="${assinatura}" alt="Assinatura guardada">`:'<span class="muted" style="font-size:.9rem">Sem assinatura guardada. Use uma foto nítida da assinatura em papel branco.</span>';
+    $('#cSigR').hidden=!assinatura;$('#cSigB').textContent=assinatura?'Trocar assinatura':'Carregar assinatura'};pvSig();
+  $('#cSig').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
+    try{assinatura=await prepararAssinatura(file);pvSig();erro('')}catch(err){erro('Não foi possível usar esta imagem. Use uma foto nítida da assinatura em papel branco (JPG ou PNG).')}};
+  $('#cSigR').onclick=()=>{assinatura='';pvSig()};
+  $('#cX').onclick=$('#cX0').onclick=()=>dlg.close();
+  if(id){
+    $('#cArq').onclick=()=>{c.arquivado=!c.arquivado;save();dlg.close();render();toast(c.arquivado?'Colaborador arquivado — os registos mantêm-se':'Colaborador reativado')};
+    $('#cDel').onclick=async()=>{const T=S.turnos.filter(t=>t.colabId===id),rec=T.some(t=>recente(t.data));
+      if(T.some(t=>turnoFechado(t))){erro('Este colaborador tem serviços em meses fechados. Pode arquivá-lo em vez de o eliminar.');return}
+      const msg=!T.length?`Eliminar ${c.nome}?`:`${c.nome} tem ${T.length} serviços registados, que também serão eliminados.`+(rec?`\n\n${AVISO_LEGAL}\nSugestão: use “Arquivar” — esconde o colaborador e mantém os registos.`:'');
+      if(await confirmar(msg,'Eliminar mesmo assim',true)){
+        S.colab=S.colab.filter(x=>x.id!==id);S.turnos=S.turnos.filter(t=>t.colabId!==id);S.assin=S.assin.filter(a=>a.colabId!==id);save();dlg.close();render();toast('Colaborador eliminado')}};
+  }
+  f.onsubmit=e=>{e.preventDefault();const nome=$('#cN').value.trim();if(!nome)return erro('Indique o nome.');
+    const email=$('#cE').value.trim();if(email&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return erro('O email não parece válido.');
+    const d={nome,tel:$('#cT').value.trim(),email,valor:Math.max(0,parseFloat(String($('#cV').value).replace(',','.'))||0),foto,assinatura};
+    if(id)Object.assign(c,d);else S.colab.push({id:uid(),...d});save();dlg.close();render();toast('Colaborador guardado')};
+  setTimeout(()=>$('#cN').focus(),50);
+}
+async function renLocal(id){const l=S.locais.find(x=>x.id===id);const n=await pedirTexto('Mudar nome do local',l.nome);if(n){l.nome=n;save();vEquipa()}}
+async function delLocal(id){const l=S.locais.find(x=>x.id===id);const n=S.turnos.filter(t=>t.localId===id).length;
+  if(!await confirmar(n?`Há ${n} serviços em “${l.nome}”. Eliminar mesmo assim? Esses serviços ficam sem local.`:`Eliminar o local “${l.nome}”?`,'Eliminar',true))return;
+  S.locais=S.locais.filter(x=>x.id!==id);if(LOC.ultimoLocal===id)LOC.ultimoLocal='';save();vEquipa()}
+
+/* =================== Relatórios =================== */
+let fR={mes:hoje().slice(0,7),colab:'',per:'mes',met:'val'};
+function dadosRel(){
+  const L=concluidos(t=>(fR.per==='tudo'||t.data.startsWith(fR.per==='ano'?fR.mes.slice(0,4):fR.mes))&&(!fR.colab||t.colabId===fR.colab))
+    .sort((a,b)=>(a.data+a.ini).localeCompare(b.data+b.ini));
+  const grupos={};L.forEach(t=>{(grupos[t.colabId]??=[]).push(t)});
+  return{L,grupos,...soma(L)};
+}
+const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
+const nomeMes=m=>new Date(m+'-15T12:00').toLocaleDateString('pt-PT',{month:'long',year:'numeric'});
+const nomePer=()=>fR.per==='tudo'?'todo o período':fR.per==='ano'?'ano de '+fR.mes.slice(0,4):nomeMes(fR.mes);
+const slugPer=()=>fR.per==='tudo'?'total':fR.per==='ano'?fR.mes.slice(0,4):fR.mes;
+function totaisColab(R){return Object.keys(R.grupos).map(cid=>({cid,...soma(R.grupos[cid])})).sort((a,b)=>b.val-a.val)}
+const assinDe=(cid,mes)=>S.assin.find(a=>a.id===cid+'|'+mes);
+function estadoAssin(x){const a=assinDe(x.cid,fR.mes);if(!a)return null;
+  return{a,ok:Math.round(a.min)===Math.round(x.min)&&Math.abs(a.val-x.val)<0.005}}
+function vRel(){
+  carregarPDF().catch(()=>{});
+  const R=dadosRel(),mensal=fR.per==='mes',fch=mensal&&fechado(fR.mes);
+  let h=cab('Relatórios e totais',esc(S.cfg.empresa||'Relatório de trabalho')+' · '+nomePer()+(fch?' · fechado':''));
+  h+=`<div class="filters noprint"><div class="f"><label for="rP">Período</label><select id="rP">${[['mes','Mês'],['ano','Ano'],['tudo','Todo o período']].map(([v,n])=>`<option value="${v}" ${fR.per===v?'selected':''}>${n}</option>`).join('')}</select></div>
+    ${fR.per==='tudo'?'':fR.per==='ano'?`<div class="f"><label for="rA">Ano</label><input type="number" id="rA" min="2000" max="2100" value="${fR.mes.slice(0,4)}"></div>`
+      :`<div class="f"><label for="rM">Mês</label><input type="month" id="rM" value="${fR.mes}"></div>`}
+    <div class="f"><label for="rC">Colaborador</label><select id="rC">${opts(S.colab,fR.colab,'Todos')}</select></div></div>`;
+  h+=`<div class="tools noprint">
+    <button class="btn p" onclick="partilhar('whatsapp')">${ic('chat')}WhatsApp</button><button class="btn p" onclick="partilhar('email')">${ic('mail')}Email</button>
+    <button class="btn" onclick="gerarPDF(true)">${ic('file')}PDF</button><button class="btn" onclick="exportCSV()">${ic('grid')}Excel</button><button class="btn" onclick="print()">${ic('print')}Imprimir</button>
+    <span class="sep"></span>
+    ${R.n?`<button class="btn" onclick="pagarTodos()">${ic('euro')}${R.por>0.004?'Marcar tudo como pago':'Desmarcar pagamentos'}</button>`:''}
+    ${mensal?(fch?`<button class="btn" onclick="reabrirMes('${fR.mes}')">${ic('unlock')}Reabrir mês</button>`:`<button class="btn" onclick="fecharMes('${fR.mes}')">${ic('lock')}Fechar mês</button>`):''}</div>`;
+  if(fch)h+=`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(fR.mes))} está fechado. Os serviços deste mês não podem ser alterados nem eliminados.</span></div>`;
+  h+=`<div class="stats"><div class="stat"><div class="k">Horas trabalhadas</div><div class="v">${hfmt(R.min)}</div><div class="x">${R.n} serviços</div></div>
+    <div class="stat hl"><div class="k">Valor total</div><div class="v">${eur(R.val)}</div><div class="x">Pago ${eur(R.pago)}</div></div>
+    <div class="stat ${R.por>0.004?'warn':''}"><div class="k">Por pagar</div><div class="v">${eur(R.por)}</div></div></div>`;
+  if(!R.n){h+=`<div class="card">${vazio('chart','Sem serviços concluídos neste período.')}</div>`;}
+  else{const TC=totaisColab(R);
+    h+=`<div class="card"><h2>Totais por colaborador</h2><div class="tw"><table><thead><tr><th>Colaborador</th><th class="n">Serviços</th><th class="n">Horas</th><th class="n">Valor</th><th class="n">Pago</th><th class="n">Por pagar</th><th class="noprint"></th>${mensal?'<th>Assinatura</th>':''}</tr></thead><tbody>
+    ${TC.map(x=>{const ea=mensal?estadoAssin(x):null;return `<tr><td><div class="who">${av(x.cid)}${esc(colabN(x.cid))}</div></td><td class="n">${x.n}</td><td class="n">${hfmt(x.min)}</td><td class="n"><b>${eur(x.val)}</b></td><td class="n">${eur(x.pago)}</td><td class="n" style="${x.por>0.004?'color:var(--warn);font-weight:700':''}">${eur(x.por)}</td>
+      <td class="noprint"><button class="btn s ${x.por>0.004?'p':''}" onclick="pagarColab('${x.cid}')">${x.por>0.004?ic('euro')+'Pagar':ic('check')+'Pago'}</button></td>
+      ${mensal?`<td>${ea?`<button class="btn s g" onclick="assinar('${x.cid}')"><span class="chip ${ea.ok?'pago':'porpagar'}">${ic(ea.ok?'check':'sign')}${ea.ok?'Assinado '+dataPT(new Date(ea.a.em).toISOString().slice(0,10)):'Desatualizada'}</span></button>`:`<button class="btn s noprint" onclick="assinar('${x.cid}')">${ic('sign')}Assinar</button>`}</td>`:''}</tr>`}).join('')}
+    </tbody><tfoot><tr><td>Total global</td><td class="n">${R.n}</td><td class="n">${hfmt(R.min)}</td><td class="n">${eur(R.val)}</td><td class="n">${eur(R.pago)}</td><td class="n">${eur(R.por)}</td><td class="noprint"></td>${mensal?'<td></td>':''}</tr></tfoot></table></div></div>`;
+    h+=cartaoGraficos(R,TC);
+    h+=`<div class="sec-t">Detalhe dos serviços</div>`;
+    for(const x of TC){const T=R.grupos[x.cid];const ea=mensal?estadoAssin(x):null;
+      h+=`<div class="card"><h2 class="who" style="font-size:1.15rem">${av(x.cid)}${esc(colabN(x.cid))}</h2><div class="tw"><table><thead><tr><th>Data</th><th>Local</th><th>Entrada</th><th>Saída</th><th>Retoma: entrada</th><th>Retoma: saída</th><th>Trabalho efetuado</th><th class="n">Horas</th><th class="n">€/h</th><th class="n">Valor</th><th>Pagamento</th></tr></thead><tbody>
+      ${T.map(t=>`<tr><td style="white-space:nowrap">${diaSem(t.data)} ${dataPT(t.data)}</td><td>${esc(localN(t.localId))}</td><td>${t.ini}</td><td>${sai1(t)}</td><td>${ent2(t)||'—'}</td><td>${sai2(t)||'—'}</td><td>${esc(t.trabalho)}</td><td class="n">${hfmt(dur(t))}</td><td class="n">${eur(t.valor)}</td><td class="n">${eur(ganho(t))}</td><td>${t.pago?`<span class="chip pago">${dataPT(t.pago)}</span>`:'<span class="chip porpagar">Por pagar</span>'}</td></tr>`).join('')}
+      </tbody><tfoot><tr><td colspan="7">Total</td><td class="n">${hfmt(x.min)}</td><td></td><td class="n">${eur(x.val)}</td><td></td></tr></tfoot></table></div>
+      ${ea?`<div style="margin-top:.9rem"><div class="meta" style="margin-bottom:.3rem">Assinado em ${new Date(ea.a.em).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'})}${ea.a.origem==='imagem'?' · a partir de imagem carregada':''}${ea.ok?'':' — <b style="color:var(--warn)">os valores mudaram depois da assinatura</b>'}</div><img class="sig-img" src="${ea.a.img}" alt="Assinatura"></div>`:''}</div>`;}
+  }
+  $('#main').innerHTML=h;
+  $('#rP').onchange=e=>{fR.per=e.target.value;vRel()};
+  if($('#rM'))$('#rM').onchange=e=>{if(e.target.value){fR.mes=e.target.value;vRel()}};
+  if($('#rA'))$('#rA').onchange=e=>{const a=parseInt(e.target.value);if(a>1999&&a<2101){fR.mes=a+fR.mes.slice(4);vRel()}};
+  $('#rC').onchange=e=>{fR.colab=e.target.value;vRel()};
+  document.querySelectorAll('[data-met]').forEach(b=>b.onclick=()=>{fR.met=b.dataset.met;vRel()});
+}
+
+/* Gráficos (SVG desenhado pela app, funciona sem internet) */
+function cartaoGraficos(R,TC){
+  const met=fR.met,fmt=v=>met==='val'?eur(v):hfmt(v),ano=fR.mes.slice(0,4);
+  const meses=MESES.map((_,i)=>{const p=ano+'-'+pad(i+1);const s=soma(concluidos(t=>t.data.startsWith(p)&&(!fR.colab||t.colabId===fR.colab)));return met==='val'?s.val:s.min});
+  const W=640,H=230,b=26,tp=22,bw=(W-20)/12,mx=Math.max(...meses,met==='val'?1:60);
+  const curto=v=>met==='val'?(v>=1000?(v/1000).toFixed(1).replace('.',',')+'k€':Math.round(v)+'€'):Math.round(v/60)+'h';
+  const svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Gráfico por mês de ${ano}">
+    <line x1="10" x2="${W-10}" y1="${H-b}" y2="${H-b}" stroke="var(--line)"/>
+    ${meses.map((v,i)=>{const hh=(H-b-tp)*v/mx,x=10+i*bw+bw*.19,y=H-b-hh,sel=fR.per==='mes'&&fR.mes===ano+'-'+pad(i+1);
+      return `<g><title>${MESES[i]} ${ano}: ${fmt(v)}</title><rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(bw*.62).toFixed(1)}" height="${Math.max(hh,v>0?2:0).toFixed(1)}" rx="5" fill="var(--accent)" opacity="${sel||fR.per!=='mes'?1:.45}"/>
+      ${v>0?`<text x="${(x+bw*.31).toFixed(1)}" y="${(y-6).toFixed(1)}" text-anchor="middle" font-size="12" font-weight="700" fill="var(--ink)">${curto(v)}</text>`:''}
+      <text x="${(x+bw*.31).toFixed(1)}" y="${H-8}" text-anchor="middle" font-size="12" fill="var(--muted)">${MESES[i]}</text></g>`}).join('')}</svg>`;
+  const porLocal={};R.L.forEach(t=>{const k=t.localId||'';porLocal[k]=(porLocal[k]||0)+(met==='val'?ganho(t):dur(t))});
+  const barras=(items)=>{const m=Math.max(...items.map(i=>i.v),0.0001);return items.map(i=>`<div class="hb-row"><span class="nm" title="${esc(i.n)}">${esc(i.n)}</span><div class="bar"><span style="width:${(i.v/m*100).toFixed(1)}%;${i.c?`background:${i.c}`:''}"></span></div><span class="v">${fmt(i.v)}</span></div>`).join('')};
+  const colab=TC.map(x=>({n:colabN(x.cid),v:met==='val'?x.val:x.min,c:corDe(x.cid)})).sort((a,b)=>b.v-a.v);
+  const locais=Object.entries(porLocal).map(([k,v])=>({n:localN(k),v})).sort((a,b)=>b.v-a.v);
+  return `<div class="card"><div class="row" style="justify-content:space-between;margin-bottom:.8rem"><h2 style="margin:0">Gráficos</h2>
+    <div class="seg noprint"><button data-met="val" class="${met==='val'?'on':''}">Ganhos</button><button data-met="min" class="${met==='min'?'on':''}">Horas</button></div></div>
+    <div class="charts"><div class="chart"><p class="chart-t">${met==='val'?'Ganhos':'Horas'} por mês — ${ano}${fR.colab?' · '+esc(colabN(fR.colab)):''}</p>${svg}</div>
+    <div><p class="chart-t">Por colaborador — ${nomePer()}</p>${barras(colab)}<p class="chart-t" style="margin-top:1.1rem">Por local — ${nomePer()}</p>${barras(locais)}</div></div></div>`;
+}
+
+/* Pagamentos */
+async function pagarColab(cid){const T=dadosRel().grupos[cid]||[];const por=T.filter(t=>!t.pago);
+  if(por.length){const v=por.reduce((a,t)=>a+ganho(t),0);
+    if(await confirmar(`Marcar ${por.length} serviço${por.length>1?'s':''} de ${colabN(cid)} (${nomePer()}) como pago${por.length>1?'s':''}?\nTotal: ${eur(v)}`,'Marcar como pago')){por.forEach(t=>t.pago=hoje());save();vRel();toast('Pagamento registado')}}
+  else if(await confirmar(`Desmarcar o pagamento dos serviços de ${colabN(cid)} (${nomePer()})?`,'Desmarcar',true)){T.forEach(t=>t.pago='');save();vRel();toast('Pagamento desmarcado')}}
+async function pagarTodos(){const R=dadosRel();const por=R.L.filter(t=>!t.pago);
+  if(por.length){if(await confirmar(`Marcar todos os ${por.length} serviços por pagar (${nomePer()}) como pagos?\nTotal: ${eur(R.por)}`,'Marcar como pago')){por.forEach(t=>t.pago=hoje());save();vRel();toast('Pagamentos registados')}}
+  else if(await confirmar(`Desmarcar todos os pagamentos de ${nomePer()}?`,'Desmarcar',true)){R.L.forEach(t=>t.pago='');save();vRel()}}
+
+/* Fecho de mês */
+async function fecharMes(mes){
+  const ab=S.turnos.filter(t=>aberto(t)&&t.data.startsWith(mes));
+  if(ab.length){toast('Termine primeiro os turnos em curso deste mês');return}
+  if(!await confirmar(`Fechar ${nomeMes(mes)}?\nOs serviços deste mês deixam de poder ser alterados, eliminados ou acrescentados, até reabrir o mês. Os pagamentos e assinaturas continuam disponíveis.`,'Fechar mês'))return;
+  S.fechos.push({id:mes,em:Date.now()});save();render();toast('Mês fechado');
+}
+async function reabrirMes(mes){
+  if(LOC.pinHash){const p=await pedirTexto('PIN para reabrir o mês','','pin');if(!p)return false;if(await hashPin(p,LOC.pinSalt)!==LOC.pinHash){toast('PIN errado');return false}}
+  else if(!await confirmar(`Reabrir ${nomeMes(mes)}? Os serviços voltam a poder ser alterados.`,'Reabrir mês'))return false;
+  S.fechos=S.fechos.filter(f=>f.id!==mes);save();render();toast('Mês reaberto');return true;
+}
+
+/* Assinatura no ecrã */
+function assinar(cid){
+  const R=dadosRel(),x=totaisColab(R).find(y=>y.cid===cid);if(!x)return;const ea=estadoAssin(x);
+  const f=$('#dlgForm');f.oninput=f.onchange=null;
+  f.innerHTML=`<div class="dh"><h2>Assinatura do mês</h2><button type="button" class="btn g s" id="aX0" aria-label="Fechar">${ic('x')}</button></div>
+    <div class="decl">Eu, <b>${esc(colabN(cid))}</b>, confirmo que em <b>${nomeMes(fR.mes)}</b> prestei <b>${x.n}</b> serviço${x.n>1?'s':''}, num total de <b>${hfmt(x.min)}</b>, no valor de <b>${eur(x.val)}</b>${x.pago>0?` (dos quais ${eur(x.pago)} já recebidos)`:''}.</div>
+    ${ea?`<div class="info ${ea.ok?'ok':''}" style="margin-bottom:.8rem">${ic(ea.ok?'check':'sign')}<span style="flex:1">${ea.ok?'Já assinado':'Assinatura anterior desatualizada'} em ${new Date(ea.a.em).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'})}. Assinar de novo substitui-a.</span></div>`:''}
+    <div class="row" style="justify-content:space-between;margin-bottom:.4rem"><div class="lbl">Assine com o dedo ou o rato, ou carregue uma imagem</div>
+      <div class="row">${S.colab.find(c=>c.id===cid)?.assinatura?`<button type="button" class="btn s" id="aG">${ic('sign')}Usar assinatura guardada</button>`:''}
+      <label class="btn s" style="color:inherit">${ic('up')}Carregar imagem<input type="file" id="aF" accept="image/*" hidden></label></div></div>
+    <canvas class="sig" id="aCv"></canvas>
+    <div class="err" id="aErr" hidden></div>
+    <div class="dacts"><button type="button" class="btn g" id="aL">${ic('trash')}Limpar</button><div class="row"><button type="button" class="btn" id="aX">Cancelar</button><button type="submit" class="btn p">${ic('check')}Confirmar assinatura</button></div></div>`;
+  const dlg=$('#dlg');dlg.showModal();
+  const pad_=padAssinatura($('#aCv'));
+  $('#aL').onclick=()=>pad_.limpar();
+  const aErr=m=>{const er=$('#aErr');er.textContent=m;er.hidden=!m};
+  $('#aF').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
+    try{await pad_.desenharImagem(await prepararAssinatura(file));aErr('')}catch(err){aErr('Não foi possível usar esta imagem. Use uma foto nítida da assinatura em papel branco (JPG ou PNG).')}};
+  if($('#aG'))$('#aG').onclick=async()=>{await pad_.desenharImagem(S.colab.find(c=>c.id===cid).assinatura);aErr('')};
+  $('#aX').onclick=$('#aX0').onclick=()=>dlg.close();
+  f.onsubmit=e=>{e.preventDefault();if(pad_.vazio()){const er=$('#aErr');er.textContent='Falta a assinatura.';er.hidden=false;return}
+    S.assin=S.assin.filter(a=>a.id!==cid+'|'+fR.mes);
+    S.assin.push({id:cid+'|'+fR.mes,colabId:cid,mes:fR.mes,img:pad_.img(),origem:pad_.origem(),em:Date.now(),min:x.min,val:x.val,n:x.n});
+    save();dlg.close();vRel();toast('Assinatura guardada')};
+}
+function padAssinatura(cv){const ctx=cv.getContext('2d');let des=false,vaz=true,last=null;const COR='#13202A';
+  function preparar(){const r=cv.getBoundingClientRect(),d=window.devicePixelRatio||1;cv.width=Math.round(r.width*d);cv.height=Math.round(r.height*d);
+    ctx.setTransform(d,0,0,d,0,0);ctx.fillStyle='#fff';ctx.fillRect(0,0,r.width,r.height);ctx.lineWidth=2.6;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=COR;vaz=true}
+  preparar();
+  const pos=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+  cv.onpointerdown=e=>{e.preventDefault();des=true;last=pos(e);try{cv.setPointerCapture(e.pointerId)}catch(_){}ctx.beginPath();ctx.fillStyle=COR;ctx.arc(last[0],last[1],1.3,0,7);ctx.fill();vaz=false};
+  cv.onpointermove=e=>{if(!des)return;const p=pos(e);ctx.beginPath();ctx.moveTo(last[0],last[1]);ctx.lineTo(p[0],p[1]);ctx.stroke();last=p;vaz=false};
+  cv.onpointerup=cv.onpointercancel=cv.onpointerleave=()=>{des=false};
+  let origem='desenhada';
+  const desenharImagem=src=>new Promise(ok=>{const im=new Image();im.onload=()=>{preparar();const r=cv.getBoundingClientRect();
+    const f=Math.min(r.width/im.width,r.height/im.height);ctx.drawImage(im,(r.width-im.width*f)/2,(r.height-im.height*f)/2,im.width*f,im.height*f);vaz=false;origem='imagem';ok()};im.src=src});
+  cv.addEventListener('pointerdown',()=>{origem='desenhada'});
+  return{limpar:()=>{preparar();origem='desenhada'},vazio:()=>vaz,origem:()=>origem,desenharImagem,img:()=>{const o=document.createElement('canvas');o.width=600;o.height=Math.round(600*cv.height/cv.width);
+    const g=o.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,o.width,o.height);g.drawImage(cv,0,0,o.width,o.height);return o.toDataURL('image/jpeg',0.8)}}}
+
+/* Imagem de assinatura carregada: limpa o fundo do papel, recorta e reduz para 600×200 */
+function prepararAssinatura(file){return new Promise((ok,ko)=>{
+  if(!file||!file.type.startsWith('image/'))return ko(new Error('tipo'));
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{URL.revokeObjectURL(url);
+    const esc_=Math.min(1,1600/Math.max(img.naturalWidth,img.naturalHeight));const W=Math.round(img.naturalWidth*esc_),H=Math.round(img.naturalHeight*esc_);
+    const c=document.createElement('canvas');c.width=W;c.height=H;const g=c.getContext('2d');g.fillStyle='#fff';g.fillRect(0,0,W,H);g.drawImage(img,0,0,W,H);
+    const d=g.getImageData(0,0,W,H),px=d.data;let soma=0;
+    for(let i=0;i<px.length;i+=4)soma+=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2];
+    const limiar=Math.min(235,(soma/(px.length/4))*0.82);let x0=W,y0=H,x1=0,y1=0;
+    for(let y=0;y<H;y++)for(let x=0;x<W;x++){const i=(y*W+x)*4,l=0.299*px[i]+0.587*px[i+1]+0.114*px[i+2];
+      if(l>limiar){px[i]=px[i+1]=px[i+2]=255}else{const v=Math.round(l*0.45);px[i]=px[i+1]=v;px[i+2]=Math.round(v*1.1);if(x<x0)x0=x;if(x>x1)x1=x;if(y<y0)y0=y;if(y>y1)y1=y}}
+    if(x1<=x0||y1<=y0)return ko(new Error('vazia'));
+    g.putImageData(d,0,0);const m=12;x0=Math.max(0,x0-m);y0=Math.max(0,y0-m);x1=Math.min(W,x1+m);y1=Math.min(H,y1+m);
+    const o=document.createElement('canvas');o.width=600;o.height=200;const og=o.getContext('2d');og.fillStyle='#fff';og.fillRect(0,0,600,200);
+    const bw=x1-x0,bh=y1-y0,f=Math.min(560/bw,170/bh);og.drawImage(c,x0,y0,bw,bh,(600-bw*f)/2,(200-bh*f)/2,bw*f,bh*f);
+    ok(o.toDataURL('image/jpeg',0.85))};
+  img.onerror=()=>{URL.revokeObjectURL(url);ko(new Error('leitura'))};img.src=url})}
+
+/* Texto, PDF, Excel e partilha */
+function textoResumo(curto){
+  const R=dadosRel();let s=`*${S.cfg.empresa||'Relatório de trabalho'} – ${nomePer()}*\n\n*Totais por colaborador*\n`;
+  totaisColab(R).forEach(x=>s+=`${colabN(x.cid)}: ${x.n} serviços · ${hfmt(x.min)} · ${eur(x.val)}${x.por>0.004?' · por pagar '+eur(x.por):' · pago'}\n`);
+  s+=`\n*Total global: ${hfmt(R.min)} · ${eur(R.val)}*${R.por>0.004?`\nPor pagar: ${eur(R.por)}`:''}\n`;
+  if(curto)return s+'\n(Detalhe no PDF em anexo)';
+  s+=`\n*Detalhe dos serviços*\n`;
+  for(const x of totaisColab(R)){s+=`\n${colabN(x.cid)}\n`;
+    R.grupos[x.cid].forEach(t=>s+=`- ${dataPT(t.data)} ${t.ini}-${sai1(t)}${ent2(t)?' / '+ent2(t)+'-'+sai2(t):''} · ${localN(t.localId)}${t.trabalho?' ('+t.trabalho+')':''}: ${hfmt(dur(t))}${t.pago?' ✓':''}\n`)}
+  return s;
+}
+function carregarScript(src){return new Promise((ok,ko)=>{const s=document.createElement('script');s.src=src;s.onload=ok;s.onerror=()=>{s.remove();ko(new Error(src))};document.head.appendChild(s)})}
+let pdfLib=null;
+function carregarPDF(){
+  if(window.jspdf?.jsPDF?.API?.autoTable)return Promise.resolve();
+  return pdfLib??=carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js')
+    .then(()=>carregarScript('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js'))
+    .catch(e=>{pdfLib=null;throw e});
+}
+const eurP=v=>eur(v).replace(/[\u00a0\u202f]/g,' ');
+async function gerarPDF(descarregar){
+  const R=dadosRel();if(!R.n){toast('Sem serviços concluídos neste período');return null}
+  try{await carregarPDF()}catch(e){toast('Sem internet para gerar o PDF — use Imprimir › Guardar como PDF');return null}
+  const doc=new jspdf.jsPDF({orientation:'landscape'});const PH=doc.internal.pageSize.getHeight();
+  doc.setFontSize(16);doc.text(`${S.cfg.empresa||'Relatório de trabalho'} - ${nomePer()}${fR.per==='mes'&&fechado(fR.mes)?' (mês fechado)':''}`,14,16);
+  doc.setFontSize(10);doc.setTextColor(90);doc.text(`Total: ${hfmt(R.min)}  |  ${eurP(R.val)}  |  Pago: ${eurP(R.pago)}  |  Por pagar: ${eurP(R.por)}  |  ${R.n} serviços  |  Emitido em ${dataPT(hoje())}`,14,23);doc.setTextColor(0);
+  const est={headStyles:{fillColor:[19,32,42]},footStyles:{fillColor:[227,243,239],textColor:20},theme:'grid'};
+  doc.autoTable({...est,startY:29,head:[[{content:'Totais por colaborador',colSpan:6,styles:{fillColor:[14,124,107]}}],['Colaborador','Serviços','Horas','Valor','Pago','Por pagar']],
+    body:totaisColab(R).map(x=>[colabN(x.cid),x.n,hfmt(x.min),eurP(x.val),eurP(x.pago),eurP(x.por)]),foot:[['Total global',R.n,hfmt(R.min),eurP(R.val),eurP(R.pago),eurP(R.por)]],
+    styles:{fontSize:10},tableWidth:200});
+  let y=doc.lastAutoTable.finalY+10;
+  for(const x of totaisColab(R)){const T=R.grupos[x.cid];
+    doc.autoTable({...est,startY:y,head:[[{content:colabN(x.cid),colSpan:11,styles:{fillColor:[14,124,107]}}],['Data','Local','Entrada','Saída','Retoma: entrada','Retoma: saída','Trabalho efetuado','Horas','€/h','Valor','Pagamento']],
+      body:T.map(t=>[dataPT(t.data),localN(t.localId),t.ini,sai1(t),ent2(t)||'-',sai2(t)||'-',t.trabalho||'',hfmt(dur(t)),eurP(t.valor),eurP(ganho(t)),t.pago?'Pago '+dataPT(t.pago):'Por pagar']),
+      foot:[['Total','','','','','','',hfmt(x.min),'',eurP(x.val),'']],styles:{fontSize:8.5}});
+    y=doc.lastAutoTable.finalY+6;
+    const ea=fR.per==='mes'?estadoAssin(x):null;
+    if(ea){const w=55,hh=w*0.33;if(y+hh+12>PH-10){doc.addPage();y=15}
+      doc.setFontSize(9);doc.text(`Assinado por ${colabN(x.cid)} em ${new Date(ea.a.em).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'})}${ea.a.origem==='imagem'?' (imagem carregada)':''}${ea.ok?'':' (valores alterados depois da assinatura)'}`,14,y+4);
+      try{const p=doc.getImageProperties(ea.a.img);doc.addImage(ea.a.img,'JPEG',14,y+6,w,w*p.height/p.width);y+=w*p.height/p.width+12}catch(e){y+=10}}
+    else y+=4;
+  }
+  const nome=`relatorio-${slugPer()}${fR.colab?'-'+colabN(fR.colab).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]+/g,'_'):''}.pdf`;
+  if(descarregar)doc.save(nome);
+  return new File([doc.output('blob')],nome,{type:'application/pdf'});
+}
+async function partilhar(canal){
+  const R=dadosRel();if(!R.n){toast('Sem serviços concluídos neste período');return}
+  const pdf=await gerarPDF(false);
+  if(pdf&&navigator.canShare&&navigator.canShare({files:[pdf]})){
+    try{await navigator.share({files:[pdf],title:'Relatório '+nomePer(),text:textoResumo(true)});return}
+    catch(e){if(e.name==='AbortError')return}
+  }
+  if(pdf){const a=document.createElement('a');a.href=URL.createObjectURL(pdf);a.download=pdf.name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),8000)}
+  const c=fR.colab?S.colab.find(x=>x.id===fR.colab):null;
+  let url;
+  if(canal==='whatsapp'){let tel=(c?.tel||'').replace(/\D/g,'');if(tel.length===9)tel='351'+tel;url=`https://wa.me/${tel}?text=${encodeURIComponent(textoResumo(false))}`;}
+  else{let corpo=textoResumo(false).replace(/\*/g,'');if(encodeURIComponent(corpo).length>1800)corpo=textoResumo(true).replace(/\*/g,'');
+    url=`mailto:${encodeURIComponent(c?.email||'')}?subject=${encodeURIComponent('Relatório de trabalho – '+nomePer())}&body=${encodeURIComponent(corpo)}`;}
+  if(canal==='whatsapp'){const w=window.open(url,'_blank');if(!w)location.href=url}else location.href=url;
+  if(pdf)toast('PDF descarregado — anexe-o à mensagem');
+}
+function exportCSV(){
+  const R=dadosRel();if(!R.n){toast('Sem serviços concluídos neste período');return}
+  const q=v=>'"'+String(v??'').replace(/"/g,'""')+'"';const nn=v=>(+v).toFixed(2).replace('.',',');
+  const rows=[['Data','Colaborador','Local','Entrada','Saída','Retoma: entrada','Retoma: saída','Trabalho efetuado','Horas','Valor hora','Valor','Pago em']]
+   .concat(R.L.map(t=>[dataPT(t.data),colabN(t.colabId),localN(t.localId),t.ini,sai1(t),ent2(t),sai2(t),t.trabalho,nn(dur(t)/60),nn(t.valor),nn(ganho(t)),t.pago?dataPT(t.pago):'Por pagar']));
+  rows.push([],['Totais por colaborador','','','','','','','Serviços','Horas','Pago','Valor','Por pagar']);
+  totaisColab(R).forEach(x=>rows.push([colabN(x.cid),'','','','','','',x.n,nn(x.min/60),nn(x.pago),nn(x.val),nn(x.por)]));
+  rows.push(['Total global','','','','','','',R.n,nn(R.min/60),nn(R.pago),nn(R.val),nn(R.por)]);
+  baixar('\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n'),`relatorio-${slugPer()}.csv`,'text/csv;charset=utf-8');
+}
+function baixar(conteudo,nome,tipo){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([conteudo],{type:tipo}));a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000)}
+
+/* =================== Definições, cópias, sincronização e segurança =================== */
+async function vConfig(){
+  const fmtD=v=>v?new Date(v).toLocaleString('pt-PT',{dateStyle:'medium',timeStyle:'short'}):'nunca';
+  let h=cab('Definições','Sincronização, cópias de segurança e segurança');
+  const https=location.protocol==='https:';
+  h+=`<div class="card"><h2>Sincronização PC ↔ telemóvel pelo Google Drive</h2>
+    <p class="muted" style="margin-top:0">Os dois dispositivos partilham um ficheiro numa pasta do seu Google Drive. Nada se perde: em cada registo fica a versão mais recente. Última sincronização: <b>${fmtD(LOC.ultimaSync)}</b>.</p>
+    ${temPasta()?`
+    <div class="set-row"><div><div class="t">Pasta de sincronização</div><div class="d">${pastaH?`<b>${esc(pastaH.name)}</b> — escolha uma pasta dentro do Google Drive (ex.: O meu disco › Registo de Trabalho).`:'Ainda não escolhida. Escolha uma pasta dentro do Google Drive do PC.'}</div></div>
+      <button class="btn s ${pastaH?'':'p'}" onclick="escolherPasta()">${ic('cloud')}${pastaH?'Mudar pasta':'Escolher pasta'}</button></div>
+    <div class="set-row"><div><div class="t">Sincronizar</div><div class="d">Lê o que veio do telemóvel, junta e grava a versão atualizada na pasta.</div></div>
+      <button class="btn s p" onclick="sincronizarAgora()" ${pastaH?'':'disabled'}>${ic('sync')}Sincronizar agora</button></div>
+    <label class="chk" style="margin-top:.6rem;font-weight:500"><input type="checkbox" id="sAuto" ${LOC.syncAuto?'checked':''}>Sincronizar automaticamente depois de cada alteração (enquanto a app está aberta)</label>`
+    :`
+    <div class="set-row"><div><div class="t">1. Receber do Drive</div><div class="d">Escolha o ficheiro <b>${SYNC_FICH}</b> na pasta “Registo de Trabalho” do Drive. Pode escolher vários.</div></div>
+      <button class="btn s p" onclick="sincronizarAgora()">${ic('down')}Sincronizar agora</button></div>
+    <div class="set-row"><div><div class="t">2. Enviar para o Drive</div><div class="d">Feito automaticamente a seguir ao passo 1. Use este botão na primeira vez, ou para enviar sem receber.</div></div>
+      <button class="btn s" onclick="enviarSync()">${ic('up')}Só enviar</button></div>`}
+    ${https?`<details style="margin-top:.8rem"><summary class="muted" style="cursor:pointer">Ligação direta à conta Google (avançado)</summary>
+      <div class="set-row"><div><div class="t">Sincronizar pela conta Google</div><div class="d">Requer o ID de cliente Google (em Geral).</div></div><button class="btn s" onclick="sincronizar(false)">${ic('sync')}Sincronizar</button></div></details>`:''}
+  </div>`;
+  h+=`<div class="card"><h2>Cópia de segurança</h2>
+    <p class="muted" style="margin-top:0">Última cópia: <b>${fmtD(LOC.ultimoBackup)}</b>. ${temPasta()?(pastaH?`No PC a cópia é gravada no Google Drive, em <b>${esc(pastaH.name)} › ${PASTA_COPIAS}</b> (ficam as últimas 30). Com a sincronização ligada, é feita também uma cópia automática por dia.`:'Escolha a pasta do Google Drive (em Sincronização) para as cópias irem diretamente para o Drive.'):'Abre a lista de partilha — escolha <b>Drive</b> e a pasta “Registo de Trabalho”.'}</p>
+    <div class="row"><button class="btn p" onclick="backupFicheiro()">${ic('up')}Guardar cópia no Drive</button>
+    ${https?`<button class="btn" onclick="driveGuardar()">${ic('cloud')}Guardar no Drive</button><button class="btn" onclick="driveRestaurar()">${ic('down')}Restaurar do Drive</button>`:''}
+    <label class="btn" style="color:inherit;font-size:.95rem;font-weight:600">${ic('sync')}Juntar dados de ficheiro<input type="file" accept=".json,application/json" id="juntF" hidden></label>
+    <label class="btn" style="color:inherit;font-size:.95rem;font-weight:600">${ic('down')}Restaurar de ficheiro<input type="file" accept=".json,application/json" id="impF" hidden></label></div></div>`;
+  const bioOk=await bioPossivel();
+  h+=`<div class="card"><h2>Segurança</h2>
+    <div class="set-row"><div><div class="t">Código PIN</div><div class="d">${LOC.pinHash?'Ativo — pedido ao abrir a app e após 2 minutos fora dela.':'Desativado.'}</div></div>
+      <div class="row">${LOC.pinHash?`<button class="btn s" onclick="definirPin()">Mudar PIN</button><button class="btn s d" onclick="removerPin()">Desativar</button>`:`<button class="btn s p" onclick="definirPin()">${ic('lock')}Definir PIN</button>`}</div></div>
+    <div class="set-row"><div><div class="t">Impressão digital / desbloqueio facial</div><div class="d">${LOC.bioId?'Ativo.':bioOk?'Disponível neste dispositivo. Requer PIN ativo.':'Indisponível aqui — requer a app aberta por https num dispositivo com leitor biométrico.'}</div></div>
+      <div class="row">${LOC.bioId?`<button class="btn s d" onclick="LOC.bioId='';persist();vConfig()">Desativar</button>`:`<button class="btn s" ${bioOk&&LOC.pinHash?'':'disabled'} onclick="ativarBio()">${ic('finger')}Ativar</button>`}</div></div>
+    ${LOC.pinHash?`<div class="set-row"><div><div class="t">Bloquear agora</div></div><button class="btn s" onclick="bloquear()">${ic('lock')}Bloquear</button></div>`:''}</div>`;
+  h+=`<div class="card"><h2>Armazenamento</h2><div class="set-row"><div><div class="t">${usaIDB?'Base de dados do dispositivo (IndexedDB)':'Armazenamento simples do browser'}</div><div class="d" id="armInfo">A calcular…</div></div>${ic('db',28)}</div></div>`;
+  h+=`<form class="card" id="fCfg"><h2>Geral</h2><div class="fgrid">
+   <div class="f full"><label for="sE">Nome da empresa (aparece nos relatórios)</label><input id="sE" value="${esc(S.cfg.empresa)}"></div>
+   <div class="f"><label for="sV">Valor por hora predefinido (€)</label><input id="sV" type="number" inputmode="decimal" step="0.01" min="0" value="${S.cfg.valorHora}"></div>
+   ${https?`<div class="f full"><label for="sG">ID de cliente Google (OAuth) — opcional</label><input id="sG" value="${esc(LOC.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com"></div>`:''}</div>
+   <div class="row" style="margin-top:1rem"><button class="btn p">Guardar definições</button></div></form>`;
+  if(view!=='config')return;
+  $('#main').innerHTML=h;
+  $('#impF').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>restaurarTexto(t,'substituir'));e.target.value=''};
+  $('#juntF').onchange=e=>{const f=e.target.files[0];if(f)f.text().then(t=>restaurarTexto(t,'juntar'));e.target.value=''};
+  if($('#sAuto'))$('#sAuto').onchange=e=>{LOC.syncAuto=e.target.checked;persist();if(LOC.syncAuto)sincronizarAgora()};
+  $('#fCfg').onsubmit=e=>{e.preventDefault();S.cfg.empresa=$('#sE').value.trim();S.cfg.valorHora=Math.max(0,parseFloat(String($('#sV').value).replace(',','.'))||0);if($('#sG'))LOC.clientId=$('#sG').value.trim();save();toast('Definições guardadas')};
+  try{const est=await navigator.storage?.estimate?.();const per=await navigator.storage?.persisted?.();
+    const kb=Math.round(new Blob([JSON.stringify(S)]).size/1024);
+    const el=$('#armInfo');if(el)el.textContent=`Dados da app: ${kb} KB · ${S.turnos.length} serviços, ${S.colab.length} colaboradores`+(est?.quota?` · espaço disponível: ${(est.quota/1048576/1024).toFixed(1).replace('.',',')} GB`:'')+(per?' · protegido contra limpeza automática':'');}catch(e){}
+}
+const nomeBackup=()=>`registo-trabalho-backup-${hoje()}.json`;
+const PASTA_COPIAS='Cópias de segurança';
+/* PC: grava a cópia diretamente na pasta do Google Drive (subpasta “Cópias de segurança”), mantendo as últimas 30 */
+async function copiaNaPasta(silencioso){
+  if(!pastaH||!await permissaoPasta(!silencioso))return false;
+  try{const sub=await pastaH.getDirectoryHandle(PASTA_COPIAS,{create:true});
+    const fh=await sub.getFileHandle(nomeBackup(),{create:true});const w=await fh.createWritable();await w.write(JSON.stringify(S));await w.close();
+    const nomes=[];for await(const [n,h] of sub.entries())if(h.kind==='file'&&/^registo-trabalho-backup-\d{4}-\d{2}-\d{2}\.json$/.test(n))nomes.push(n);
+    nomes.sort();for(const n of nomes.slice(0,Math.max(0,nomes.length-30))){try{await sub.removeEntry(n)}catch(e){}}
+    LOC.ultimoBackup=Date.now();await persist();
+    if(!silencioso){if(view==='config')vConfig();toast(`Cópia guardada no Google Drive: ${pastaH.name} › ${PASTA_COPIAS}`)}
+    return true}catch(e){if(!silencioso)toast('Não foi possível gravar na pasta do Drive');return false}}
+async function backupFicheiro(){
+  if(temPasta()&&pastaH&&await copiaNaPasta(false))return;
+  if(temPasta()&&!pastaH&&await confirmar('Para guardar as cópias diretamente no Google Drive, escolha uma vez a pasta do Drive (ex.: O meu disco › Registo de Trabalho).\n\nEscolher agora?','Escolher pasta')){await escolherPasta();if(pastaH)await copiaNaPasta(false);return}
+  const json=JSON.stringify(S);const f=new File([json],nomeBackup(),{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'Cópia de segurança'});marcarBackup();return}catch(e){if(e.name==='AbortError')return}}
+  baixar(json,f.name,'application/json');marcarBackup();
+}
+function marcarBackup(){LOC.ultimoBackup=Date.now();persist();if(view==='config')vConfig();toast('Cópia de segurança criada')}
+async function restaurarTexto(txt,modo){
+  let d;try{d=JSON.parse(txt);if(!Array.isArray(d.turnos)||!Array.isArray(d.colab))throw 0}catch(e){toast('Ficheiro de cópia inválido');return}
+  if(modo==='juntar'){const n=juntar(d);render();toast(n?`Dados juntos: ${n} registos novos ou atualizados`:'Nada de novo nesse ficheiro');return}
+  const rec=S.turnos.some(t=>recente(t.data));
+  if(!await confirmar(`Substituir TODOS os dados atuais por esta cópia? (${d.colab.length} colaboradores, ${d.turnos.length} serviços)`+(rec?`\n\nOs registos atuais que não estejam na cópia perdem-se. ${AVISO_LEGAL}\nSe quer apenas acrescentar, use “Juntar dados de ficheiro”.`:''),'Substituir',true))return;
+  S=normalizar(d);inicializarSnap();await persist();render();toast('Dados restaurados')}
+
+/* Google Drive (Google Identity Services + Drive API v3, permissão drive.file) */
+let token=null,tokenExp=0;
+const tokenValido=()=>token&&Date.now()<tokenExp-60000;
+async function driveToken(silencioso){
+  if(tokenValido())return token;
+  if(silencioso)throw new Error('sem sessão');
+  if(!LOC.clientId){toast('Indique o ID de cliente Google em Definições');throw 0}
+  if(location.protocol==='file:'){toast('Abra a app a partir de um endereço https para usar o Drive');throw 0}
+  if(!window.google?.accounts){try{await carregarScript('https://accounts.google.com/gsi/client')}catch(e){toast('Sem ligação ao Google');throw 0}}
+  return new Promise((ok,ko)=>{
+    const cli=google.accounts.oauth2.initTokenClient({client_id:LOC.clientId,scope:'https://www.googleapis.com/auth/drive.file',
+      callback:r=>{if(r.error){toast('Autorização recusada');ko(r)}else{token=r.access_token;tokenExp=Date.now()+(r.expires_in||3600)*1000;ok(token)}},
+      error_callback:e=>{toast('Autorização cancelada');ko(e)}});
+    cli.requestAccessToken({prompt:token?'':'consent'});
+  });
+}
+const H_=()=>({Authorization:'Bearer '+token});
+async function driveProcurar(nome){
+  const q=encodeURIComponent(`name='${nome}' and trashed=false`);
+  const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=1&fields=files(id)`,{headers:H_()});
+  if(!r.ok)throw new Error('drive '+r.status);const j=await r.json();return j.files?.[0]?.id||null}
+async function driveEnviar(nome,conteudo,id){
+  if(id){const r=await fetch(`https://www.googleapis.com/upload/drive/v3/files/${id}?uploadType=media`,{method:'PATCH',headers:{...H_(),'Content-Type':'application/json'},body:conteudo});if(!r.ok)throw new Error('drive '+r.status);return}
+  const b='----rt'+uid(),meta={name:nome,mimeType:'application/json'};
+  const body=`--${b}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(meta)}\r\n--${b}\r\nContent-Type: application/json\r\n\r\n${conteudo}\r\n--${b}--`;
+  const r=await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart',{method:'POST',headers:{...H_(),'Content-Type':'multipart/related; boundary='+b},body});
+  if(!r.ok)throw new Error('drive '+r.status)}
+const SYNC_NOME='registo-trabalho-sincronizacao.json';
+let aSincronizar=false,syncT=null;
+async function sincronizar(silencioso){
+  if(aSincronizar)return;
+  try{await driveToken(silencioso)}catch(e){return}
+  aSincronizar=true;if(!silencioso)toast('A sincronizar…');
+  try{
+    const id=await driveProcurar(SYNC_NOME);let n=0;
+    if(id){const r=await fetch(`https://www.googleapis.com/drive/v3/files/${id}?alt=media`,{headers:H_()});if(r.ok){try{n=juntar(await r.json())}catch(e){}}}
+    await driveEnviar(SYNC_NOME,JSON.stringify(S),id);
+    LOC.ultimaSync=Date.now();await persist();
+    if($('#lock').hidden&&!document.querySelector('dialog[open]'))render();
+    if(!silencioso)toast(n?`Sincronizado: ${n} registos recebidos`:'Sincronizado');
+  }catch(e){if(String(e.message).includes('401')){token=null}if(!silencioso)toast('Não foi possível sincronizar')}
+  finally{aSincronizar=false}
+}
+/* ---- Sincronização por ficheiro numa pasta do Google Drive (não precisa de alojamento) ---- */
+const SYNC_FICH='registo-trabalho-sync.json';
+const temPasta=()=>'showDirectoryPicker' in window;
+const usaAPI=()=>location.protocol==='https:'&&!!LOC.clientId;
+let pastaH=null;
+async function escolherPasta(){
+  try{const h=await window.showDirectoryPicker({id:'registo-sync',mode:'readwrite'});pastaH=h;
+    if(usaIDB){try{await DB.set('pastaSync',h)}catch(e){}}
+    toast('Pasta escolhida: '+h.name);await sincPasta(false);if(view==='config')vConfig()}
+  catch(e){if(e.name!=='AbortError')toast('Não foi possível usar essa pasta')}}
+async function permissaoPasta(pedir){if(!pastaH)return false;const o={mode:'readwrite'};
+  try{if(await pastaH.queryPermission(o)==='granted')return true;if(!pedir)return false;return await pastaH.requestPermission(o)==='granted'}catch(e){return false}}
+async function sincPasta(silencioso){
+  if(aSincronizar)return;
+  if(!await permissaoPasta(!silencioso)){if(!silencioso)toast('Sem acesso à pasta — escolha-a de novo em Definições');return}
+  aSincronizar=true;
+  try{let n=0;const extras=[];
+    for await(const [nome,h] of pastaH.entries()){
+      if(h.kind!=='file'||!/^registo-trabalho-sync.*\.json$/i.test(nome))continue;
+      try{n+=juntar(JSON.parse(await (await h.getFile()).text()))}catch(e){}
+      if(nome!==SYNC_FICH)extras.push(nome)}
+    const fh=await pastaH.getFileHandle(SYNC_FICH,{create:true});const w=await fh.createWritable();await w.write(JSON.stringify(S));await w.close();
+    for(const nm of extras){try{await pastaH.removeEntry(nm)}catch(e){}}   // limpa cópias repetidas vindas do telemóvel
+    if(!LOC.ultimoBackup||Date.now()-LOC.ultimoBackup>864e5)await copiaNaPasta(true);   // cópia automática diária
+    LOC.ultimaSync=Date.now();await persist();
+    if($('#lock').hidden&&!document.querySelector('dialog[open]'))render();
+    if(!silencioso)toast(n?`Sincronizado: ${n} registos recebidos`:'Sincronizado');
+  }catch(e){if(!silencioso)toast('Não foi possível sincronizar')}
+  finally{aSincronizar=false}}
+/* Telemóvel: escolher o ficheiro do Drive, juntar e enviar a versão atualizada */
+$('#sincF').onchange=async e=>{const files=[...e.target.files];e.target.value='';if(!files.length)return;
+  let n=0,ok=0;for(const f of files){try{n+=juntar(JSON.parse(await f.text()));ok++}catch(err){}}
+  if(!ok){toast('Esse ficheiro não é uma sincronização válida');return}
+  render();
+  if(await confirmar(`${n?`Recebidos ${n} registos novos ou atualizados.`:'Já estava tudo atualizado.'}\n\nAgora envie a versão atualizada para o Drive: escolha “Drive” e a mesma pasta “Registo de Trabalho”.`,'Enviar para o Drive'))enviarSync();
+  else{LOC.ultimaSync=Date.now();persist()}};
+async function enviarSync(){
+  const json=JSON.stringify(S),f=new File([json],SYNC_FICH,{type:'application/json'});
+  if(navigator.canShare&&navigator.canShare({files:[f]})){
+    try{await navigator.share({files:[f],title:'Sincronização — Registo de Trabalho'});LOC.ultimaSync=Date.now();persist();render();return}
+    catch(e){if(e.name==='AbortError')return}}
+  baixar(json,SYNC_FICH,'application/json');LOC.ultimaSync=Date.now();persist();
+  toast('Ficheiro descarregado — carregue-o na pasta “Registo de Trabalho” do Drive');}
+function sincronizarAgora(){
+  if(usaAPI())return sincronizar(false);
+  if(temPasta()){if(pastaH)return sincPasta(false);ir('config');return escolherPasta()}
+  $('#sincF').click();
+}
+function agendarSync(){if(!LOC.syncAuto)return;clearTimeout(syncT);
+  if(usaAPI()){if(tokenValido())syncT=setTimeout(()=>sincronizar(true),8000);return}
+  if(pastaH)syncT=setTimeout(()=>sincPasta(true),5000)}
+function syncSilenciosa(){if(!LOC.syncAuto)return;if(usaAPI()){if(tokenValido())sincronizar(true)}else if(pastaH)sincPasta(true)}
+async function driveGuardar(){
+  try{await driveToken()}catch(e){return}
+  try{await driveEnviar(nomeBackup(),JSON.stringify(S),null);marcarBackup();toast('Cópia guardada no Google Drive')}catch(e){toast('Erro ao enviar para o Drive')}
+}
+async function driveRestaurar(){
+  try{await driveToken()}catch(e){return}
+  try{
+    const q=encodeURIComponent("name contains 'registo-trabalho-backup' and trashed=false");
+    const r=await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=modifiedTime desc&pageSize=1&fields=files(id,name)`,{headers:H_()});
+    if(!r.ok){toast('Erro ao ler o Drive ('+r.status+')');return}
+    const j=await r.json();if(!j.files?.length){toast('Nenhuma cópia encontrada no Drive');return}
+    const f=await fetch(`https://www.googleapis.com/drive/v3/files/${j.files[0].id}?alt=media`,{headers:H_()});
+    restaurarTexto(await f.text(),'substituir');
+  }catch(e){toast('Sem ligação à internet')}
+}
+
+/* PIN e biometria */
+async function hashPin(p,s){const t=s+':'+p;
+  if(window.crypto?.subtle){try{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(t));return[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}catch(e){}}
+  let h=2166136261;for(const c of t){h^=c.charCodeAt(0);h=Math.imul(h,16777619)>>>0}return 'f'+h.toString(16)}
+async function definirPin(){
+  if(LOC.pinHash){const at=await pedirTexto('PIN atual','','pin');if(!at)return;if(await hashPin(at,LOC.pinSalt)!==LOC.pinHash){toast('PIN errado');return}}
+  const a=await pedirTexto('Novo PIN (4 a 6 algarismos)','','pin');if(!a)return;
+  if(!/^\d{4,6}$/.test(a)){toast('O PIN tem de ter 4 a 6 algarismos');return}
+  const b=await pedirTexto('Repita o novo PIN','','pin');if(a!==b){toast('Os PIN não coincidem');return}
+  LOC.pinSalt=uid();LOC.pinLen=a.length;LOC.pinHash=await hashPin(a,LOC.pinSalt);await persist();vConfig();toast('PIN definido')}
+async function removerPin(){const at=await pedirTexto('PIN atual','','pin');if(!at)return;
+  if(await hashPin(at,LOC.pinSalt)!==LOC.pinHash){toast('PIN errado');return}
+  LOC.pinHash='';LOC.pinSalt='';LOC.pinLen=0;LOC.bioId='';await persist();render();toast('PIN desativado')}
+async function bioPossivel(){try{return window.isSecureContext&&location.protocol!=='file:'&&!!window.PublicKeyCredential&&await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()}catch(e){return false}}
+const b64=buf=>btoa(String.fromCharCode(...new Uint8Array(buf)));
+const unb64=s=>Uint8Array.from(atob(s),c=>c.charCodeAt(0));
+async function ativarBio(){
+  if(!LOC.pinHash){toast('Defina primeiro um PIN');return}
+  try{const c=await navigator.credentials.create({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),rp:{name:'Registo de Trabalho'},
+      user:{id:crypto.getRandomValues(new Uint8Array(16)),name:'registo-trabalho',displayName:'Registo de Trabalho'},
+      pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+      authenticatorSelection:{authenticatorAttachment:'platform',userVerification:'required',residentKey:'discouraged'},timeout:60000}});
+    LOC.bioId=b64(c.rawId);await persist();vConfig();toast('Desbloqueio biométrico ativado')}
+  catch(e){toast('Não foi possível ativar o desbloqueio biométrico')}}
+async function bioDesbloquear(auto){
+  try{await navigator.credentials.get({publicKey:{challenge:crypto.getRandomValues(new Uint8Array(32)),allowCredentials:[{type:'public-key',id:unb64(LOC.bioId)}],userVerification:'required',timeout:60000}});desbloquear()}
+  catch(e){if(!auto)desenharLock('Não reconhecido — use o PIN')}}
+/* Ecrã de bloqueio */
+let pinBuf='',falhas=0,bloqAte=0;
+function bloquear(){if(!LOC.pinHash)return;document.querySelectorAll('dialog[open]').forEach(d=>d.close());$('#main').innerHTML='';
+  $('#lock').hidden=false;pinBuf='';desenharLock();if(LOC.bioId)setTimeout(()=>bioDesbloquear(true),350)}
+function desenharLock(msg=''){
+  $('#lock').innerHTML=`<div class="lockbox" id="lockBox"><div class="lk">${ic('lock',30)}</div><h2>Registo de Trabalho</h2><div class="muted">Introduza o PIN</div>
+    <div class="dots">${Array.from({length:LOC.pinLen},(_,i)=>`<i class="${i<pinBuf.length?'on':''}"></i>`).join('')}</div><div class="lmsg">${esc(msg)}</div>
+    <div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button type="button" data-k="${n}">${n}</button>`).join('')}
+    <button type="button" data-k="bio" aria-label="Impressão digital" ${LOC.bioId?'':'style="visibility:hidden"'}>${ic('finger',26)}</button><button type="button" data-k="0">0</button><button type="button" data-k="del" aria-label="Apagar">⌫</button></div></div>`}
+$('#lock').addEventListener('click',e=>{const b=e.target.closest('[data-k]');if(b)tecla(b.dataset.k)});
+document.addEventListener('keydown',e=>{if($('#lock').hidden)return;if(/^\d$/.test(e.key))tecla(e.key);else if(e.key==='Backspace')tecla('del')});
+async function tecla(k){
+  if(Date.now()<bloqAte){desenharLock(`Aguarde ${Math.ceil((bloqAte-Date.now())/1000)} segundos`);return}
+  if(k==='del'){pinBuf=pinBuf.slice(0,-1);desenharLock();return}
+  if(k==='bio'){bioDesbloquear(false);return}
+  if(pinBuf.length>=LOC.pinLen)return;pinBuf+=k;desenharLock();
+  if(pinBuf.length===LOC.pinLen){
+    if(await hashPin(pinBuf,LOC.pinSalt)===LOC.pinHash){desbloquear();return}
+    falhas++;pinBuf='';let m='PIN errado';if(falhas>=5){bloqAte=Date.now()+30000;falhas=0;m='Demasiadas tentativas. Aguarde 30 segundos.'}
+    desenharLock(m);$('#lockBox').classList.add('shake');
+  }
+}
+function desbloquear(){$('#lock').hidden=true;pinBuf='';falhas=0;render();syncSilenciosa()}
+let escondidoEm=0;
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){escondidoEm=Date.now();syncSilenciosa()}
+  else if(LOC.pinHash&&$('#lock').hidden&&Date.now()-escondidoEm>120000)bloquear();
+  else if($('#lock').hidden&&Date.now()-escondidoEm>60000)syncSilenciosa();
+});
+
+/* =================== Arranque =================== */
+async function arrancar(){
+  let d=null,l=null;
+  if(usaIDB){try{d=await DB.get('estado');l=await DB.get('local')}catch(e){usaIDB=false}}
+  let migrar=false;
+  if(!d){try{d=JSON.parse(localStorage.getItem(KEY));migrar=!!d}catch(e){}}
+  if(!l){try{l=JSON.parse(localStorage.getItem(KEY+'_local'))}catch(e){}}
+  S=d?normalizar(d):def();LOC={...defLoc(),...(l||{})};
+  for(const k of ['clientId','ultimoBackup','ultimoLocal'])if(k in S.cfg){if(!LOC[k])LOC[k]=S.cfg[k];delete S.cfg[k]}
+  delete S.cfg.autoInicio;
+  inicializarSnap();
+  if(usaIDB){await persist();if(usaIDB&&migrar){try{localStorage.removeItem(KEY)}catch(e){}}}
+  try{navigator.storage?.persist?.()}catch(e){}
+  if(usaIDB&&temPasta()){try{pastaH=await DB.get('pastaSync')||null}catch(e){}}
+  pronto=true;
+  if(LOC.pinHash)bloquear();else{render();syncSilenciosa()}
+}
+arrancar();
+</script>
+</body>
+</html>
