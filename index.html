@@ -283,6 +283,7 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
+const VERSAO='2026.11.02-c';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -964,6 +965,16 @@ async function vConfig(){
   const fmtD=v=>v?new Date(v).toLocaleString('pt-PT',{dateStyle:'medium',timeStyle:'short'}):'nunca';
   let h=cab('Definições','Sincronização, cópias de segurança e segurança');
   const https=location.protocol==='https:';
+  const metodo=usaAPI()?'Ligação direta à conta Google (automática)':temPasta()?'Pasta do Google Drive no PC':'Ficheiro do Drive escolhido à mão (telemóvel)';
+  let autor='—';if(!usaAPI()&&temPasta()&&pastaH){permPasta=await permissaoPasta(false);autor=permPasta?'<b style="color:var(--accent)">sim</b>':'<b style="color:var(--warn)">não — toque em Sincronizar agora</b>'}
+  h+=`<div class="card"><h2>Diagnóstico da sincronização</h2><div class="fgrid" style="font-size:.92rem">
+    <div><div class="lbl">Endereço</div>${esc(location.protocol==='file:'?'ficheiro local':location.origin+location.pathname)}</div>
+    <div><div class="lbl">Versão da app</div>${VERSAO}</div>
+    <div><div class="lbl">Dispositivo</div>${tipoDisp()==='PC'?'PC':'Telemóvel'}</div>
+    <div><div class="lbl">Método</div>${metodo}</div>
+    ${!usaAPI()&&temPasta()?`<div><div class="lbl">Pasta escolhida</div>${pastaH?esc(pastaH.name):'<b style="color:var(--warn)">nenhuma — escolha em baixo</b>'}</div><div><div class="lbl">Autorização da pasta</div>${autor}</div>`:''}
+    <div><div class="lbl">Última sincronização</div>${LOC.ultimaSync?quando(LOC.ultimaSync):'<b style="color:var(--warn)">nunca</b>'}</div>
+    <div><div class="lbl">Dados neste dispositivo</div>${S.turnos.length} serviços · ${S.colab.length} colaboradores</div></div></div>`;
   h+=`<div class="card"><h2>Sincronização PC ↔ telemóvel pelo Google Drive</h2>
     <p class="muted" style="margin-top:0">Os dois dispositivos partilham um ficheiro numa pasta do seu Google Drive. Nada se perde: em cada registo fica a versão mais recente. Última sincronização: <b>${fmtD(LOC.ultimaSync)}</b>.</p>
     ${temPasta()?`
