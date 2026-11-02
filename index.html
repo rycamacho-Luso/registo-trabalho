@@ -283,7 +283,7 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
-const VERSAO='2026.11.02-c';
+const VERSAO='2026.11.02-d';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -1097,7 +1097,9 @@ let permPasta=false;
 const tipoDisp=()=>temPasta()?'PC':'telemóvel';
 const comMeta=()=>JSON.stringify({...S,_meta:{disp:LOC.disp,tipo:tipoDisp(),em:Date.now()}});
 const quando=ms=>new Date(ms).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'});
-const temPasta=()=>'showDirectoryPicker' in window;
+/* Telemóvel/tablet: no Android o seletor de pastas só dá acesso ao armazenamento do aparelho, nunca ao Google Drive */
+const eMovel=()=>!!(navigator.userAgentData&&navigator.userAgentData.mobile)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+const temPasta=()=>'showDirectoryPicker' in window&&!eMovel();
 const usaAPI=()=>location.protocol==='https:'&&!!LOC.clientId;
 let pastaH=null;
 async function escolherPasta(){
