@@ -185,6 +185,12 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 .toast.on{opacity:1;transform:translate(-50%,0)}
 .fab{display:none}
 .fab[hidden]{display:none!important}
+.nb[hidden]{display:none!important}
+.info[hidden],.banner[hidden],.card[hidden]{display:none!important}
+.chip.conf{background:var(--warn-2);color:var(--warn)}
+.perm-l{display:grid;gap:.45rem;margin-top:.4rem}
+.hist-row{display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;padding:.6rem 0;border-bottom:1px solid var(--line);font-size:.9rem}
+.hist-row:last-child{border-bottom:0}
 
 @media (max-width:820px){
   .qs{grid-template-columns:1fr 1fr}
@@ -283,7 +289,7 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
-const VERSAO='2026.11.02-e';
+const VERSAO='2026.11.02-h';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -339,7 +345,7 @@ const pad=n=>String(n).padStart(2,'0');
 const hoje=()=>{const d=new Date();return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())};
 const agoraHM=()=>{const d=new Date();return pad(d.getHours())+':'+pad(d.getMinutes())};
 const m2=hm=>{if(!hm)return null;const[h,m]=hm.split(':').map(Number);return isNaN(h)?null:h*60+(m||0)};
-const eur=v=>(+v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
+const eur=v=>(typeof fbAtivo==='function'&&fbAtivo()&&!perm('verValores'))?'—':(+v||0).toLocaleString('pt-PT',{style:'currency',currency:'EUR'});
 const hfmt=min=>{min=Math.max(0,Math.round(min||0));return Math.floor(min/60)+'h'+pad(min%60)};
 const dataPT=d=>d?d.split('-').reverse().join('/'):'';
 const dataLonga=d=>new Date(d+'T12:00').toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'});
@@ -447,7 +453,7 @@ function atualizarSugestoes(){const cont=new Map();
   $('#dlS').innerHTML=L.map(x=>`<option value="${esc(x.v)}">`).join('')}
 
 /* =================== Navegação =================== */
-const VIEWS=[['ponto','Ponto','clock'],['servicos','Serviços','list'],['equipa','Colaboradores','users'],['relatorios','Relatórios','chart'],['config','Definições','cloud']];
+const VIEWS=[['ponto','Ponto','clock'],['servicos','Serviços','list'],['equipa','Colaboradores','users'],['relatorios','Relatórios','chart'],['acessos','Acessos','shield'],['config','Definições','cloud']];
 let view='ponto';
 $('#nav').innerHTML=`<div class="logo"><div class="mark">${ic('clock',22)}</div><b>Registo de<br>Trabalho</b></div>`+
   VIEWS.map(([v,n,i])=>`<button class="nb${v===view?' on':''}" data-v="${v}">${ic(i)}<span>${n}</span></button>`).join('')+
@@ -456,8 +462,11 @@ $('#nav').addEventListener('click',e=>{const b=e.target.closest('[data-v]');if(b
 $('#fab').innerHTML=ic('plus');$('#fab').onclick=()=>{if(pronto)editTurno()};
 function ir(v){if(!pronto)return;view=v;document.querySelectorAll('.nb').forEach(x=>x.classList.toggle('on',x.dataset.v===v));render();window.scrollTo(0,0)}
 function render(){
-  $('#fab').hidden=!['ponto','servicos'].includes(view);
-  ({ponto:vPonto,servicos:vServicos,equipa:vEquipa,relatorios:vRel,config:vConfig})[view]();
+  const vis={equipa:perm('gerirColaboradores'),relatorios:perm('relatorios'),acessos:fbAtivo()&&ehAdmin()};
+  if((view in vis)&&!vis[view])view='ponto';
+  document.querySelectorAll('.nb[data-v]').forEach(b=>{const v=b.dataset.v;b.hidden=(v in vis)&&!vis[v];b.classList.toggle('on',v===view)});
+  $('#fab').hidden=!['ponto','servicos'].includes(view)||!podeRegistar();
+  ({ponto:vPonto,servicos:vServicos,equipa:vEquipa,relatorios:vRel,acessos:vAcessos,config:vConfig})[view]();
   atualizarSugestoes();tick();
   $('#navFoot').innerHTML=`${LOC.pinHash?`<button class="nb" onclick="bloquear()">${ic('lock')}<span>Bloquear</span></button>`:''}<div style="padding:.5rem">${LOC.ultimaSync?'Sincronizado '+new Date(LOC.ultimaSync).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'}):'Dados guardados neste dispositivo'}</div>`;
 }
@@ -478,6 +487,7 @@ function vPonto(){
   let h=cab('Ponto',saud+(S.cfg.empresa?' · '+esc(S.cfg.empresa):''),`${botaoSync()}${LOC.pinHash?`<button class="btn" onclick="bloquear()" aria-label="Bloquear">${ic('lock')}</button>`:''}<button class="btn hm" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`);
   h+=`<div class="hero"><div><div class="d" id="heroD"></div><div class="t" id="heroT">--:--</div></div><div class="live-n"><b>${emCurso.length}</b>${emCurso.length===1?'turno em curso':'turnos em curso'}</div></div>`;
   const semCopia=S.turnos.length>=5&&(!LOC.ultimoBackup||Date.now()-LOC.ultimoBackup>7*864e5)&&(!LOC.ultimaSync||Date.now()-LOC.ultimaSync>7*864e5);
+  if(fbAtivo()&&fb.regrasEmFalta)h+=`<div class="banner"><span>${ic('lock')} Falta publicar as regras de segurança do Firebase — os dados não estão a sincronizar.</span><button class="btn s p" onclick="ir('config')">Resolver</button></div>`;
   if(!fbAtivo()&&temPasta()&&pastaH&&!permPasta)h+=`<div class="banner"><span>${ic('sync')} A sincronização com o Drive está em pausa: o Chrome pede autorização sempre que a app é aberta.</span><button class="btn s p" onclick="sincPasta(false)">${ic('sync')}Retomar sincronização</button></div>`;
   if(semCopia)h+=`<div class="banner"><span>${LOC.ultimoBackup?'Já passou mais de uma semana desde a última cópia de segurança.':'Ainda não fez nenhuma cópia de segurança.'}</span><button class="btn s" onclick="ir('config')">${ic('cloud')}Fazer cópia</button></div>`;
   h+=`<div class="stats">
@@ -487,11 +497,13 @@ function vPonto(){
   if(!S.colab.length){
     h+=`<div class="card"><h2>Bem-vindo, vamos começar</h2><p class="muted" style="margin-top:0">Adicione os colaboradores e os locais de trabalho. Depois pode iniciar turnos aqui com um toque.</p>
       <button class="btn p big" onclick="ir('equipa')">${ic('users')}Adicionar colaboradores</button></div>`;
+  }else if(!podeRegistar()){
+    h+=fbAtivo()&&!meuColab()&&!perm('editarTodos')?`<div class="info">${ic('users')}<span style="flex:1">A sua conta ainda não está associada a um colaborador. Peça ao administrador.</span></div>`:'';
   }else if(fechado(mes)){
     h+=`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(mes))} está fechado. Reabra o mês em Relatórios para registar turnos.</span></div>`;
   }else{
     h+=`<div class="card"><h2>Iniciar turno</h2><div class="qs">
-      <div class="f"><label for="qC">Colaborador</label><select id="qC">${opts(ativos(),'')}</select></div>
+      <div class="f"><label for="qC">Colaborador</label><select id="qC">${opts(colabsPermitidos(),'')}</select></div>
       <div class="f"><label for="qL">Local</label><select id="qL">${opts(S.locais,LOC.ultimoLocal,'Sem local')}</select></div>
       <div class="f grow"><label for="qT">Serviço efetuado (opcional)</label><input id="qT" list="dlS" autocomplete="off" placeholder="Ex.: limpeza, manutenção…"></div>
       <button class="btn p big" onclick="iniciarRapido()">${ic('play')}Iniciar agora</button></div></div>`;
@@ -504,18 +516,19 @@ function vPonto(){
       <div class="times">${horasChips(t)}</div>
       <div class="meta">${ic('pin')}${esc(localN(t.localId))}${t.data!==hj?' · desde '+dataPT(t.data):''}</div>
       ${t.trabalho?`<div class="meta" style="margin-top:.2rem">${esc(t.trabalho)}</div>`:''}
-      <div class="acts">
+      ${podeEditarTurno(t)?`<div class="acts">
         ${t.estado==='curso'&&!t.pIni?`<button class="btn w s" onclick="pausa('${t.id}')">${ic('pause')}Registar saída (intervalo)</button>`:''}
         ${t.estado==='pausa'?`<button class="btn p s" onclick="retomar('${t.id}')">${ic('play')}Retomar turno</button>`:''}
         <button class="btn s" onclick="terminar('${t.id}')">${ic('stop')}Terminar turno</button>
         <button class="btn g s" onclick="editTurno('${t.id}')" aria-label="Editar">${ic('edit')}</button>
-      </div></div>`).join('')}</div>`:`<div class="card">${vazio('clock','Nenhum turno em curso.')}</div>`;
+      </div>`:''}</div>`).join('')}</div>`:`<div class="card">${vazio('clock','Nenhum turno em curso.')}</div>`;
   const hojeL=concluidos(t=>t.data===hj).sort((a,b)=>b.ini.localeCompare(a.ini));
   if(hojeL.length)h+=`<div class="sec-t">Concluídos hoje <span class="count">${hojeL.length}</span></div>${hojeL.map(linhaServico).join('')}`;
   $('#main').innerHTML=h;
 }
 function iniciarRapido(){
   const cid=$('#qC').value;if(!cid)return;
+  if(!podeRegistar()||!colabsPermitidos().some(c=>c.id===cid)){toast('Sem permissão para registar turnos deste colaborador');return}
   if(fechado(hoje().slice(0,7))){toast('Este mês está fechado');return}
   if(S.turnos.some(t=>aberto(t)&&t.colabId===cid)){toast(colabN(cid)+' já tem um turno em curso');return}
   const c=S.colab.find(x=>x.id===cid);const lid=$('#qL').value;
@@ -523,7 +536,7 @@ function iniciarRapido(){
   LOC.ultimoLocal=lid;save();render();toast('Turno iniciado às '+agoraHM());
 }
 const achar=id=>S.turnos.find(x=>x.id===id);
-function podeAlterar(t){if(turnoFechado(t)){toast('O mês deste turno está fechado');return false}return true}
+function podeAlterar(t){if(turnoFechado(t)){toast('O mês deste turno está fechado');return false}if(!podeEditarTurno(t)){toast('Sem permissão para alterar este turno');return false}return true}
 function pausa(id){const t=achar(id);if(!t||!podeAlterar(t))return;t.pIni=agoraHM();t.pFim='';t.estado='pausa';save();render();toast('Saída para intervalo registada')}
 function retomar(id){const t=achar(id);if(!t||!podeAlterar(t))return;t.pFim=agoraHM();t.estado='curso';save();render();toast('Turno retomado')}
 async function terminar(id){const t=achar(id);if(!t||!podeAlterar(t))return;
@@ -542,18 +555,23 @@ setInterval(tick,1000);
 function editTurno(id,base){
   if(!S.colab.length){toast('Adicione primeiro um colaborador em Colaboradores');ir('equipa');return}
   const orig=id?achar(id):null;if(id&&!orig)return;
-  const c0=ativos()[0]||S.colab[0];
+  if(!orig&&!podeRegistar()){toast('Sem permissão para registar serviços');return}
+  const c0=colabsPermitidos()[0]||ativos()[0]||S.colab[0];
   const t=orig||base||{id:null,colabId:c0.id,localId:LOC.ultimoLocal||'',data:hoje(),ini:'',fim:'',pIni:'',pFim:'',trabalho:'',valor:valorDe(c0),estado:'concluido',pago:''};
-  const bloq=!!(orig&&turnoFechado(orig));
+  const semPerm=!!(orig&&!podeEditarTurno(orig));
+  const bloq=!!(orig&&(turnoFechado(orig)||semPerm));
+  const autor=orig&&fb.porDe?fb.porDe.get('turnos:'+orig.id):'';
   const f=$('#dlgForm');f.oninput=f.onchange=null;
   f.innerHTML=`<div class="dh"><h2>${bloq?'Serviço':orig?'Editar serviço':'Adicionar serviço'}</h2><button type="button" class="btn g s" id="fX0" aria-label="Fechar">${ic('x')}</button></div>
-  ${bloq?`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(orig.data.slice(0,7)))} está fechado. Para alterar, reabra o mês.</span><button type="button" class="btn s" id="fReab">${ic('unlock')}Reabrir mês</button></div>`:''}
+  ${bloq&&turnoFechado(orig)?`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(orig.data.slice(0,7)))} está fechado. Para alterar, reabra o mês.</span>${ehAdmin()?`<button type="button" class="btn s" id="fReab">${ic('unlock')}Reabrir mês</button>`:''}</div>`
+    :semPerm?`<div class="info">${ic('lock')}<span style="flex:1">Só pode consultar este serviço${orig.pago?' (já foi pago)':''}.</span></div>`:''}
+  ${autor?`<div class="meta" style="margin:-.4rem 0 .8rem">Última alteração por <b>${esc(autor)}</b></div>`:''}
   <fieldset ${bloq?'disabled':''}><div class="fgrid">
-    <div class="f"><label for="fC">Colaborador</label><select id="fC">${opts(ativos(t.colabId),t.colabId)}${S.colab.some(c=>c.id===t.colabId)?'':`<option value="${esc(t.colabId)}" selected>(colaborador removido)</option>`}</select></div>
+    <div class="f"><label for="fC">Colaborador</label><select id="fC">${opts(colabsPermitidos(t.colabId),t.colabId)}${S.colab.some(c=>c.id===t.colabId)?'':`<option value="${esc(t.colabId)}" selected>(colaborador removido)</option>`}</select></div>
     <div class="f"><label for="fL">Local</label><select id="fL">${opts(S.locais,t.localId,'Sem local')}<option value="__novo">+ Novo local…</option></select>
       <input id="fLn" placeholder="Nome do novo local" hidden></div>
     <div class="f"><label for="fD">Data</label><input type="date" id="fD" value="${t.data}"></div>
-    <div class="f"><label for="fV">Valor por hora (€)</label><input type="number" inputmode="decimal" step="0.01" min="0" id="fV" value="${t.valor}"></div>
+    <div class="f" ${perm('verValores')?'':'hidden'}><label for="fV">Valor por hora (€)</label><input type="number" inputmode="decimal" step="0.01" min="0" id="fV" value="${t.valor}"></div>
     <div class="tb"><div class="tt">Turno</div><div class="two">
       <div class="f"><label for="fI">Hora de entrada</label><input type="time" id="fI" value="${t.ini}"></div>
       <div class="f"><label for="fS1">Hora de saída</label><input type="time" id="fS1" value="${sai1(t)}"></div></div></div>
@@ -562,11 +580,12 @@ function editTurno(id,base){
       <div class="f"><label for="fS2">Hora de saída</label><input type="time" id="fS2" value="${sai2(t)}"></div></div></div>
     <div class="f full"><label for="fT">Serviço efetuado</label><input id="fT" list="dlS" autocomplete="off" value="${esc(t.trabalho)}" placeholder="Escreva ou escolha um serviço já usado"></div>
     <label class="chk"><input type="checkbox" id="fA" ${aberto(t)?'checked':''}>Turno ainda a decorrer (sem hora de saída final)</label>
-    <label class="chk"><input type="checkbox" id="fP" ${t.pago?'checked':''}>Pago${t.pago?` <span class="muted" style="font-weight:500">em ${dataPT(t.pago)}</span>`:''}</label>
+    ${ehAdmin()&&t.confirmado===false?`<label class="chk" style="color:var(--warn)"><input type="checkbox" id="fConf">Confirmar este serviço (registado pelo colaborador)</label>`:''}
+    <label class="chk" ${ehAdmin()?'':'hidden'}><input type="checkbox" id="fP" ${t.pago?'checked':''}>Pago${t.pago?` <span class="muted" style="font-weight:500">em ${dataPT(t.pago)}</span>`:''}</label>
     <div class="preview"><span>Total</span><span><b id="pvH">0h00</b> · <span id="pvV">0,00 €</span></span></div>
   </div></fieldset>
   <div class="err" id="fErr" hidden></div>
-  <div class="dacts"><div class="row">${orig&&!bloq?`<button type="button" class="btn d" id="fDel">${ic('trash')}Eliminar</button>`:''}${orig?`<button type="button" class="btn g" id="fDup">${ic('copy')}Duplicar</button>`:''}</div>
+  <div class="dacts"><div class="row">${orig&&!bloq&&podeApagar()?`<button type="button" class="btn d" id="fDel">${ic('trash')}Eliminar</button>`:''}${orig?`<button type="button" class="btn g" id="fDup">${ic('copy')}Duplicar</button>`:''}</div>
   <div class="row"><button type="button" class="btn" id="fX">${bloq?'Fechar':'Cancelar'}</button>${bloq?'':'<button type="submit" class="btn p">Guardar</button>'}</div></div>`;
   const dlg=$('#dlg');dlg.showModal();
   const erro=m=>{const e=$('#fErr');e.textContent=m;e.hidden=!m;if(m)e.scrollIntoView({block:'nearest'})};
@@ -577,7 +596,8 @@ function editTurno(id,base){
     else if(e2){n.estado='curso';n.pIni=s1;n.pFim=e2;n.fim=''}
     else if(s1){n.estado='pausa';n.pIni=s1;n.pFim='';n.fim=''}
     else{n.estado='curso';n.pIni='';n.pFim='';n.fim=''}
-    n.pago=(!ab&&$('#fP').checked)?(t.pago||hoje()):'';
+    n.pago=ehAdmin()?((!ab&&$('#fP').checked)?(t.pago||hoje()):''):(t.pago||'');
+    if(ehAdmin()){if($('#fConf'))n.confirmado=$('#fConf').checked?true:false}else if(fbAtivo())n.confirmado=false;
     return{n,s1,e2,s2,ab};
   }
   function previsao(){const{n,ab}=ler();const m=dur(n,ab);$('#pvH').textContent=hfmt(m);$('#pvV').textContent=eur(m/60*n.valor);$('#fP').disabled=bloq||ab;erro('')}
@@ -585,16 +605,17 @@ function editTurno(id,base){
   $('#fC').addEventListener('change',e=>{const c=S.colab.find(x=>x.id===e.target.value);if(c&&!orig){$('#fV').value=valorDe(c);previsao()}});
   $('#fL').addEventListener('change',e=>{const n=$('#fLn');n.hidden=e.target.value!=='__novo';if(!n.hidden)n.focus()});
   $('#fX').onclick=$('#fX0').onclick=()=>dlg.close();
-  if(bloq)$('#fReab').onclick=async()=>{if(await reabrirMes(orig.data.slice(0,7)))editTurno(id)};
+  if($('#fReab'))$('#fReab').onclick=async()=>{if(await reabrirMes(orig.data.slice(0,7)))editTurno(id)};
   if(orig){
     $('#fDup').onclick=()=>{const{n}=ler();dlg.close();editTurno(null,{...n,id:null,data:hoje(),estado:'concluido',pago:''});toast('Cópia pronta — confirme a data e as horas')};
-    if(!bloq)$('#fDel').onclick=async()=>{
+    if($('#fDel'))$('#fDel').onclick=async()=>{
       const msg=recente(orig.data)?`Eliminar este serviço?\n\nAtenção: este registo tem menos de 5 anos. ${AVISO_LEGAL}`:'Eliminar este serviço? Esta ação não pode ser desfeita.';
       if(await confirmar(msg,'Eliminar mesmo assim',true)){S.turnos=S.turnos.filter(x=>x.id!==id);save();dlg.close();render();toast('Serviço eliminado')}};
   }
   f.onsubmit=e=>{e.preventDefault();if(bloq)return;
     const{n,s1,e2,s2,ab}=ler();
     if(!n.data)return erro('Indique a data.');
+    if(!colabsPermitidos(orig?orig.colabId:'').some(c=>c.id===n.colabId))return erro('Sem permissão para registar serviços deste colaborador.');
     if(fechado(n.data.slice(0,7)))return erro(`${cap(nomeMes(n.data.slice(0,7)))} está fechado. Reabra o mês em Relatórios para registar neste mês.`);
     if(!n.ini)return erro('Indique a hora de entrada.');
     const rel=x=>{let v=m2(x)-m2(n.ini);return v<0?v+1440:v};
@@ -619,7 +640,7 @@ let fT={mes:hoje().slice(0,7),colab:'',estado:'',pag:'',q:''};
 function linhaServico(t){const ab=aberto(t);
   return `<div class="svc" role="button" tabindex="0" onclick="editTurno('${t.id}')" onkeydown="if(event.key==='Enter')editTurno('${t.id}')">
     ${av(t.colabId)}
-    <div style="min-width:0"><div class="nm">${esc(colabN(t.colabId))} ${chipEstado(t)}${turnoFechado(t)?`<span class="chip lock">${ic('lock')}</span>`:''}</div>
+    <div style="min-width:0"><div class="nm">${esc(colabN(t.colabId))} ${chipEstado(t)}${t.confirmado===false?'<span class="chip conf">Por confirmar</span>':''}${turnoFechado(t)?`<span class="chip lock">${ic('lock')}</span>`:''}</div>
       <div class="times">${horasChips(t)}</div>
       <div class="meta">${ic('pin')}${esc(localN(t.localId))}${t.trabalho?' · '+esc(t.trabalho):''}</div></div>
     <div class="r"><div class="h"${ab?` data-timer="${t.id}"`:''}>${hfmt(dur(t,ab))}</div><div class="meta">${ab?'a decorrer':eur(ganho(t))}</div></div></div>`}
@@ -627,13 +648,13 @@ function vServicos(){
   let h=cab('Serviços','Registos de trabalho por dia',`<button class="btn p hm" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`);
   h+=`<div class="filters"><div class="f"><label for="tM">Mês</label><input type="month" id="tM" value="${fT.mes}"></div>
    <div class="f"><label for="tC">Colaborador</label><select id="tC">${opts(S.colab,fT.colab,'Todos')}</select></div>
-   <div class="f"><label for="tE">Estado</label><select id="tE"><option value="">Todos</option>${[['curso','Em curso'],['concluido','Concluídos']].map(([v,n])=>`<option value="${v}" ${fT.estado===v?'selected':''}>${n}</option>`).join('')}</select></div>
+   <div class="f"><label for="tE">Estado</label><select id="tE"><option value="">Todos</option>${[['curso','Em curso'],['concluido','Concluídos'],['confirmar','Por confirmar']].map(([v,n])=>`<option value="${v}" ${fT.estado===v?'selected':''}>${n}</option>`).join('')}</select></div>
    <div class="f"><label for="tP">Pagamento</label><select id="tP"><option value="">Todos</option>${[['por','Por pagar'],['pago','Pagos']].map(([v,n])=>`<option value="${v}" ${fT.pag===v?'selected':''}>${n}</option>`).join('')}</select></div>
    <div class="f"><label for="tQ">Pesquisar</label><input id="tQ" type="search" placeholder="Local ou serviço…" value="${esc(fT.q)}"></div></div>`;
   if(fT.mes&&fechado(fT.mes))h+=`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(fT.mes))} está fechado — os serviços só podem ser consultados.</span></div>`;
   const q=fT.q.toLowerCase();
   const L=S.turnos.filter(t=>(!fT.mes||t.data.startsWith(fT.mes))&&(!fT.colab||t.colabId===fT.colab)
-      &&(!fT.estado||(fT.estado==='curso'?aberto(t):t.estado===fT.estado))
+      &&(!fT.estado||(fT.estado==='curso'?aberto(t):fT.estado==='confirmar'?t.confirmado===false:t.estado===fT.estado))
       &&(!fT.pag||(t.estado==='concluido'&&(fT.pag==='pago'?!!t.pago:!t.pago)))
       &&(!q||(t.trabalho||'').toLowerCase().includes(q)||localN(t.localId).toLowerCase().includes(q)||colabN(t.colabId).toLowerCase().includes(q)))
     .sort((a,b)=>(b.data+b.ini).localeCompare(a.data+a.ini));
@@ -641,6 +662,8 @@ function vServicos(){
   h+=`<div class="stats"><div class="stat"><div class="k">Horas</div><div class="v">${hfmt(T.min)}</div><div class="x">${L.length} serviços</div></div>
     <div class="stat hl"><div class="k">Valor</div><div class="v">${eur(T.val)}</div></div>
     <div class="stat ${T.por>0?'warn':''}"><div class="k">Por pagar</div><div class="v">${eur(T.por)}</div></div></div>`;
+  const porConf=L.filter(t=>t.confirmado===false);
+  if(ehAdmin()&&porConf.length)h+=`<div class="banner"><span>${porConf.length} serviço${porConf.length>1?'s':''} registado${porConf.length>1?'s':''} por colaboradores à espera de confirmação.</span><span class="row"><button class="btn s" onclick="fT.estado='confirmar';vServicos()">Ver</button><button class="btn s p" onclick="confirmarTodos()">${ic('check')}Confirmar todos</button></span></div>`;
   if(!L.length)h+=`<div class="card">${vazio('list','Sem serviços para estes filtros.',`<button class="btn p" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`)}</div>`;
   let dia='';
   L.forEach(t=>{if(t.data!==dia){dia=t.data;const sd=soma(L.filter(x=>x.data===dia&&x.estado==='concluido'));
@@ -754,8 +777,8 @@ function vRel(){
     <button class="btn p" onclick="partilhar('whatsapp')">${ic('chat')}WhatsApp</button><button class="btn p" onclick="partilhar('email')">${ic('mail')}Email</button>
     <button class="btn" onclick="gerarPDF(true)">${ic('file')}PDF</button><button class="btn" onclick="exportCSV()">${ic('grid')}Excel</button><button class="btn" onclick="print()">${ic('print')}Imprimir</button>
     <span class="sep"></span>
-    ${R.n?`<button class="btn" onclick="pagarTodos()">${ic('euro')}${R.por>0.004?'Marcar tudo como pago':'Desmarcar pagamentos'}</button>`:''}
-    ${mensal?(fch?`<button class="btn" onclick="reabrirMes('${fR.mes}')">${ic('unlock')}Reabrir mês</button>`:`<button class="btn" onclick="fecharMes('${fR.mes}')">${ic('lock')}Fechar mês</button>`):''}</div>`;
+    ${R.n&&ehAdmin()?`<button class="btn" onclick="pagarTodos()">${ic('euro')}${R.por>0.004?'Marcar tudo como pago':'Desmarcar pagamentos'}</button>`:''}
+    ${mensal&&ehAdmin()?(fch?`<button class="btn" onclick="reabrirMes('${fR.mes}')">${ic('unlock')}Reabrir mês</button>`:`<button class="btn" onclick="fecharMes('${fR.mes}')">${ic('lock')}Fechar mês</button>`):''}</div>`;
   if(fch)h+=`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(fR.mes))} está fechado. Os serviços deste mês não podem ser alterados nem eliminados.</span></div>`;
   h+=`<div class="stats"><div class="stat"><div class="k">Horas trabalhadas</div><div class="v">${hfmt(R.min)}</div><div class="x">${R.n} serviços</div></div>
     <div class="stat hl"><div class="k">Valor total</div><div class="v">${eur(R.val)}</div><div class="x">Pago ${eur(R.pago)}</div></div>
@@ -764,8 +787,8 @@ function vRel(){
   else{const TC=totaisColab(R);
     h+=`<div class="card"><h2>Totais por colaborador</h2><div class="tw"><table><thead><tr><th>Colaborador</th><th class="n">Serviços</th><th class="n">Horas</th><th class="n">Valor</th><th class="n">Pago</th><th class="n">Por pagar</th><th class="noprint"></th>${mensal?'<th>Assinatura</th>':''}</tr></thead><tbody>
     ${TC.map(x=>{const ea=mensal?estadoAssin(x):null;return `<tr><td><div class="who">${av(x.cid)}${esc(colabN(x.cid))}</div></td><td class="n">${x.n}</td><td class="n">${hfmt(x.min)}</td><td class="n"><b>${eur(x.val)}</b></td><td class="n">${eur(x.pago)}</td><td class="n" style="${x.por>0.004?'color:var(--warn);font-weight:700':''}">${eur(x.por)}</td>
-      <td class="noprint"><button class="btn s ${x.por>0.004?'p':''}" onclick="pagarColab('${x.cid}')">${x.por>0.004?ic('euro')+'Pagar':ic('check')+'Pago'}</button></td>
-      ${mensal?`<td>${ea?`<button class="btn s g" onclick="assinar('${x.cid}')"><span class="chip ${ea.ok?'pago':'porpagar'}">${ic(ea.ok?'check':'sign')}${ea.ok?'Assinado '+dataPT(new Date(ea.a.em).toISOString().slice(0,10)):'Desatualizada'}</span></button>`:`<button class="btn s noprint" onclick="assinar('${x.cid}')">${ic('sign')}Assinar</button>`}</td>`:''}</tr>`}).join('')}
+      <td class="noprint">${ehAdmin()?`<button class="btn s ${x.por>0.004?'p':''}" onclick="pagarColab('${x.cid}')">${x.por>0.004?ic('euro')+'Pagar':ic('check')+'Pago'}</button>`:''}</td>
+      ${mensal?`<td>${ea?`<button class="btn s g" onclick="assinar('${x.cid}')"><span class="chip ${ea.ok?'pago':'porpagar'}">${ic(ea.ok?'check':'sign')}${ea.ok?'Assinado '+dataPT(new Date(ea.a.em).toISOString().slice(0,10)):'Desatualizada'}</span></button>`:(ehAdmin()||x.cid===meuColab()?`<button class="btn s noprint" onclick="assinar('${x.cid}')">${ic('sign')}Assinar</button>`:'—')}</td>`:''}</tr>`}).join('')}
     </tbody><tfoot><tr><td>Total global</td><td class="n">${R.n}</td><td class="n">${hfmt(R.min)}</td><td class="n">${eur(R.val)}</td><td class="n">${eur(R.pago)}</td><td class="n">${eur(R.por)}</td><td class="noprint"></td>${mensal?'<td></td>':''}</tr></tfoot></table></div></div>`;
     h+=cartaoGraficos(R,TC);
     h+=`<div class="sec-t">Detalhe dos serviços</div>`;
@@ -964,11 +987,12 @@ function baixar(conteudo,nome,tipo){const a=document.createElement('a');a.href=U
 /* =================== Definições, cópias, sincronização e segurança =================== */
 async function vConfig(){
   const fmtD=v=>v?new Date(v).toLocaleString('pt-PT',{dateStyle:'medium',timeStyle:'short'}):'nunca';
-  let h=cab('Definições','Sincronização, cópias de segurança e segurança');
+  const lim=fbAtivo()&&!ehAdmin();
+  let h=cab('Definições',lim?'A sua conta e segurança':'Sincronização, cópias de segurança e segurança');
   const https=location.protocol==='https:';
-  const metodo=fbAtivo()?`Firebase — tempo real (${fb.online?'<b style="color:var(--accent)">ligado</b>':'<b style="color:var(--warn)">sem internet</b>'})`:LOC.fbConfig?'<b style="color:var(--warn)">Firebase configurado, mas sem sessão iniciada</b>':usaAPI()?'Ligação direta à conta Google (automática)':temPasta()?'Pasta do Google Drive no PC':'Ficheiro do Drive escolhido à mão (telemóvel)';
+  const metodo=fbAtivo()&&fb.regrasEmFalta?'<b style="color:var(--warn)">Firebase — bloqueado: faltam as regras de segurança</b>':fbAtivo()?`Firebase — tempo real (${fb.online?'<b style="color:var(--accent)">ligado</b>':'<b style="color:var(--warn)">sem internet</b>'})`:LOC.fbConfig?'<b style="color:var(--warn)">Firebase configurado, mas sem sessão iniciada</b>':usaAPI()?'Ligação direta à conta Google (automática)':temPasta()?'Pasta do Google Drive no PC':'Ficheiro do Drive escolhido à mão (telemóvel)';
   let autor='—';if(!usaAPI()&&temPasta()&&pastaH){permPasta=await permissaoPasta(false);autor=permPasta?'<b style="color:var(--accent)">sim</b>':'<b style="color:var(--warn)">não — toque em Sincronizar agora</b>'}
-  h+=`<div class="card"><h2>Diagnóstico da sincronização</h2><div class="fgrid" style="font-size:.92rem">
+  h+=`<div class="card" ${lim?'hidden':''}><h2>Diagnóstico da sincronização</h2><div class="fgrid" style="font-size:.92rem">
     <div><div class="lbl">Endereço</div>${esc(location.protocol==='file:'?'ficheiro local':location.origin+location.pathname)}</div>
     <div><div class="lbl">Versão da app</div>${VERSAO}</div>
     <div><div class="lbl">Dispositivo</div>${tipoDisp()==='PC'?'PC':'Telemóvel'}</div>
@@ -994,7 +1018,7 @@ async function vConfig(){
     ${https?`<details style="margin-top:.8rem"><summary class="muted" style="cursor:pointer">Ligação direta à conta Google (avançado)</summary>
       <div class="set-row"><div><div class="t">Sincronizar pela conta Google</div><div class="d">Requer o ID de cliente Google (em Geral).</div></div><button class="btn s" onclick="sincronizar(false)">${ic('sync')}Sincronizar</button></div></details>`:''}
   </div>`;
-  h+=`<div class="card"><h2>Cópia de segurança</h2>
+  h+=`<div class="card" ${lim?'hidden':''}><h2>Cópia de segurança</h2>
     <p class="muted" style="margin-top:0">Última cópia: <b>${fmtD(LOC.ultimoBackup)}</b>. ${temPasta()?(pastaH?`No PC a cópia é gravada no Google Drive, em <b>${esc(pastaH.name)} › ${PASTA_COPIAS}</b> (ficam as últimas 30). Com a sincronização ligada, é feita também uma cópia automática por dia.`:'Escolha a pasta do Google Drive para as cópias irem diretamente para o Drive.'):'Abre a lista de partilha — escolha <b>Drive</b> e a pasta “Registo de Trabalho”.'}</p>
     <div class="row">${temPasta()&&!pastaH?`<button class="btn" onclick="escolherPasta()">${ic('cloud')}Escolher pasta do Drive</button>`:''}<button class="btn p" onclick="backupFicheiro()">${ic('up')}Guardar cópia no Drive</button>
     ${https?`<button class="btn" onclick="driveGuardar()">${ic('cloud')}Guardar no Drive</button><button class="btn" onclick="driveRestaurar()">${ic('down')}Restaurar do Drive</button>`:''}
@@ -1007,8 +1031,8 @@ async function vConfig(){
     <div class="set-row"><div><div class="t">Impressão digital / desbloqueio facial</div><div class="d">${LOC.bioId?'Ativo.':bioOk?'Disponível neste dispositivo. Requer PIN ativo.':'Indisponível aqui — requer a app aberta por https num dispositivo com leitor biométrico.'}</div></div>
       <div class="row">${LOC.bioId?`<button class="btn s d" onclick="LOC.bioId='';persist();vConfig()">Desativar</button>`:`<button class="btn s" ${bioOk&&LOC.pinHash?'':'disabled'} onclick="ativarBio()">${ic('finger')}Ativar</button>`}</div></div>
     ${LOC.pinHash?`<div class="set-row"><div><div class="t">Bloquear agora</div></div><button class="btn s" onclick="bloquear()">${ic('lock')}Bloquear</button></div>`:''}</div>`;
-  h+=`<div class="card"><h2>Armazenamento</h2><div class="set-row"><div><div class="t">${usaIDB?'Base de dados do dispositivo (IndexedDB)':'Armazenamento simples do browser'}</div><div class="d" id="armInfo">A calcular…</div></div>${ic('db',28)}</div></div>`;
-  h+=`<form class="card" id="fCfg"><h2>Geral</h2><div class="fgrid">
+  h+=`<div class="card" ${lim?'hidden':''}><h2>Armazenamento</h2><div class="set-row"><div><div class="t">${usaIDB?'Base de dados do dispositivo (IndexedDB)':'Armazenamento simples do browser'}</div><div class="d" id="armInfo">A calcular…</div></div>${ic('db',28)}</div></div>`;
+  h+=`<form class="card" id="fCfg" ${lim?'hidden':''}><h2>Geral</h2><div class="fgrid">
    <div class="f full"><label for="sE">Nome da empresa (aparece nos relatórios)</label><input id="sE" value="${esc(S.cfg.empresa)}"></div>
    <div class="f"><label for="sV">Valor por hora predefinido (€)</label><input id="sV" type="number" inputmode="decimal" step="0.01" min="0" value="${S.cfg.valorHora}"></div>
    ${https?`<div class="f full"><label for="sG">ID de cliente Google (OAuth) — opcional</label><input id="sG" value="${esc(LOC.clientId)}" placeholder="xxxxxxxx.apps.googleusercontent.com"></div>`:''}</div>
@@ -1181,8 +1205,39 @@ async function driveRestaurar(){
 
 /* =================== Firebase (sincronização em tempo real) =================== */
 const FB_V='10.12.2';
-let fb={app:null,auth:null,db:null,user:null,unsub:null,remoto:new Map(),online:navigator.onLine,primeiro:false,iniciado:false};
-const fbAtivo=()=>!!(fb.user&&LOC.fbConfig);
+let fb={app:null,auth:null,db:null,user:null,unsubs:[],remoto:new Map(),remotoDados:new Map(),porDe:new Map(),online:navigator.onLine,iniciado:false,empresa:null,membro:null,papel:null};
+const fbAtivo=()=>!!(fb.user&&LOC.fbConfig&&fb.empresa);
+/* Permissões */
+const PERMS=[['registarProprios','Registar e editar os próprios turnos'],['verTodos','Ver os serviços de todos'],['editarTodos','Registar, editar e apagar serviços de todos'],
+  ['verValores','Ver valores (€) e pagamentos'],['relatorios','Ver relatórios e enviar PDF'],['gerirColaboradores','Gerir colaboradores e locais']];
+const PERM_CURTO={registarProprios:'Próprios turnos',verTodos:'Ver todos',editarTodos:'Editar todos',verValores:'Valores €',relatorios:'Relatórios',gerirColaboradores:'Colaboradores'};
+const PRESET={registarProprios:true,verTodos:false,editarTodos:false,verValores:true,relatorios:true,gerirColaboradores:false};
+/* Perfis recomendados (o administrador pode depois ajustar cada privilégio) */
+const PERFIS={
+  colaborador:{nome:'Colaborador',desc:'Regista os seus turnos, vê quanto tem a receber e o seu relatório. Não vê os colegas.',papel:'colaborador',
+    perm:{registarProprios:true,verTodos:false,editarTodos:false,verValores:true,relatorios:true,gerirColaboradores:false}},
+  chefe:{nome:'Chefe de equipa',desc:'Regista e corrige os turnos de todos (por exemplo, num evento). Não vê valores, para não saber quanto ganham os colegas.',papel:'colaborador',
+    perm:{registarProprios:true,verTodos:true,editarTodos:true,verValores:false,relatorios:true,gerirColaboradores:false}},
+  admin:{nome:'Administrador',desc:'Acesso total: vê e altera tudo, incluindo pagamentos, meses fechados e acessos. Só para quem o substitui na gestão.',papel:'admin',
+    perm:{registarProprios:true,verTodos:true,editarTodos:true,verValores:true,relatorios:true,gerirColaboradores:true}}};
+function perfilDe(papel,perm){if(papel==='admin')return 'admin';
+  for(const k of ['colaborador','chefe']){const pp=PERFIS[k].perm;if(PERMS.every(([c])=>!!(perm||{})[c]===pp[c]))return k}return 'personalizado'}
+const NOME_PERFIL=k=>k==='personalizado'?'Personalizado':PERFIS[k].nome;
+function ehAdmin(){return !fbAtivo()||fb.papel==='dono'||fb.papel==='admin'}
+function perm(p){return ehAdmin()||!!(fb.membro&&fb.membro.ativo&&fb.membro.perm&&fb.membro.perm[p])}
+function meuColab(){return fb.membro&&fb.membro.colabId||''}
+function colabsPermitidos(sel){return perm('editarTodos')?ativos(sel):ativos(sel).filter(c=>c.id===meuColab())}
+function podeRegistar(){return perm('editarTodos')||(perm('registarProprios')&&!!meuColab()&&colabsPermitidos().length>0)}
+function podeEditarTurno(t){if(perm('editarTodos'))return true;return perm('registarProprios')&&t.colabId===meuColab()&&!t.pago}
+function podeApagar(){return perm('editarTodos')}
+function podeEscrever(k){if(ehAdmin())return true;const p=k.indexOf(':'),c=k.slice(0,p),id=k.slice(p+1);
+  if(c==='colab'||c==='locais')return perm('gerirColaboradores')&&(S[c]||[]).some(x=>x.id===id);
+  if(c==='turnos'||c==='assin'){const rr=(S[c]||[]).find(x=>x.id===id);if(!rr)return false;return perm('editarTodos')||(perm('registarProprios')&&rr.colabId===meuColab()&&(c==='assin'||!rr.pago))}
+  return false}
+async function confirmarTodos(){const L=S.turnos.filter(t=>t.confirmado===false);if(!L.length)return;
+  if(!await confirmar(`Confirmar ${L.length} serviço${L.length>1?'s':''} registado${L.length>1?'s':''} pelos colaboradores?`,'Confirmar'))return;
+  L.forEach(t=>t.confirmado=true);save();if(fT.estado==='confirmar')fT.estado='';render();toast('Serviços confirmados')}
+const rerender=()=>{if(pronto&&$('#lock').hidden&&!document.querySelector('dialog[open]'))render()};
 const fbFila=new Map();let fbT=null;
 async function carregarFirebase(){
   if(window.firebase&&firebase.firestore&&firebase.auth)return;
@@ -1198,40 +1253,99 @@ async function fbIniciar(){
     fb.auth=firebase.auth();fb.db=firebase.firestore();
     try{await fb.db.enablePersistence({synchronizeTabs:true})}catch(e){}
     fb.iniciado=true;
-    fb.auth.onAuthStateChanged(u=>{fb.user=u;if(u)fbOuvir();else fbParar();if(pronto&&$('#lock').hidden&&!document.querySelector('dialog[open]'))render()});
+    fb.auth.onAuthStateChanged(u=>{fbEntrar(u)});
   }catch(e){toast('Configuração do Firebase inválida: '+(e.message||e))}
 }
-const fbCol=()=>fb.db.collection('utilizadores').doc(fb.user.uid).collection('registos');
+const fbEmp=()=>fb.db.collection('empresas').doc(fb.empresa);
+const fbCol=()=>fbEmp().collection('registos');
+const emailDe=u=>String(u&&u.email||'').toLowerCase();
+/* Descobre a que empresa pertence a conta e com que papel */
+async function fbEntrar(u){
+  fb.user=u;fbParar();fb.regrasEmFalta=false;
+  if(!u){fb.empresa=null;fb.membro=null;fb.papel=null;rerender();return}
+  const email=emailDe(u);let emp=u.uid,papel='dono',membro=null,falhou=false;
+  try{const a=await fb.db.collection('acessos').doc(email).get();
+    if(a.exists&&a.data().empresa&&a.data().empresa!==u.uid){emp=a.data().empresa;
+      const m=await fb.db.collection('empresas').doc(emp).collection('membros').doc(email).get();
+      if(!m.exists||!m.data().ativo){semAcesso();return}
+      membro=m.data();papel=membro.papel==='admin'?'admin':'colaborador'}}
+  catch(e){if(e&&e.code==='permission-denied'){fb.regrasEmFalta=true;emp=u.uid;papel='dono';membro=null}
+    else{falhou=true;if(LOC.fbConta&&LOC.fbConta.uid===u.uid){emp=LOC.fbConta.empresa;papel=LOC.fbConta.papel;membro=LOC.fbConta.membro||null}}}
+  if(falhou&&!(LOC.fbConta&&LOC.fbConta.uid===u.uid)){toast('Não foi possível confirmar o acesso — verifique a internet');return}
+  const outra=LOC.fbConta&&(LOC.fbConta.uid!==u.uid||LOC.fbConta.empresa!==emp);
+  if(outra||(!LOC.fbConta&&papel!=='dono')){S=def();inicializarSnap();fbFila.clear();if(outra)toast('Conta diferente — os dados deste aparelho passam a ser os desta conta')}
+  fb.empresa=emp;fb.papel=papel;fb.membro=membro;
+  LOC.fbConta={uid:u.uid,empresa:emp,papel,membro};await persist();
+  if(papel==='dono'){try{await fbEmp().set({dono:u.uid,email,atualizado:Date.now()},{merge:true})}catch(e){}}
+  fbOuvir();rerender();
+}
+function semAcesso(){fbParar();fb.empresa=null;fb.membro=null;fb.papel='sem';S=def();inicializarSnap();LOC.fbConta=null;persist();
+  if(pronto&&$('#lock').hidden){view='config';render()}toast('Sem acesso: peça ao administrador para lhe dar acesso')}
 const docId=(c,id)=>(c+'__'+id).replace(/\//g,'_');
-function fbOuvir(){fbParar();fb.primeiro=true;
-  fb.unsub=fbCol().onSnapshot(snap=>{let mud=0;
-    snap.docChanges().forEach(ch=>{if(ch.type==='removed')return;const d=ch.doc.data();if(!d||!d.col)return;
-      fb.remoto.set(d.col+':'+d.id,d.upd||0);mud+=aplicarRemoto(d)});
-    if(mud){inicializarSnap();persist();if(pronto&&$('#lock').hidden&&!document.querySelector('dialog[open]'))render()}
-    if(fb.primeiro){fb.primeiro=false;fbReconciliar();if(mud)toast(`Firebase: ${mud} registos recebidos`)}
+function fbOuvir(){fbParar();const col=fbCol();
+  const consultas=perm('verTodos')?[col]:[...['colab','locais','cfg','fechos'].map(c=>col.where('col','==',c)),col.where('colabId','==',meuColab()||'(nenhum)')];
+  let pend=consultas.length,recebidos=0;
+  fb.unsubs=consultas.map(q=>{let primeiro=true;return q.onSnapshot(snap=>{let mud=0;
+    snap.docChanges().forEach(ch=>{if(ch.type==='removed')return;const d=ch.doc.data();if(!d||!d.col)return;const k=d.col+':'+d.id;
+      fb.remoto.set(k,d.upd||0);fb.remotoDados.set(k,d.apagado?null:(d.dados||null));if(d.por)fb.porDe.set(k,d.por);mud+=aplicarRemoto(d)});
+    if(mud){inicializarSnap();persist();rerender()}
+    recebidos+=mud;
+    if(primeiro){primeiro=false;if(--pend===0){fbReconciliar();if(recebidos)toast(`Firebase: ${recebidos} registos recebidos`)}}
     LOC.ultimaSync=Date.now();persist();
-  },err=>{toast('Firebase: '+(err.code==='permission-denied'?'sem permissão — verifique as regras de segurança':(err.message||err.code)))})}
-function fbParar(){if(fb.unsub){fb.unsub();fb.unsub=null}fb.remoto.clear()}
+    fb.regrasEmFalta=false;
+  },err=>{if(err.code==='permission-denied'&&fb.papel==='dono'){if(!fb.regrasEmFalta){fb.regrasEmFalta=true;rerender()}return}
+    toast('Firebase: '+(err.code==='permission-denied'?'sem permissão — confirme as regras de segurança e o seu acesso':(err.message||err.code)))})});
+  if(fb.papel!=='dono')fb.unsubs.push(fbEmp().collection('membros').doc(emailDe(fb.user)).onSnapshot(m=>{const d=m.exists?m.data():null;
+    if(!d||!d.ativo){semAcesso();return}
+    const antes=fb.membro||{};fb.membro=d;fb.papel=d.papel==='admin'?'admin':'colaborador';LOC.fbConta={...LOC.fbConta,papel:fb.papel,membro:d};persist();
+    const mudouVista=(antes.colabId!==d.colabId)||((antes.perm||{}).verTodos!==(d.perm||{}).verTodos)||(antes.papel!==d.papel);
+    if(mudouVista&&antes.email)fbOuvir();rerender()},()=>{}));
+}
+function fbParar(){for(const u of fb.unsubs||[])try{u()}catch(e){}fb.unsubs=[];fb.remoto.clear();fb.remotoDados.clear()}
 function aplicarRemoto(d){
   if(d.col==='cfg'){if((d.upd||0)>(S.cfg.upd||0)){S.cfg={...S.cfg,...(d.dados||{}),upd:d.upd};return 1}return 0}
   if(!COLS.includes(d.col))return 0;
   const k=d.col+':'+d.id,arr=S[d.col],i=arr.findIndex(r=>r.id===d.id),loc=i>=0?arr[i]:null;
   if(d.apagado){if(!(S.apagados[k]>=d.upd))S.apagados[k]=d.upd;if(loc&&(loc.upd||0)<=d.upd){arr.splice(i,1);return 1}return 0}
   if(S.apagados[k]>=d.upd)return 0;
+  if(!d.dados)return 0;
   if(!loc){arr.push({...d.dados,upd:d.upd});return 1}
   if(d.upd>(loc.upd||0)){arr[i]={...d.dados,upd:d.upd};return 1}
   return 0}
-function fbMarcar(chaves){if(!fbAtivo()||!chaves||!chaves.length)return;for(const k of chaves)fbFila.set(k,1);clearTimeout(fbT);fbT=setTimeout(fbEnviar,400)}
+function fbMarcar(chaves){if(!fbAtivo()||!chaves||!chaves.length)return;chaves=chaves.filter(podeEscrever);if(!chaves.length)return;for(const k of chaves)fbFila.set(k,1);clearTimeout(fbT);fbT=setTimeout(fbEnviar,400)}
+/* Histórico: descrição legível de cada registo e dos campos alterados */
+const NOMES_CAMPOS={ini:'entrada',fim:'saída',pIni:'saída (intervalo)',pFim:'retoma',trabalho:'serviço efetuado',valor:'valor/hora',pago:'pagamento',estado:'estado',
+  data:'data',localId:'local',colabId:'colaborador',confirmado:'confirmação',nome:'nome',foto:'fotografia',assinatura:'assinatura',tel:'telemóvel',email:'email',arquivado:'arquivo',img:'assinatura',empresa:'empresa',valorHora:'valor/hora predefinido'};
+function descrever(c,x){x=x||{};
+  if(c==='turnos')return `${colabN(x.colabId)} · ${dataPT(x.data)} ${x.ini||''}${sai1(x)?'–'+sai1(x):''}${ent2(x)?' / '+ent2(x)+'–'+(sai2(x)||'…'):''} · ${localN(x.localId)}`;
+  if(c==='colab')return 'Colaborador '+(x.nome||'');if(c==='locais')return 'Local '+(x.nome||'');
+  if(c==='fechos')return 'Fecho do mês '+(x.id||'');if(c==='assin')return `Assinatura de ${colabN(x.colabId)} (${x.mes||''})`;
+  return 'Definições'}
+function difs(a,b){if(!a||!b)return[];const ks=new Set([...Object.keys(a),...Object.keys(b)]);const out=[];
+  for(const k of ks){if(k==='id')continue;if(JSON.stringify(a[k]??'')!==JSON.stringify(b[k]??''))out.push(NOMES_CAMPOS[k]||k)}return out.slice(0,8)}
+const resumoTurno=x=>x?{data:x.data,ini:x.ini,fim:x.fim||'',pIni:x.pIni||'',pFim:x.pFim||'',trabalho:x.trabalho||'',valor:x.valor,pago:x.pago||'',colab:colabN(x.colabId),local:localN(x.localId)}:null;
 async function fbEnviar(){
   if(!fbAtivo()||!fbFila.size)return;const ks=[...fbFila.keys()];fbFila.clear();
-  for(let i=0;i<ks.length;i+=400){const b=fb.db.batch();
-    for(const k of ks.slice(i,i+400)){const p=k.indexOf(':'),c=k.slice(0,p),id=k.slice(p+1);let d=null;
-      if(c==='cfg'){const{upd,...x}=S.cfg;d={col:'cfg',id:'cfg',upd:upd||0,dados:JSON.parse(JSON.stringify(x))}}
+  const email=emailDe(fb.user),admin=ehAdmin(),granel=ks.length>50;
+  for(let i=0;i<ks.length;i+=200){const b=fb.db.batch();const lote=ks.slice(i,i+200);
+    for(const k of lote){const p=k.indexOf(':'),c=k.slice(0,p),id=k.slice(p+1);let d=null,merge=false;
+      const antes=fb.remotoDados.has(k)?fb.remotoDados.get(k):undefined;
+      if(c==='cfg'){const{upd,...x}=S.cfg;d={col:'cfg',id:'cfg',upd:upd||0,por:email,dados:JSON.parse(JSON.stringify(x))}}
       else{const rr=(S[c]||[]).find(x=>x.id===id);
-        if(rr){const{upd,...x}=rr;d={col:c,id,upd:upd||1,dados:JSON.parse(JSON.stringify(x))}}
-        else if(S.apagados[k])d={col:c,id,upd:S.apagados[k],apagado:true}}
-      if(!d)continue;b.set(fbCol().doc(docId(c,id)),d);fb.remoto.set(k,d.upd)}
-    try{await b.commit()}catch(e){ks.slice(i).forEach(k=>fbFila.set(k,1));toast('Firebase: não foi possível gravar ('+(e.code||e.message)+')');return}}
+        if(rr){const{upd,...x}=rr;d={col:c,id,upd:upd||1,por:email,dados:JSON.parse(JSON.stringify(x))};
+          if(c==='turnos'||c==='assin')d.colabId=rr.colabId||'';
+          if(c==='turnos'&&!admin)d.dados.confirmado=false}
+        else if(S.apagados[k]){d={col:c,id,upd:S.apagados[k],por:email,apagado:true,dados:firebase.firestore.FieldValue.delete()};merge=true}}
+      if(!d)continue;
+      b.set(fbCol().doc(docId(c,id)),d,{merge});
+      if(!granel){const depois=d.apagado?null:d.dados;const acao=d.apagado?'apagou':(antes?'alterou':'criou');
+        b.set(fbEmp().collection('historico').doc(),{em:Date.now(),uid:fb.user.uid,email,acao,col:c,id,
+          resumo:descrever(c,depois||antes),campos:acao==='alterou'?difs(antes,depois):[],
+          ...(c==='turnos'?{antes:resumoTurno(antes),depois:resumoTurno(depois)}:{})})}
+      fb.remoto.set(k,d.upd);fb.remotoDados.set(k,d.apagado?null:d.dados);fb.porDe.set(k,email)}
+    if(granel&&i===0)b.set(fbEmp().collection('historico').doc(),{em:Date.now(),uid:fb.user.uid,email,acao:'sincronizou',col:'',id:'',resumo:`${ks.length} registos enviados de uma vez`,campos:[]});
+    try{await b.commit()}catch(e){lote.concat(ks.slice(i+200)).forEach(k=>fbFila.set(k,1));
+      toast(e.code==='permission-denied'?'Firebase: sem permissão para esta alteração':'Firebase: não foi possível gravar ('+(e.code||e.message)+')');return}}
   LOC.ultimaSync=Date.now();persist();
 }
 function fbReconciliar(){if(!fbAtivo())return;const ks=[];
@@ -1247,8 +1361,14 @@ const ERROS_FB={'auth/invalid-credential':'Email ou palavra-passe errados.','aut
 function cartaoFirebase(){
   const cfgOk=!!LOC.fbConfig;
   let h=`<div class="card"><h2>Firebase — sincronização em tempo real</h2>`;
-  if(fbAtivo())h+=`<div class="info ok">${ic('check')}<span style="flex:1">Ligado como <b>${esc(fb.user.email||'')}</b>. O PC e o telemóvel ficam iguais em segundos, mesmo depois de períodos sem internet.</span></div>
-    <div class="row"><button class="btn" onclick="sincronizarAgora()">${ic('sync')}Verificar agora</button><button class="btn" onclick="fbSair()">Terminar sessão</button><button class="btn g" onclick="fbMudarConfig()">Mudar configuração</button></div>`;
+  const papelTxt=fb.papel==='dono'?'Administrador (dono)':fb.papel==='admin'?'Administrador':'Colaborador'+(meuColab()?' — '+colabN(meuColab()):'');
+  if(fbAtivo()&&fb.regrasEmFalta)h+=`<div class="info" style="background:var(--warn-2);color:var(--warn);border-color:transparent">${ic('lock')}<span style="flex:1">O Firebase recusou o acesso aos dados: <b>as regras de segurança novas ainda não estão publicadas</b>. Copie-as, cole-as em Firestore Database › Regras e carregue em Publicar.</span></div>
+    <div class="row" style="margin-bottom:.8rem"><button class="btn p" onclick="copiarRegras()">${ic('copy')}Copiar regras</button><button class="btn" onclick="fbEntrar(fb.user)">${ic('sync')}Já publiquei — tentar de novo</button></div>`;
+  if(fbAtivo())h+=`<div class="info ${fb.regrasEmFalta?'':'ok'}">${ic(fb.regrasEmFalta?'users':'check')}<span style="flex:1">${fb.regrasEmFalta?'Sessão iniciada':'Ligado'} como <b>${esc(fb.user.email||'')}</b> · ${esc(papelTxt)}.${fb.regrasEmFalta?'':' Os dados ficam iguais em todos os aparelhos em segundos, mesmo depois de períodos sem internet.'}</span></div>
+    <div class="row">${ehAdmin()?`<button class="btn" onclick="sincronizarAgora()">${ic('sync')}Verificar agora</button><button class="btn" onclick="fbExportar()">${ic('down')}Exportar tudo do Firebase</button>`:''}${fb.papel==='dono'&&!fb.regrasEmFalta?`<button class="btn g" onclick="copiarRegras()">${ic('copy')}Copiar regras de segurança</button>`:''}
+    <button class="btn" onclick="fbMudarPalavra()">${ic('lock')}Mudar palavra-passe</button><button class="btn" onclick="fbSair()">Terminar sessão</button>${ehAdmin()?`<button class="btn g" onclick="fbMudarConfig()">Mudar configuração</button>`:''}</div>`;
+  else if(fb.user&&fb.papel==='sem')h+=`<div class="info">${ic('lock')}<span style="flex:1">Entrou como <b>${esc(fb.user.email||'')}</b>, mas ainda não tem acesso, ou o acesso foi suspenso. Peça ao administrador.</span></div>
+    <div class="row"><button class="btn" onclick="fbSair()">Terminar sessão</button></div>`;
   else if(cfgOk)h+=`<p class="muted" style="margin-top:0">Projeto <b>${esc(LOC.fbConfig.projectId)}</b>. Entre com o email e a palavra-passe criados no Firebase (os mesmos no PC e no telemóvel).</p>
     <form id="fbLogin" class="fgrid"><div class="f"><label for="fbE">Email</label><input id="fbE" type="email" autocomplete="username" value="${esc(LOC.fbEmail||'')}"></div>
     <div class="f"><label for="fbP">Palavra-passe</label><input id="fbP" type="password" autocomplete="current-password"></div>
@@ -1269,6 +1389,180 @@ function ligarFormsFirebase(){
       LOC.fbEmail=em;persist();await fb.auth.signInWithEmailAndPassword(em,pw);toast('Sessão iniciada — a sincronizar…')}
     catch(x){err(ERROS_FB[x.code]||('Erro: '+(x.message||x.code)))}};
 }
+async function fbMudarPalavra(){if(!fb.user)return;
+  if(!await confirmar(`Enviar um email para ${fb.user.email} com uma ligação para definir uma nova palavra-passe?`,'Enviar email'))return;
+  try{await fb.auth.sendPasswordResetEmail(fb.user.email);toast('Email enviado — veja a caixa de correio (e o spam)')}catch(x){toast(ERROS_FB[x.code]||'Não foi possível enviar o email')}}
+async function fbExportar(){
+  if(!fbAtivo()||!ehAdmin())return;toast('A exportar do Firebase…');
+  try{const [r,m,h]=await Promise.all([fbCol().get(),fbEmp().collection('membros').get(),fbEmp().collection('historico').get()]);
+    const registos=r.docs.map(x=>x.data()),membros=m.docs.map(x=>x.data()),historico=h.docs.map(x=>x.data()).sort((a,b)=>(b.em||0)-(a.em||0));
+    const app=def();for(const d of registos){if(d.col==='cfg'){if(d.dados)app.cfg={...app.cfg,...d.dados,upd:d.upd};continue}
+      if(!COLS.includes(d.col))continue;if(d.apagado)app.apagados[d.col+':'+d.id]=d.upd;else if(d.dados)app[d.col].push({...d.dados,upd:d.upd})}
+    const json=JSON.stringify({...app,_exportacao:{em:new Date().toISOString(),empresa:fb.empresa,conta:fb.user.email,versao:VERSAO,registos,membros,historico}});
+    const nome=`registo-trabalho-firebase-${hoje()}.json`,f=new File([json],nome,{type:'application/json'});
+    if(eMovel()&&navigator.canShare&&navigator.canShare({files:[f]})){try{await navigator.share({files:[f],title:'Exportação do Firebase'})}catch(e){if(e.name==='AbortError')return}}
+    else baixar(json,nome,'application/json');
+    toast(`Exportados ${registos.length} registos, ${membros.length} acessos e ${historico.length} entradas do histórico`)}
+  catch(e){toast('Não foi possível exportar ('+(e.code||e.message)+')')}}
+/* ---- Regras de segurança do Firestore (geradas com o identificador do dono) ---- */
+function regrasFirestore(){const U=fb.user.uid;return `rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Dono da aplicação: ${emailDe(fb.user)}
+    function dono() { return request.auth != null && request.auth.uid == '${U}'; }
+    function autenticado() { return request.auth != null && request.auth.token.email != null; }
+    function meuEmail() { return request.auth.token.email.lower(); }
+    function caminhoMembro() { return /databases/$(database)/documents/empresas/${U}/membros/$(meuEmail()); }
+    function eMembro() { return autenticado() && exists(caminhoMembro()) && get(caminhoMembro()).data.ativo == true; }
+    function membro() { return get(caminhoMembro()).data; }
+    function eAdmin() { return dono() || (eMembro() && membro().papel == 'admin'); }
+    function pode(p) { return eAdmin() || (eMembro() && membro().perm.get(p, false) == true); }
+    function cadastro(d) { return d.col in ['colab', 'locais']; }
+    function novoProprio() {
+      let d = request.resource.data;
+      return pode('registarProprios') && eMembro()
+        && d.col in ['turnos', 'assin'] && d.get('colabId', '') == membro().colabId
+        && d.get('apagado', false) == false
+        && (d.col == 'assin' || (d.dados.get('pago', '') == '' && d.dados.get('confirmado', false) == false));
+    }
+    function existenteProprio() {
+      return eMembro() && resource.data.get('colabId', '') == membro().colabId
+        && (resource.data.col == 'assin' || resource.data.get('dados', {}).get('pago', '') == '');
+    }
+
+    // Dados da versão anterior (antes dos acessos por colaborador)
+    match /utilizadores/{uid}/{documento=**} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+    match /acessos/{email} {
+      allow get: if autenticado() && meuEmail() == email;
+      allow write: if eAdmin();
+    }
+    match /empresas/{e} {
+      allow get: if e == '${U}' && (dono() || eMembro());
+      allow write: if e == '${U}' && dono();
+      match /membros/{m} {
+        allow get: if e == '${U}' && (eAdmin() || (autenticado() && meuEmail() == m));
+        allow list, write: if e == '${U}' && eAdmin();
+      }
+      match /registos/{r} {
+        allow read: if e == '${U}' && (pode('verTodos')
+          || (eMembro() && (resource.data.col in ['colab', 'locais', 'cfg', 'fechos'] || resource.data.colabId == membro().colabId)));
+        allow create: if e == '${U}' && (pode('editarTodos')
+          || (pode('gerirColaboradores') && cadastro(request.resource.data)) || novoProprio());
+        allow update: if e == '${U}' && (pode('editarTodos')
+          || (pode('gerirColaboradores') && cadastro(resource.data) && cadastro(request.resource.data))
+          || (existenteProprio() && novoProprio()));
+        allow delete: if e == '${U}' && eAdmin();
+      }
+      match /historico/{h} {
+        allow read: if e == '${U}' && eAdmin();
+        allow create: if e == '${U}' && (dono() || eMembro()) && request.resource.data.uid == request.auth.uid;
+      }
+    }
+  }
+}`}
+async function copiarRegras(){try{await navigator.clipboard.writeText(regrasFirestore());toast('Regras copiadas — cole-as em Firestore › Regras e carregue em Publicar')}catch(e){toast('Selecione o texto e copie com Ctrl+C')}}
+
+/* ---- Acessos (administração) ---- */
+function linkConvite(){return location.origin+location.pathname+'#cfg='+btoa(JSON.stringify(LOC.fbConfig))}
+async function copiarConvite(){try{await navigator.clipboard.writeText(linkConvite());toast('Link copiado')}catch(e){await pedirTexto('Copie este link',linkConvite())}}
+function partilharConvite(){const t=`Olá! Para registar os teus turnos, abre este link no Chrome e entra com o teu email e palavra-passe:\n${linkConvite()}`;
+  const w=window.open('https://wa.me/?text='+encodeURIComponent(t),'_blank');if(!w)location.href='https://wa.me/?text='+encodeURIComponent(t)}
+let membrosCache=[],histCache=[];
+async function vAcessos(){
+  if(!fbAtivo()||!ehAdmin()){view='ponto';return render()}
+  let h=cab('Acessos','Quem pode usar a app e o que pode fazer',`<button class="btn p" onclick="editAcesso()">${ic('plus')}Dar acesso</button>`);
+  h+=`<div class="card"><h2>Convidar um colaborador</h2><p class="muted" style="margin-top:0">1) Carregue em <b>Dar acesso</b> e indique o email do colaborador. 2) Envie-lhe o link de convite: abre a app já ligada ao seu Firebase. 3) O colaborador define a palavra-passe pelo email que recebe e entra.</p>
+    <div class="row"><button class="btn" onclick="copiarConvite()">${ic('copy')}Copiar link de convite</button><button class="btn" onclick="partilharConvite()">${ic('chat')}Enviar por WhatsApp</button></div></div>`;
+  if(fb.papel==='dono')h+=`<div class="card"><h2>Regras de segurança (obrigatório)</h2><p class="muted" style="margin-top:0">Estas regras são as que protegem os dados no servidor: cada colaborador só vê e altera o que lhe permitir, e mais ninguém tem acesso. Já levam o seu identificador. Copie-as e cole-as no Firebase em <b>Firestore Database › Regras</b>, substituindo tudo, e carregue em <b>Publicar</b>. Faça-o antes de dar acesso a alguém.</p>
+    <div class="row" style="margin-bottom:.6rem"><button class="btn p" onclick="copiarRegras()">${ic('copy')}Copiar regras</button></div>
+    <details><summary class="muted" style="cursor:pointer">Ver as regras</summary><textarea readonly rows="14" style="font-family:ui-monospace,Consolas,monospace;font-size:.78rem;margin-top:.5rem">${esc(regrasFirestore())}</textarea></details></div>`;
+  h+=`<div class="sec-t">Acessos</div><div class="card" id="listaAcessos">A carregar…</div>`;
+  h+=`<div class="sec-t">Histórico de alterações</div><div class="filters"><div class="f"><label for="hQ">Pesquisar no histórico</label><input id="hQ" type="search" placeholder="Nome, email, data…"></div></div><div class="card" id="listaHist">A carregar…</div>`;
+  $('#main').innerHTML=h;$('#hQ').oninput=()=>desenharHist();
+  carregarAcessos();carregarHistorico();
+}
+async function carregarAcessos(){
+  try{const q=await fbEmp().collection('membros').get();membrosCache=q.docs.map(x=>x.data()).sort((a,b)=>(a.email||'').localeCompare(b.email||''))}catch(e){$('#listaAcessos').textContent='Não foi possível carregar ('+(e.code||e.message)+')';return}
+  const el=$('#listaAcessos');if(!el)return;
+  el.innerHTML=`<ul class="list"><li><div><b>${esc(fb.user.email)}</b> <span class="chip pago">Dono</span><div class="meta">Acesso total — não pode ser retirado</div></div></li>`+
+    membrosCache.map(m=>`<li><div style="min-width:0"><b>${esc(m.email)}</b> <span class="chip ${m.papel==='admin'?'pago':''}">${NOME_PERFIL(perfilDe(m.papel,m.perm))}</span>${m.ativo?'':' <span class="chip porpagar">Suspenso</span>'}
+      <div class="meta">${m.colabId?'Colaborador: '+esc(colabN(m.colabId)):'Sem colaborador associado'}${m.papel==='admin'?'':' · '+(PERMS.filter(([k])=>m.perm&&m.perm[k]).map(([k])=>PERM_CURTO[k]).join(' · ')||'sem privilégios')}</div></div>
+      <div class="row"><button class="btn s" onclick="editAcesso('${esc(m.email)}')">${ic('edit')}Editar</button><button class="btn s" onclick="suspenderAcesso('${esc(m.email)}')">${m.ativo?'Suspender':'Reativar'}</button><button class="btn s d" onclick="removerAcesso('${esc(m.email)}')">${ic('trash')}</button></div></li>`).join('')+`</ul>`+
+    (membrosCache.length?'':`<p class="muted">Ainda não deu acesso a ninguém. Carregue em <b>Dar acesso</b>.</p>`);
+}
+async function carregarHistorico(){
+  try{const q=await fbEmp().collection('historico').orderBy('em','desc').limit(300).get();histCache=q.docs.map(x=>x.data())}catch(e){const el=$('#listaHist');if(el)el.textContent='Não foi possível carregar ('+(e.code||e.message)+')';return}
+  desenharHist()}
+function desenharHist(){const el=$('#listaHist');if(!el)return;const q=($('#hQ')?.value||'').toLowerCase();
+  const AC={criou:['Criou','pago'],alterou:['Alterou',''],apagou:['Apagou','porpagar'],sincronizou:['Sincronizou','']};
+  const L=histCache.filter(x=>!q||JSON.stringify(x).toLowerCase().includes(q)||quando(x.em).includes(q));
+  el.innerHTML=L.length?L.map(x=>{const a=AC[x.acao]||[x.acao,''];return `<div class="hist-row"><div class="meta" style="white-space:nowrap">${quando(x.em)}</div>
+    <div><span class="chip ${a[1]}">${a[0]}</span> <b>${esc(x.resumo||'')}</b><div class="meta">${esc(x.email||'')}${x.campos&&x.campos.length?' · alterou: '+esc(x.campos.join(', ')):''}</div>
+    ${x.antes&&x.depois&&x.acao==='alterou'?`<div class="meta">Antes: ${esc(x.antes.ini)}–${esc(x.antes.fim||x.antes.pIni||'…')} · ${esc(x.antes.trabalho||'')} → Depois: ${esc(x.depois.ini)}–${esc(x.depois.fim||x.depois.pIni||'…')} · ${esc(x.depois.trabalho||'')}</div>`:''}</div></div>`}).join('')
+    :vazio('list',histCache.length?'Nada encontrado.':'Ainda não há alterações registadas.')}
+function editAcesso(email){
+  const m=email?membrosCache.find(x=>x.email===email):{email:'',colabId:'',papel:'colaborador',ativo:true,perm:{...PRESET}};if(!m)return;
+  const f=$('#dlgForm');f.oninput=f.onchange=null;
+  f.innerHTML=`<div class="dh"><h2>${email?'Editar acesso':'Dar acesso'}</h2><button type="button" class="btn g s" id="aX0" aria-label="Fechar">${ic('x')}</button></div><div class="fgrid">
+    <div class="f full"><label for="aE">Email do colaborador</label><input id="aE" type="email" value="${esc(m.email)}" ${email?'disabled':''} placeholder="nome@exemplo.pt"></div>
+    <div class="f"><label for="aC">Colaborador associado</label><select id="aC">${opts(ativos(m.colabId),m.colabId,'— nenhum —')}</select></div>
+    <div class="f"><label for="aPap">Perfil</label><select id="aPap">${['colaborador','chefe','admin','personalizado'].map(k=>`<option value="${k}" ${perfilDe(m.papel,m.perm)===k?'selected':''}>${NOME_PERFIL(k)}${k==='colaborador'?' (recomendado)':''}</option>`).join('')}</select></div>
+    <div class="meta full" id="aDesc" style="margin-top:-.3rem"></div>
+    <div class="tb" id="aPerms"><div class="tt">Privilégios <small>(pode ajustar)</small></div><div class="perm-l">${PERMS.map(([k,n])=>`<label class="chk"><input type="checkbox" data-p="${k}" ${m.perm&&m.perm[k]?'checked':''}>${n}</label>`).join('')}</div></div>
+    <div class="info full" id="aAviso" hidden style="background:var(--warn-2);color:var(--warn);border-color:transparent;margin:0">${ic('users')}<span style="flex:1">Com “Ver os serviços de todos” e “Ver valores” juntos, esta pessoa fica a saber quanto ganham os colegas.</span></div>
+    <label class="chk"><input type="checkbox" id="aAt" ${m.ativo?'checked':''}>Acesso ativo</label>
+    ${email?'':`<label class="chk"><input type="checkbox" id="aCriar" checked>Criar a conta e enviar ao colaborador um email para definir a palavra-passe</label>`}
+  </div><div class="err" id="aErr" hidden></div>
+  <div class="dacts"><span></span><div class="row"><button type="button" class="btn" id="aX">Cancelar</button><button type="submit" class="btn p">Guardar</button></div></div>`;
+  const dlg=$('#dlg');dlg.showModal();
+  const erro=t=>{const e=$('#aErr');e.textContent=t;e.hidden=!t};
+  const caixas=()=>[...$('#aPerms').querySelectorAll('[data-p]')];
+  const atual=()=>{const k=$('#aPap').value,adm=k==='admin';
+    $('#aDesc').innerHTML=k==='personalizado'?'Privilégios escolhidos à medida, nas caixas abaixo.':esc(PERFIS[k].desc);
+    $('#aPerms').style.opacity=adm?.45:1;caixas().forEach(i=>i.disabled=adm);
+    const p={};caixas().forEach(i=>p[i.dataset.p]=i.checked);
+    const av=$('#aAviso');av.hidden=!(p.verTodos&&p.verValores&&!adm);};
+  $('#aPap').onchange=()=>{const k=$('#aPap').value;if(PERFIS[k])caixas().forEach(i=>i.checked=!!PERFIS[k].perm[i.dataset.p]);atual()};
+  caixas().forEach(i=>i.onchange=()=>{const p={};caixas().forEach(x=>p[x.dataset.p]=x.checked);$('#aPap').value=perfilDe('colaborador',p);atual()});
+  atual();
+  $('#aX').onclick=$('#aX0').onclick=()=>dlg.close();
+  f.onsubmit=async e=>{e.preventDefault();
+    const em=($('#aE').value||'').trim().toLowerCase();
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em))return erro('Indique um email válido.');
+    if(em===emailDe(fb.user))return erro('Esse é o seu próprio email — já tem acesso total.');
+    if(!email&&membrosCache.some(x=>x.email===em))return erro('Esse email já tem acesso. Use Editar.');
+    const perfil=$('#aPap').value,papel=perfil==='admin'?'admin':'colaborador',colabId=$('#aC').value;
+    const p={};caixas().forEach(i=>p[i.dataset.p]=perfil==='admin'?true:i.checked);
+    if(papel!=='admin'&&!colabId&&!p.editarTodos)return erro('Associe o acesso a um colaborador (para saber quais são os turnos dele).');
+    if(papel!=='admin'&&!Object.values(p).some(Boolean))return erro('Escolha pelo menos um privilégio, ou desmarque “Acesso ativo”.');
+    if(papel==='admin'&&m.papel!=='admin'&&!await confirmar(`Dar acesso total (Administrador) a ${em}? Vai poder ver e alterar tudo, incluindo pagamentos e acessos.`,'Dar acesso total'))return;
+    const dados={email:em,colabId,papel,perfil,perm:p,ativo:$('#aAt').checked,atualizadoEm:Date.now(),atualizadoPor:emailDe(fb.user)};
+    if(!email){dados.criadoEm=Date.now();dados.criadoPor=emailDe(fb.user)}
+    try{
+      if(!email&&$('#aCriar').checked){
+        const app2=(firebase.apps||[]).find(a=>a&&a.name==='convites')||firebase.initializeApp(LOC.fbConfig,'convites');
+        try{const cred=await app2.auth().createUserWithEmailAndPassword(em,Array.from(crypto.getRandomValues(new Uint8Array(18)),x=>(x%36).toString(36)).join('')+'A1!');try{await app2.auth().signOut()}catch(_){}}
+        catch(x){if(x.code!=='auth/email-already-in-use')throw x;
+          if(!await confirmar(`Já existe uma conta com o email ${em}. Só continue se tiver a certeza de que é do colaborador.`,'Continuar'))return}
+        try{await fb.auth.sendPasswordResetEmail(em)}catch(_){}
+      }
+      const b=fb.db.batch();b.set(fbEmp().collection('membros').doc(em),dados,{merge:true});b.set(fb.db.collection('acessos').doc(em),{empresa:fb.empresa,atualizado:Date.now()});
+      b.set(fbEmp().collection('historico').doc(),{em:Date.now(),uid:fb.user.uid,email:emailDe(fb.user),acao:email?'alterou':'criou',col:'acessos',id:em,resumo:`Acesso de ${em}${colabId?' ('+colabN(colabId)+')':''}`,campos:[]});
+      await b.commit();dlg.close();toast(email?'Acesso atualizado':'Acesso criado — envie o link de convite ao colaborador');carregarAcessos();carregarHistorico();
+    }catch(x){erro(ERROS_FB[x.code]||('Não foi possível guardar: '+(x.code||x.message)))}};
+}
+async function suspenderAcesso(email){const m=membrosCache.find(x=>x.email===email);if(!m)return;
+  if(!await confirmar(m.ativo?`Suspender o acesso de ${email}? Deixa de conseguir entrar até o reativar.`:`Reativar o acesso de ${email}?`,m.ativo?'Suspender':'Reativar',m.ativo))return;
+  try{const b=fb.db.batch();b.set(fbEmp().collection('membros').doc(email),{ativo:!m.ativo,atualizadoEm:Date.now(),atualizadoPor:emailDe(fb.user)},{merge:true});
+    b.set(fbEmp().collection('historico').doc(),{em:Date.now(),uid:fb.user.uid,email:emailDe(fb.user),acao:'alterou',col:'acessos',id:email,resumo:`Acesso de ${email} ${m.ativo?'suspenso':'reativado'}`,campos:[]});
+    await b.commit();carregarAcessos();carregarHistorico()}catch(x){toast('Não foi possível ('+(x.code||x.message)+')')}}
+async function removerAcesso(email){
+  if(!await confirmar(`Retirar o acesso de ${email}? A conta deixa de ver os dados. Os serviços que registou ficam guardados.`,'Retirar acesso',true))return;
+  try{const b=fb.db.batch();b.delete(fbEmp().collection('membros').doc(email));b.delete(fb.db.collection('acessos').doc(email));
+    b.set(fbEmp().collection('historico').doc(),{em:Date.now(),uid:fb.user.uid,email:emailDe(fb.user),acao:'apagou',col:'acessos',id:email,resumo:`Acesso de ${email} retirado`,campos:[]});
+    await b.commit();carregarAcessos();carregarHistorico();toast('Acesso retirado')}catch(x){toast('Não foi possível ('+(x.code||x.message)+')')}}
 async function fbSair(){if(!await confirmar('Terminar a sessão do Firebase neste aparelho? Os dados ficam no aparelho, mas deixam de sincronizar até voltar a entrar.','Terminar sessão'))return;
   try{await fb.auth.signOut()}catch(e){}fb.user=null;fbParar();vConfig()}
 async function fbMudarConfig(){if(!await confirmar('Apagar a configuração do Firebase deste aparelho? Os dados ficam no aparelho e no Firebase.','Apagar configuração',true))return;
@@ -1348,6 +1642,9 @@ async function arrancar(){
   if(usaIDB){await persist();if(usaIDB&&migrar){try{localStorage.removeItem(KEY)}catch(e){}}}
   try{navigator.storage?.persist?.()}catch(e){}
   if(!LOC.disp){LOC.disp=uid();await persist()}
+  if(location.hash.startsWith('#cfg=')){try{const c=JSON.parse(atob(location.hash.slice(5)));
+      if(c&&c.apiKey&&c.projectId&&c.authDomain){if(!LOC.fbConfig||LOC.fbConfig.projectId!==c.projectId){LOC.fbConfig=c;await persist()}view='config';setTimeout(()=>toast('Ligação ao Firebase recebida — entre com o seu email e palavra-passe'),700)}}catch(e){}
+    history.replaceState(null,'',location.pathname+location.search)}
   if(usaIDB&&temPasta()){try{pastaH=await DB.get('pastaSync')||null;if(pastaH)permPasta=await permissaoPasta(false)}catch(e){}}
   pronto=true;
   if(LOC.pinHash)bloquear();else{render();syncSilenciosa()}
