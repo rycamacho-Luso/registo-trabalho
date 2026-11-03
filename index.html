@@ -293,9 +293,33 @@ const VERSAO='2026.11.02-h';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
-function normalizar(d){const b=def(),arr=x=>Array.isArray(x)?x:[];d=d||{};
-  return{cfg:{...b.cfg,...(d.cfg||{})},colab:arr(d.colab),locais:arr(d.locais),
-    turnos:arr(d.turnos).filter(t=>t&&t.id&&t.estado!=='agendado'),fechos:arr(d.fechos),assin:arr(d.assin),
+/* Validação de tudo o que entra (Firebase, Drive, ficheiros importados): impede que dados de terceiros
+   injetem código na página. Campos com formato fixo são verificados; imagens só como data:image. */
+const RE_ID=/^[A-Za-z0-9_|.:-]{1,100}$/,RE_DATA=/^\d{4}-\d{2}-\d{2}$/,RE_HM=/^\d{1,2}:\d{2}$/,RE_MES=/^\d{4}-\d{2}$/;
+const RE_IMG=/^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=\s]+$/;
+const ESTADOS=['curso','pausa','concluido','confirmar','agendado'];
+const imgOk=v=>typeof v==='string'&&RE_IMG.test(v)?v:'';
+function limparReg(col,r){
+  if(!r||typeof r!=='object'||Array.isArray(r)||typeof r.id!=='string'||!RE_ID.test(r.id))return null;
+  const o={...r},txt=k=>{if(o[k]!=null&&typeof o[k]!=='string')o[k]=String(o[k])},num=k=>{if(o[k]!=null){const n=+o[k];o[k]=isFinite(n)?n:0}};
+  const fmt=(k,re)=>{if(o[k]!=null&&!(typeof o[k]==='string'&&(o[k]===''||re.test(o[k]))))o[k]=''};
+  const ref=k=>{if(o[k]!=null&&!(typeof o[k]==='string'&&(o[k]===''||RE_ID.test(o[k]))))o[k]=''};
+  if(o.upd!=null)num('upd');
+  if(col==='turnos'){ref('colabId');ref('localId');fmt('data',RE_DATA);['ini','fim','pIni','pFim'].forEach(k=>fmt(k,RE_HM));
+    txt('trabalho');num('valor');if(!ESTADOS.includes(o.estado))o.estado='concluido';
+    if(o.pago&&!(typeof o.pago==='string'&&RE_DATA.test(o.pago)))o.pago=RE_DATA.test(o.data||'')?o.data:'1970-01-01';
+    if(!o.pago)o.pago=''}
+  else if(col==='colab'){txt('nome');txt('tel');txt('email');if(o.valor!=null)num('valor');
+    if(o.foto!=null)o.foto=imgOk(o.foto);if(o.assinatura!=null)o.assinatura=imgOk(o.assinatura)}
+  else if(col==='locais')txt('nome');
+  else if(col==='fechos'){if(!RE_MES.test(o.id))return null;num('em')}
+  else if(col==='assin'){ref('colabId');fmt('mes',RE_MES);o.img=imgOk(o.img);if(o.origem!=='imagem')o.origem='desenhada';['em','min','val','n'].forEach(num)}
+  return o}
+function limparCfg(c){const o={...(c||{})};if(o.empresa!=null&&typeof o.empresa!=='string')o.empresa=String(o.empresa);
+  const v=+o.valorHora;o.valorHora=isFinite(v)&&v>=0?v:5;if(o.upd!=null)o.upd=+o.upd||0;return o}
+function normalizar(d){const b=def(),arr=(x,c)=>Array.isArray(x)?x.map(r=>limparReg(c,r)).filter(Boolean):[];d=d||{};
+  return{cfg:limparCfg({...b.cfg,...(d.cfg||{})}),colab:arr(d.colab,'colab'),locais:arr(d.locais,'locais'),
+    turnos:arr(d.turnos,'turnos').filter(t=>t.estado!=='agendado'),fechos:arr(d.fechos,'fechos'),assin:arr(d.assin,'assin'),
     apagados:d.apagados&&typeof d.apagados==='object'&&!Array.isArray(d.apagados)?d.apagados:{}}}
 let S=def(),LOC=defLoc(),pronto=false;
 
@@ -359,7 +383,7 @@ const CORES=['#0E7C6B','#2563EB','#9333EA','#C2570C','#BE185D','#0891B2','#4D7C0
 function corDe(id){let h=0;for(const ch of String(id))h=(h*31+ch.charCodeAt(0))>>>0;return CORES[h%CORES.length]}
 const iniciais=n=>String(n||'?').trim().split(/\s+/).filter(Boolean).map((p,i,a)=>i===0||i===a.length-1?p[0]:'').join('').slice(0,2).toUpperCase();
 function av(id,cls=''){const c=S.colab.find(x=>x.id===id);
-  if(c&&c.foto)return `<img class="av ${cls}" src="${c.foto}" alt="">`;
+  if(c&&c.foto)return `<img class="av ${cls}" src="${esc(imgOk(c.foto))}" alt="">`;
   return `<div class="av ${cls}" style="background:${corDe(id)}" aria-hidden="true">${esc(iniciais(colabN(id)))}</div>`}
 function reduzirFoto(file){return new Promise((ok,ko)=>{
   if(!file.type.startsWith('image/'))return ko(new Error('tipo'));
@@ -717,14 +741,14 @@ function editColab(id){
   const dlg=$('#dlg');dlg.showModal();
   const erro=m=>{const e=$('#cErr');e.textContent=m;e.hidden=!m};
   const pv=()=>{const nome=$('#cN').value.trim()||'?';
-    $('#cPv').innerHTML=foto?`<img class="av xl" src="${foto}" alt="Fotografia">`:`<div class="av xl" style="background:${corDe(id||nome)}">${esc(iniciais(nome))}</div>`;
+    $('#cPv').innerHTML=foto?`<img class="av xl" src="${esc(imgOk(foto))}" alt="Fotografia">`:`<div class="av xl" style="background:${corDe(id||nome)}">${esc(iniciais(nome))}</div>`;
     $('#cFr').hidden=!foto;$('#cFb').textContent=foto?'Trocar foto':'Carregar foto'};
   pv();$('#cN').addEventListener('input',()=>{if(!foto)pv()});
   $('#cF').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
     try{foto=await reduzirFoto(file);pv();erro('')}catch(err){erro('Não foi possível ler esta imagem. Use uma foto JPG ou PNG.')}};
   $('#cFr').onclick=()=>{foto='';pv()};
   let assinatura=c.assinatura||'';
-  const pvSig=()=>{$('#cSigPv').innerHTML=assinatura?`<img class="sig-img" src="${assinatura}" alt="Assinatura guardada">`:'<span class="muted" style="font-size:.9rem">Sem assinatura guardada. Use uma foto nítida da assinatura em papel branco.</span>';
+  const pvSig=()=>{$('#cSigPv').innerHTML=assinatura?`<img class="sig-img" src="${esc(imgOk(assinatura))}" alt="Assinatura guardada">`:'<span class="muted" style="font-size:.9rem">Sem assinatura guardada. Use uma foto nítida da assinatura em papel branco.</span>';
     $('#cSigR').hidden=!assinatura;$('#cSigB').textContent=assinatura?'Trocar assinatura':'Carregar assinatura'};pvSig();
   $('#cSig').onchange=async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;
     try{assinatura=await prepararAssinatura(file);pvSig();erro('')}catch(err){erro('Não foi possível usar esta imagem. Use uma foto nítida da assinatura em papel branco (JPG ou PNG).')}};
@@ -796,7 +820,7 @@ function vRel(){
       h+=`<div class="card"><h2 class="who" style="font-size:1.15rem">${av(x.cid)}${esc(colabN(x.cid))}</h2><div class="tw"><table><thead><tr><th>Data</th><th>Local</th><th>Entrada</th><th>Saída</th><th>Retoma: entrada</th><th>Retoma: saída</th><th>Trabalho efetuado</th><th class="n">Horas</th><th class="n">€/h</th><th class="n">Valor</th><th>Pagamento</th></tr></thead><tbody>
       ${T.map(t=>`<tr><td style="white-space:nowrap">${diaSem(t.data)} ${dataPT(t.data)}</td><td>${esc(localN(t.localId))}</td><td>${t.ini}</td><td>${sai1(t)}</td><td>${ent2(t)||'—'}</td><td>${sai2(t)||'—'}</td><td>${esc(t.trabalho)}</td><td class="n">${hfmt(dur(t))}</td><td class="n">${eur(t.valor)}</td><td class="n">${eur(ganho(t))}</td><td>${t.pago?`<span class="chip pago">${dataPT(t.pago)}</span>`:'<span class="chip porpagar">Por pagar</span>'}</td></tr>`).join('')}
       </tbody><tfoot><tr><td colspan="7">Total</td><td class="n">${hfmt(x.min)}</td><td></td><td class="n">${eur(x.val)}</td><td></td></tr></tfoot></table></div>
-      ${ea?`<div style="margin-top:.9rem"><div class="meta" style="margin-bottom:.3rem">Assinado em ${new Date(ea.a.em).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'})}${ea.a.origem==='imagem'?' · a partir de imagem carregada':''}${ea.ok?'':' — <b style="color:var(--warn)">os valores mudaram depois da assinatura</b>'}</div><img class="sig-img" src="${ea.a.img}" alt="Assinatura"></div>`:''}</div>`;}
+      ${ea?`<div style="margin-top:.9rem"><div class="meta" style="margin-bottom:.3rem">Assinado em ${new Date(ea.a.em).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'})}${ea.a.origem==='imagem'?' · a partir de imagem carregada':''}${ea.ok?'':' — <b style="color:var(--warn)">os valores mudaram depois da assinatura</b>'}</div><img class="sig-img" src="${esc(imgOk(ea.a.img))}" alt="Assinatura"></div>`:''}</div>`;}
   }
   $('#main').innerHTML=h;
   $('#rP').onchange=e=>{fR.per=e.target.value;vRel()};
@@ -1303,8 +1327,10 @@ function fbOuvir(){fbParar();const col=fbCol();
 }
 function fbParar(){for(const u of fb.unsubs||[])try{u()}catch(e){}fb.unsubs=[];fb.remoto.clear();fb.remotoDados.clear()}
 function aplicarRemoto(d){
-  if(d.col==='cfg'){if((d.upd||0)>(S.cfg.upd||0)){S.cfg={...S.cfg,...(d.dados||{}),upd:d.upd};return 1}return 0}
-  if(!COLS.includes(d.col))return 0;
+  if(d.col==='cfg'){if((d.upd||0)>(S.cfg.upd||0)){S.cfg=limparCfg({...S.cfg,...(d.dados||{}),upd:d.upd});return 1}return 0}
+  if(!COLS.includes(d.col)||typeof d.id!=='string'||!RE_ID.test(d.id))return 0;
+  d={...d,upd:+d.upd||0};
+  if(d.dados){const r=limparReg(d.col,{...d.dados,id:d.id});if(!r)return 0;d.dados=r}
   const k=d.col+':'+d.id,arr=S[d.col],i=arr.findIndex(r=>r.id===d.id),loc=i>=0?arr[i]:null;
   if(d.apagado){if(!(S.apagados[k]>=d.upd))S.apagados[k]=d.upd;if(loc&&(loc.upd||0)<=d.upd){arr.splice(i,1);return 1}return 0}
   if(S.apagados[k]>=d.upd)return 0;
@@ -1489,7 +1515,7 @@ async function carregarAcessos(){
   el.innerHTML=`<ul class="list"><li><div><b>${esc(fb.user.email)}</b> <span class="chip pago">Dono</span><div class="meta">Acesso total — não pode ser retirado</div></div></li>`+
     membrosCache.map(m=>`<li><div style="min-width:0"><b>${esc(m.email)}</b> <span class="chip ${m.papel==='admin'?'pago':''}">${NOME_PERFIL(perfilDe(m.papel,m.perm))}</span>${m.ativo?'':' <span class="chip porpagar">Suspenso</span>'}
       <div class="meta">${m.colabId?'Colaborador: '+esc(colabN(m.colabId)):'Sem colaborador associado'}${m.papel==='admin'?'':' · '+(PERMS.filter(([k])=>m.perm&&m.perm[k]).map(([k])=>PERM_CURTO[k]).join(' · ')||'sem privilégios')}</div></div>
-      <div class="row"><button class="btn s" onclick="editAcesso('${esc(m.email)}')">${ic('edit')}Editar</button><button class="btn s" onclick="suspenderAcesso('${esc(m.email)}')">${m.ativo?'Suspender':'Reativar'}</button><button class="btn s d" onclick="removerAcesso('${esc(m.email)}')">${ic('trash')}</button></div></li>`).join('')+`</ul>`+
+      <div class="row"><button class="btn s" onclick="editAcesso(${esc(JSON.stringify(m.email))})">${ic('edit')}Editar</button><button class="btn s" onclick="suspenderAcesso(${esc(JSON.stringify(m.email))})">${m.ativo?'Suspender':'Reativar'}</button><button class="btn s d" onclick="removerAcesso(${esc(JSON.stringify(m.email))})">${ic('trash')}</button></div></li>`).join('')+`</ul>`+
     (membrosCache.length?'':`<p class="muted">Ainda não deu acesso a ninguém. Carregue em <b>Dar acesso</b>.</p>`);
 }
 async function carregarHistorico(){
