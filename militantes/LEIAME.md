@@ -1,4 +1,4 @@
-# Registo de Militantes — Fase 1
+# Registo de Militantes — Fases 1 e 2
 
 Aplicação para computador (PWA instalável, funciona sem internet) para registo de militantes de partido político em Portugal. Cores retiradas do site oficial do MPT (`https://mpt.pt/styles.css`, escala de verdes `--g-*`, e verde do logótipo `#006530`); letra Manrope, a mesma do site.
 
@@ -20,6 +20,28 @@ Aplicação para computador (PWA instalável, funciona sem internet) para regist
 - Painel com indicadores, lista com pesquisa e filtros, ficha, histórico de alterações, impressão da ficha de inscrição em A4.
 - Exportação para CSV (protegida contra injeção de fórmulas) e cópia de segurança/restauro em JSON.
 
+## O que faz a Fase 2 — Quotas, donativos e recibos
+
+- Separador **Quotas e recibos**: situação de cada militante (em dia, períodos em atraso, valor em dívida), receitas do ano, percentagem de quotas em dia e numerário acumulado face ao limite legal.
+- Quotas mensais, trimestrais, semestrais ou anuais, com regime normal, reduzido ou isento por militante.
+- Registo de pagamentos (quota, donativo, contribuição de eleito), com escolha dos períodos a pagar, incluindo atrasos e adiantamentos.
+- **Recibos** numerados por ano (`2026/0001`), sem saltos nem repetições, com valor por extenso; impressão em A4 com original e duplicado.
+- Recibos **nunca são apagados**: só anulados, com motivo, data e hora. Ao eliminar um militante, os recibos são conservados.
+- Exportação para a contabilidade (CSV com a classificação legal de cada receita) e mapa de quotas em atraso.
+- Cópia de segurança inclui os recibos. As bases de dados da Fase 1 são atualizadas automaticamente, sem perda de dados.
+
+### Limites legais aplicados automaticamente (Lei n.º 19/2003, IAS 2026 = 537,13 €)
+
+| Regra | Limite 2026 | Artigo |
+|---|---|---|
+| Pagamento em numerário tem de ser inferior a 25% do IAS | < 134,28 € | art. 3.º, n.os 2 e 3 |
+| Total anual recebido em numerário | ≤ 26.856,50 € (50 × IAS) | art. 3.º, n.º 3 |
+| Donativos por doador e por ano | ≤ 13.428,25 € (25 × IAS) | art. 7.º, n.º 1 |
+| Donativos só por cheque ou transferência | — | art. 7.º, n.º 1 |
+| Receitas discriminadas por alínea do art. 3.º | — | art. 12.º, n.º 3, al. b) |
+
+O IAS de cada ano é editável em *Configurações* (2026: Portaria n.º 480-A/2025/1).
+
 ## Base legal usada
 
 Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), com as alterações das LO n.º 2/2008 e n.º 1/2018.
@@ -35,7 +57,6 @@ Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos
 
 ## Próximas fases (proposta)
 
-- **Fase 2**: quotas e pagamentos com recibos e limites da Lei n.º 19/2003, mapa de quotas em atraso.
 - **Fase 3**: cartão de militante em PDF com fotografia e código QR; lista oficial de concelhos e freguesias (CAOP).
 - **Fase 4**: utilizadores com palavra-passe e perfis, cifra da base de dados, registo de acessos (RGPD).
 - **Fase 5**: versão `.exe` (Electron/Tauri) e sincronização entre sedes, se necessário.

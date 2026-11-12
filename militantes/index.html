@@ -186,6 +186,68 @@ dialog::backdrop{background:rgba(17,32,10,.55);backdrop-filter:blur(3px)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .hidden{display:none!important}
 
+
+/* ---------- Fase 2: quotas e recibos ---------- */
+.tabs{display:flex;gap:4px;margin-bottom:16px;border-bottom:1px solid var(--line)}
+.tabs button{all:unset;cursor:pointer;padding:10px 16px;font-weight:700;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-1px}
+.tabs button.on{color:var(--ink);border-color:var(--g-500)}
+.tabs button:focus-visible{outline:2px solid var(--g-400)}
+.seg{display:flex;gap:4px;background:var(--line-2);padding:4px;border-radius:12px;flex-wrap:wrap}
+.seg button{all:unset;cursor:pointer;flex:1;text-align:center;padding:8px 12px;border-radius:9px;font-weight:700;font-size:13.5px;color:var(--muted)}
+.seg button.on{background:var(--surface);color:var(--ink);box-shadow:var(--shadow-sm)}
+.per-ano{display:grid;grid-template-columns:48px 1fr;gap:8px;align-items:start;margin-bottom:8px}
+.per-ano b{padding-top:7px;font-size:13px}
+.per-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+.per{all:unset;cursor:pointer;text-align:center;padding:7px 4px;border-radius:9px;border:1.5px solid var(--line);font-size:12.5px;font-weight:700;background:var(--surface-2)}
+.per:hover:not(:disabled){border-color:var(--g-400)}
+.per.atr{border-color:var(--danger);color:var(--danger);background:var(--danger-2)}
+.per.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.per.pago{background:var(--g-100);border-color:var(--g-200);color:var(--g-700);cursor:not-allowed;text-decoration:line-through;opacity:.75}
+.per-leg{display:flex;gap:8px;margin-top:6px}
+.per-leg .per{cursor:default;padding:2px 10px;font-size:11px;text-decoration:none}
+.alerta{padding:10px 14px;border-radius:12px;font-size:13px;font-weight:600;margin-top:6px}
+.alerta.bad{background:var(--danger-2);color:var(--danger)}
+.alerta.warn{background:var(--warn-2);color:var(--warn)}
+.meter{height:8px;background:var(--line-2);border-radius:99px;overflow:hidden;margin:8px 0 4px}
+.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--g-500),var(--g-400));border-radius:99px}
+.mini-kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:14px}
+.mini-kpis div{padding:14px 16px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line-2)}
+.mini-kpis span{display:block;font-size:12.5px;color:var(--muted);font-weight:600}
+.mini-kpis b{display:block;font-size:22px;font-weight:800;letter-spacing:-.02em}
+.mini-kpis small{color:var(--muted)}
+table.mini td{padding:8px 10px;font-size:13.5px}
+tfoot td{border-bottom:none}
+tr.anul td{opacity:.55}
+.recibo{border:1px solid var(--line);border-radius:16px;padding:22px;background:var(--surface);position:relative}
+.recibo.anulado::after{content:"ANULADO";position:absolute;top:42%;left:50%;transform:translate(-50%,-50%) rotate(-18deg);font-size:64px;font-weight:800;color:rgba(180,35,24,.18);letter-spacing:.1em;pointer-events:none}
+.rc-head{display:flex;justify-content:space-between;gap:16px;border-bottom:3px solid var(--brand);padding-bottom:12px}
+.rc-head>div:first-child{display:flex;gap:12px;align-items:center}
+.rc-head img{max-height:48px;max-width:110px}
+.rc-head small{display:block;color:var(--muted);font-size:12px}
+.rc-num{text-align:right}
+.rc-num span{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700}
+.rc-num b{font-size:20px;color:var(--accent)}
+.rc-num small{display:block;color:var(--muted);font-size:12px}
+.rc-txt{margin:16px 0 6px}
+.rc-valor{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;background:var(--accent-soft);border-radius:12px;padding:12px 16px}
+.rc-valor b{font-size:24px;font-weight:800}
+.rc-valor span{font-style:italic;color:var(--muted)}
+.rc-tbl{margin-top:14px}
+.rc-tbl td{padding:7px 10px;font-size:13.5px;border-bottom:1px solid var(--line-2)}
+.rc-tbl td:first-child{color:var(--muted);font-weight:700;width:32%}
+.rc-anul{margin-top:12px;color:var(--danger);font-weight:700}
+.rc-sign{display:flex;justify-content:flex-end;margin-top:36px}
+.rc-sign div{border-top:1px solid var(--ink);padding-top:4px;width:220px;text-align:center;font-size:12px}
+.rc-nota{font-size:11px;color:var(--muted);margin:14px 0 0}
+@media print{
+  .p-recibo .recibo{border:1px solid #999;border-radius:6px;padding:7mm;font-size:10pt;margin:0;page-break-inside:avoid;color:#000;background:#fff}
+  .p-recibo .rc-txt{margin:8px 0 4px}.p-recibo .rc-valor{padding:6px 12px}.p-recibo .rc-valor b{font-size:16pt}.p-recibo .rc-tbl td{padding:4px 8px;font-size:9.5pt}.p-recibo .rc-sign{margin-top:18px}.p-recibo .rc-nota{margin-top:8px}
+  .p-recibo .rc-valor{background:#F2FAE6}
+  .p-recibo .rc-head{border-color:#006530}
+  .p-recibo .rc-num b{color:#006530}
+  .rc-corte{text-align:center;color:#888;font-size:8pt;margin:4mm 0}
+}
+@media (max-width:820px){.per-grid{grid-template-columns:repeat(4,1fr)}.mini-kpis{grid-template-columns:1fr}}
 /* Impressão: só a ficha de inscrição */
 #print{display:none}
 @media print{
@@ -235,6 +297,7 @@ dialog::backdrop{background:rgba(17,32,10,.55);backdrop-filter:blur(3px)}
     <nav class="nav" aria-label="Navegação principal">
       <button data-view="painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Painel</span></button>
       <button data-view="lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Militantes</span></button>
+      <button data-view="quotas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg><span>Quotas e recibos</span></button>
       <button data-view="novo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><span>Nova inscrição</span></button>
       <button data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Configurações</span></button>
     </nav>
@@ -388,13 +451,20 @@ const DB = {
   db: null,
   open() {
     return new Promise((res, rej) => {
-      const r = indexedDB.open('registo-militantes', 1);
-      r.onupgradeneeded = () => {
+      const r = indexedDB.open('registo-militantes', 2);
+      r.onupgradeneeded = e => {
         const db = r.result;
-        const s = db.createObjectStore('militantes', { keyPath: 'id' });
-        s.createIndex('nif', 'nif', { unique: true });
-        s.createIndex('numMilitante', 'numMilitante', { unique: true });
-        db.createObjectStore('config');
+        if (e.oldVersion < 1) {
+          const s = db.createObjectStore('militantes', { keyPath: 'id' });
+          s.createIndex('nif', 'nif', { unique: true });
+          s.createIndex('numMilitante', 'numMilitante', { unique: true });
+          db.createObjectStore('config');
+        }
+        if (e.oldVersion < 2) { // Fase 2: pagamentos e recibos
+          const p = db.createObjectStore('pagamentos', { keyPath: 'id' });
+          p.createIndex('militanteId', 'militanteId');
+          p.createIndex('numRecibo', 'numRecibo', { unique: true });
+        }
       };
       r.onsuccess = () => { DB.db = r.result; res(); };
       r.onerror = () => rej(r.error);
@@ -413,15 +483,36 @@ const DB = {
   put(m) { return DB.tx('militantes', 'readwrite', s => DB.req(s.put(m))); },
   del(id) { return DB.tx('militantes', 'readwrite', s => DB.req(s.delete(id))); },
   clear() { return DB.tx('militantes', 'readwrite', s => DB.req(s.clear())); },
+  allPag() { return DB.tx('pagamentos', 'readonly', s => DB.req(s.getAll())); },
+  putPag(p) { return DB.tx('pagamentos', 'readwrite', s => DB.req(s.put(p))); },
+  clearPag() { return DB.tx('pagamentos', 'readwrite', s => DB.req(s.clear())); },
+  /* Grava o recibo e a numeração na mesma transação (evita números repetidos ou saltados) */
+  emitir(p, cfg) {
+    return new Promise((res, rej) => {
+      const t = DB.db.transaction(['pagamentos', 'config'], 'readwrite');
+      t.objectStore('pagamentos').add(p); t.objectStore('config').put(cfg, 'cfg');
+      t.oncomplete = () => res(); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    });
+  },
   getCfg() { return DB.tx('config', 'readonly', s => DB.req(s.get('cfg'))); },
   setCfg(c) { return DB.tx('config', 'readwrite', s => DB.req(s.put(c, 'cfg'))); }
 };
 
-const CFG_PADRAO = { nomePartido: 'MPT — Partido da Terra', sigla: 'MPT', idadeMin: 18, prefixo: '', proximoNum: 1, logo: '', tema: 'auto' };
+const CFG_PADRAO = {
+  nomePartido: 'MPT — Partido da Terra', sigla: 'MPT', idadeMin: 18, prefixo: '', proximoNum: 1, logo: '', tema: 'auto',
+  // Fase 2 — tesouraria
+  nifPartido: '', sede: '', periodicidade: 'mensal', quotaNormal: 2, quotaReduzida: 1, quotasDesde: `${new Date().getFullYear()}-01-01`,
+  ias: { 2024: 509.26, 2025: 522.50, 2026: 537.13 }, // Portarias anuais do IAS (2026: Portaria n.º 480-A/2025/1)
+  recibos: {}
+};
 let CFG = { ...CFG_PADRAO };
 let LISTA = [];
+let PAGS = [];
 
-async function carregar() { LISTA = await DB.all(); LISTA.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt')); }
+async function carregar() {
+  LISTA = await DB.all(); LISTA.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt'));
+  PAGS = await DB.allPag(); PAGS.sort((a, b) => b.numRecibo.localeCompare(a.numRecibo));
+}
 function aplicarMarca() {
   $('#brandName').textContent = CFG.sigla || 'Partido';
   const box = $('#brandLogo'); box.innerHTML = '';
@@ -447,7 +538,7 @@ function ir(view, arg) {
   VIEW = view;
   $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view || (view === 'editar' && b.dataset.view === 'novo')));
   const m = $('#main'); m.innerHTML = ''; window.scrollTo(0, 0);
-  ({ painel: vPainel, lista: vLista, novo: () => vForm(null), editar: () => vForm(arg), config: vConfig })[view]();
+  ({ painel: vPainel, lista: vLista, quotas: vQuotas, novo: () => vForm(null), editar: () => vForm(arg), config: vConfig })[view]();
   m.focus({ preventScroll: true });
 }
 $$('.nav button').forEach(b => b.addEventListener('click', () => {
@@ -465,6 +556,8 @@ const ICON = {
   print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+  card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
+  receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
 };
 const avatar = (m, cls = 'av') => m.foto ? `<img class="${cls}" src="${esc(m.foto)}" alt="">` : `<div class="${cls}">${esc(iniciais(m.nomeCompleto))}</div>`;
@@ -498,6 +591,7 @@ function vPainel() {
     <div class="card pad"><h2>Militantes ativos por distrito</h2>${dist.length ? `<div class="bars">${barras(dist, maxD)}</div>` : `<div class="empty">${ICON.people}<div>Ainda não há militantes registados.</div></div>`}</div>
     <div class="card pad"><h2>Faixa etária</h2>${ativos.length ? `<div class="bars">${barras(Object.entries(faixas), maxF)}</div>` : '<div class="empty">Sem dados.</div>'}</div>
   </div>
+  ${cartaoTesourariaPainel()}
   <div class="card pad" style="margin-top:16px"><h2>Últimas inscrições</h2>
     ${recentes.length ? `<table><tbody>${recentes.map(m => `<tr data-id="${esc(m.id)}" tabindex="0"><td><div class="who">${avatar(m)}<div><b>${esc(m.nomeCompleto)}</b><small class="mono">N.º ${esc(m.numMilitante)}</small></div></div></td><td class="hide-sm">${esc(m.concelho)}, ${esc(m.distrito)}</td><td class="mono hide-sm">${fmtData(m.dataAdmissao)}</td></tr>`).join('')}</tbody></table>`
       : `<div class="empty">${ICON.user}<div>Comece por registar o primeiro militante.</div></div>`}
@@ -550,7 +644,7 @@ async function vForm(id) {
   const ed = id ? await DB.get(id) : null;
   const m = ed ? structuredClone(ed) : {
     id: uid(), estado: 'ativo', nacionalidade: 'Portuguesa', tipoDoc: 'CC', distrito: '', dataAdmissao: isoDe(hoje()),
-    numMilitante: numFmt(CFG.proximoNum), foto: '', declDupla: false, declRestricoes: false, declMagistrado: false, rgpd: false, comunicacoes: false
+    numMilitante: numFmt(CFG.proximoNum), foto: '', regimeQuota: 'normal', declDupla: false, declRestricoes: false, declMagistrado: false, rgpd: false, comunicacoes: false
   };
   FORM_SUJO = false;
   let passo = 0;
@@ -618,8 +712,9 @@ async function vForm(id) {
       ${campo('numMilitante', 'N.º de militante', { cls: 'c4', req: true, hint: 'Atribuído automaticamente; pode ser alterado.', attrs: 'maxlength="20"' })}
       ${campo('dataAdmissao', 'Data de admissão', { tipo: 'date', cls: 'c4', req: true, attrs: `max="${isoDe(hoje())}"` })}
       ${campo('estado', 'Estado', { cls: 'c4', opts: sel(Object.entries(ESTADOS), m.estado) })}
-      ${campo('estrutura', 'Estrutura / núcleo local', { cls: 'c6', hint: 'Ex.: Concelhia de Coimbra.', attrs: 'maxlength="80"' })}
-      ${campo('proponente', 'Militante proponente (n.º ou nome)', { cls: 'c6', attrs: 'maxlength="80"' })}
+      ${campo('regimeQuota', 'Regime de quota', { cls: 'c4', opts: sel(Object.entries(REGIMES), m.regimeQuota || 'normal'), hint: 'Reduzida/isento conforme os estatutos (ex.: estudantes, desempregados).' })}
+      ${campo('estrutura', 'Estrutura / núcleo local', { cls: 'c4', hint: 'Ex.: Concelhia de Coimbra.', attrs: 'maxlength="80"' })}
+      ${campo('proponente', 'Militante proponente (n.º ou nome)', { cls: 'c4', attrs: 'maxlength="80"' })}
       ${campo('observacoes', 'Observações', { tipo: 'textarea', cls: 'c12', attrs: 'maxlength="1000"' })}
       <div class="sec-title">Declarações do candidato</div>
       ${chk('declDupla', 'Declaro que não estou filiado(a) em qualquer outro partido político.', 'Art. 20.º, n.º 2, da Lei Orgânica n.º 2/2003: “Ninguém pode estar filiado simultaneamente em mais de um partido político.”', true)}
@@ -872,15 +967,19 @@ async function abrirFicha(id, irLista) {
         ${linha('Consentimento RGPD', m.consentimentoEm ? fmtDataHora(m.consentimentoEm) : 'Não registado')}${linha('Comunicações', m.comunicacoes ? 'Aceita' : 'Não aceita')}
       </div>
       ${m.observacoes ? `<div class="legal" style="margin-top:16px;white-space:pre-wrap">${esc(m.observacoes)}</div>` : ''}
+      ${blocoQuotasFicha(m)}
       <details style="margin-top:16px"><summary class="muted" style="cursor:pointer;font-weight:700">Histórico (${(m.historico || []).length})</summary>
         <ul style="margin:8px 0 0;padding-left:18px">${(m.historico || []).map(h => `<li class="muted"><span class="mono">${fmtDataHora(h.data)}</span> — ${esc(h.acao)}</li>`).join('')}</ul></details>
     </div></div></div>
   <div class="dlg-f"><button class="btn danger" id="fDel" style="margin-right:auto">${ICON.trash} Eliminar</button>
-    <button class="btn" id="fPrint">${ICON.print} Imprimir ficha</button><button class="btn pri" id="fEdit">${ICON.edit} Editar</button></div>`);
+    <button class="btn" id="fPrint">${ICON.print} Imprimir ficha</button><button class="btn" id="fPag">${ICON.card} Registar pagamento</button><button class="btn pri" id="fEdit">${ICON.edit} Editar</button></div>`);
   $('#fEdit').onclick = () => { fecharDlg(); ir('editar', m.id); };
   $('#fPrint').onclick = () => imprimir(m);
+  $('#fPag').onclick = () => dlgPagamento(m.id);
+  $$('#dlgInner [data-recibo]').forEach(el => el.onclick = () => verRecibo(el.dataset.recibo));
   $('#fDel').onclick = async () => {
-    if (!confirm(`Eliminar definitivamente o registo de ${m.nomeCompleto}?\n\nPara desfiliações normais, prefira alterar o estado para “Filiação cessada”. A eliminação deve ser usada para exercer o direito ao apagamento (art. 17.º do RGPD).`)) return;
+    const nRec = PAGS.filter(p => p.militanteId === m.id).length;
+    if (!confirm(`Eliminar definitivamente o registo de ${m.nomeCompleto}?${nRec ? `\n\nOs ${nRec} recibo(s) emitidos são conservados (obrigação contabilística — art. 12.º da Lei n.º 19/2003 e art. 17.º, n.º 3, al. b), do RGPD).` : ''}\n\nPara desfiliações normais, prefira alterar o estado para “Filiação cessada”. A eliminação deve ser usada para exercer o direito ao apagamento (art. 17.º do RGPD).`)) return;
     await DB.del(m.id); await carregar(); fecharDlg(); toast('Registo eliminado.'); ir(VIEW === 'painel' ? 'painel' : 'lista');
   };
 }
@@ -915,7 +1014,7 @@ function exportarCSV() {
   toast('CSV exportado. Contém dados pessoais — guarde-o em local seguro.');
 }
 async function exportarBackup() {
-  const dados = { app: 'registo-militantes', versao: 1, exportadoEm: new Date().toISOString(), config: CFG, militantes: await DB.all() };
+  const dados = { app: 'registo-militantes', versao: 2, exportadoEm: new Date().toISOString(), config: CFG, militantes: await DB.all(), pagamentos: await DB.allPag() };
   descarregar(`copia-seguranca-militantes_${isoDe(hoje())}.json`, JSON.stringify(dados), 'application/json');
   CFG.ultimoBackup = new Date().toISOString(); await DB.setCfg(CFG);
   toast('Cópia de segurança criada.'); if (VIEW === 'config') ir('config');
@@ -928,9 +1027,20 @@ async function importarBackup(file) {
   if (!confirm(`Importar ${validos.length} registo(s)? Registos com o mesmo identificador serão substituídos.${validos.length < d.militantes.length ? `\n${d.militantes.length - validos.length} registo(s) inválidos serão ignorados.` : ''}`)) return;
   let ok = 0, falha = 0;
   for (const m of validos) { try { await DB.put(m); ok++; } catch { falha++; } }
-  if (d.config && typeof d.config === 'object') {
-    const c = d.config; CFG.proximoNum = Math.max(CFG.proximoNum, +c.proximoNum || 1); await DB.setCfg(CFG);
+  let okP = 0;
+  if (Array.isArray(d.pagamentos)) {
+    for (const p of d.pagamentos) {
+      if (!p || typeof p !== 'object' || typeof p.id !== 'string' || !/^\d{4}\/\d{4,}$/.test(p.numRecibo || '') || !(+p.valor > 0) || !TIPOS_PAG[p.tipo] || !METODOS[p.metodo]) continue;
+      try { await DB.putPag(p); okP++; } catch { falha++; }
+    }
   }
+  if (d.config && typeof d.config === 'object') {
+    const c = d.config; CFG.proximoNum = Math.max(CFG.proximoNum, +c.proximoNum || 1);
+    // A numeração de recibos nunca recua
+    for (const [a, n] of Object.entries(c.recibos || {})) if (/^\d{4}$/.test(a)) CFG.recibos[a] = Math.max(+CFG.recibos[a] || 1, +n || 1);
+    await DB.setCfg(CFG);
+  }
+  if (okP) toast(`${okP} recibo(s) importado(s).`);
   await carregar(); toast(`${ok} registo(s) importado(s)${falha ? `, ${falha} em conflito (NIF/n.º duplicado)` : ''}.`, !!falha); ir('lista');
 }
 
@@ -947,6 +1057,15 @@ function vConfig() {
       <div class="f c4"><label for="c_tema">Tema</label><select id="c_tema">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Escuro']].map(([k, v]) => `<option value="${k}" ${CFG.tema === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
       <div class="f c6"><label for="c_pref">Prefixo do n.º de militante</label><input id="c_pref" maxlength="6" value="${esc(CFG.prefixo)}" placeholder="ex.: MPT-"></div>
       <div class="f c6"><label for="c_prox">Próximo n.º</label><input id="c_prox" type="number" min="1" value="${esc(CFG.proximoNum)}"></div>
+      <div class="sec-title">Tesouraria (recibos)</div>
+      <div class="f c6"><label for="c_nifp">NIF do partido</label><input id="c_nifp" maxlength="9" inputmode="numeric" value="${esc(CFG.nifPartido)}"><div class="msg" id="m_nifp"></div></div>
+      <div class="f c6"><label for="c_sede">Morada da sede</label><input id="c_sede" maxlength="160" value="${esc(CFG.sede)}"></div>
+      <div class="sec-title">Quotas</div>
+      <div class="f c4"><label for="c_per">Periodicidade</label><select id="c_per">${Object.entries(PERIODICIDADES).map(([k, v]) => `<option value="${k}" ${CFG.periodicidade === k ? 'selected' : ''}>${v}</option>`).join('')}</select><div class="hint">Mudar a periodicidade altera o cálculo dos períodos em atraso.</div></div>
+      <div class="f c4"><label for="c_qn">Quota normal (€/período)</label><input id="c_qn" inputmode="decimal" value="${esc(String(CFG.quotaNormal).replace('.', ','))}"></div>
+      <div class="f c4"><label for="c_qr">Quota reduzida (€/período)</label><input id="c_qr" inputmode="decimal" value="${esc(String(CFG.quotaReduzida).replace('.', ','))}"></div>
+      <div class="f c6"><label for="c_qd">Quotas exigíveis a partir de</label><input id="c_qd" type="date" value="${esc(CFG.quotasDesde)}"><div class="hint">Períodos anteriores não contam como dívida.</div></div>
+      <div class="f c6"><label for="c_ias">IAS de ${new Date().getFullYear()} (€)</label><input id="c_ias" inputmode="decimal" value="${esc(String(ias(new Date().getFullYear())).replace('.', ','))}"><div class="hint">Base dos limites da Lei n.º 19/2003. 2026: 537,13 € (Portaria n.º 480-A/2025/1).</div></div>
       <div class="f c12"><label>Logótipo (opcional)</label><div class="row"><label class="btn sm">${ICON.up} Carregar imagem<input type="file" id="c_logo" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="sr"></label>${CFG.logo ? '<button type="button" class="btn sm danger" id="c_logoDel">Remover</button>' : ''}</div><div class="hint">Aparece na barra lateral e na ficha impressa. Use o logótipo oficial com autorização do partido.</div></div>
     </div><div class="form-foot"><span></span><button class="btn pri" type="submit">Guardar configurações</button></div></form>
     <div style="display:flex;flex-direction:column;gap:16px">
@@ -954,9 +1073,9 @@ function vConfig() {
         <div class="row"><button class="btn pri" id="bk">Criar cópia (JSON)</button><label class="btn">Restaurar cópia<input type="file" id="rs" accept="application/json,.json" class="sr"></label><button class="btn" id="csv">Exportar CSV</button></div></div>
       <div class="card pad"><h2>Base legal</h2><ul class="muted" style="margin:0;padding-left:18px;font-size:13.5px">
         <li>Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), arts. 19.º a 21.º — filiação e restrições.</li>
-        <li>Lei n.º 19/2003 — financiamento dos partidos (quotas e donativos).</li>
+        <li>Lei n.º 19/2003 — financiamento dos partidos: receitas próprias (art. 3.º), numerário (art. 3.º, n.os 2 e 3), donativos (arts. 7.º e 8.º), contabilidade (art. 12.º).</li>
         <li>Regulamento (UE) 2016/679 (RGPD), art. 9.º, n.º 2, al. d), e Lei n.º 58/2019.</li></ul></div>
-      <div class="card pad"><h2 style="color:var(--danger)">Zona de perigo</h2><p class="muted" style="margin-top:0">Apaga todos os registos deste computador. Faça antes uma cópia de segurança.</p><button class="btn danger" id="wipe">${ICON.trash} Apagar todos os dados</button></div>
+      <div class="card pad"><h2 style="color:var(--danger)">Zona de perigo</h2><p class="muted" style="margin-top:0">Apaga todos os militantes e recibos deste computador. Faça antes uma cópia de segurança.</p><button class="btn danger" id="wipe">${ICON.trash} Apagar todos os dados</button></div>
     </div>
   </div>`;
   let logo = CFG.logo;
@@ -965,6 +1084,14 @@ function vConfig() {
   $('#cfgF').onsubmit = async e => {
     e.preventDefault();
     const idade = Math.min(18, Math.max(14, parseInt($('#c_idade').value, 10) || 18));
+    const num = id => parseFloat($(id).value.replace(/\s/g, '').replace(',', '.'));
+    const nifp = $('#c_nifp').value.trim();
+    if (nifp && !validarNIFColetivo(nifp)) { $('#m_nifp').className = 'msg bad'; $('#m_nifp').textContent = 'NIF inválido.'; return; }
+    const qn = num('#c_qn'), qr = num('#c_qr'), iasV = num('#c_ias');
+    if (!(qn >= 0) || !(qr >= 0) || !(iasV > 0)) return toast('Verifique os valores das quotas e do IAS.', true);
+    if (!parseISO($('#c_qd').value)) return toast('Indique a data a partir da qual as quotas são exigíveis.', true);
+    CFG.ias = { ...CFG.ias, [new Date().getFullYear()]: Math.round(iasV * 100) / 100 };
+    CFG = { ...CFG, nifPartido: nifp, sede: $('#c_sede').value.trim(), periodicidade: $('#c_per').value, quotaNormal: Math.round(qn * 100) / 100, quotaReduzida: Math.round(qr * 100) / 100, quotasDesde: $('#c_qd').value };
     CFG = { ...CFG, nomePartido: $('#c_nome').value.trim() || CFG_PADRAO.nomePartido, sigla: $('#c_sigla').value.trim(), idadeMin: idade, tema: $('#c_tema').value, prefixo: $('#c_pref').value.trim(), proximoNum: Math.max(1, parseInt($('#c_prox').value, 10) || 1), logo };
     await DB.setCfg(CFG); aplicarMarca(); toast('Configurações guardadas.'); ir('config');
   };
@@ -973,8 +1100,379 @@ function vConfig() {
   $('#wipe').onclick = async () => {
     const t = prompt('Esta ação é irreversível. Escreva APAGAR para confirmar.');
     if (t !== 'APAGAR') return;
-    await DB.clear(); await carregar(); toast('Todos os registos foram apagados.'); ir('painel');
+    await DB.clear(); await DB.clearPag(); CFG.recibos = {}; await DB.setCfg(CFG); await carregar(); toast('Todos os registos foram apagados.'); ir('painel');
   };
+}
+
+/* =====================================================================
+   FASE 2 — Quotas, donativos e recibos
+   Lei n.º 19/2003 (Financiamento dos Partidos Políticos), versão consolidada da CNE:
+   - art. 3.º, n.º 1: receitas próprias — a) quotas e contribuições dos filiados;
+     b) contribuições de eleitos; h) donativos de pessoas singulares.
+   - art. 3.º, n.os 2 e 3: receitas em numerário têm de ser tituladas por meio bancário,
+     exceto montantes < 25% do IAS, desde que no ano não ultrapassem 50 × IAS.
+   - art. 7.º, n.º 1: donativos ≤ 25 × IAS por doador e por ano, por cheque ou transferência.
+   - art. 8.º, n.º 1: proibidos donativos anónimos e de pessoas coletivas.
+   - art. 12.º: contabilidade organizada com discriminação das receitas por alínea do art. 3.º.
+   ===================================================================== */
+const TIPOS_PAG = { quota: 'Quota', donativo: 'Donativo', eleito: 'Contribuição de eleito' };
+const BASE_LEGAL_PAG = {
+  quota: 'Receita própria — art. 3.º, n.º 1, al. a), da Lei n.º 19/2003',
+  donativo: 'Donativo de pessoa singular — art. 3.º, n.º 1, al. h), e art. 7.º da Lei n.º 19/2003',
+  eleito: 'Contribuição de eleito — art. 3.º, n.º 1, al. b), da Lei n.º 19/2003'
+};
+const METODOS = { transferencia: 'Transferência bancária', mbway: 'MB WAY', multibanco: 'Referência Multibanco', debito: 'Débito direto', cheque: 'Cheque', numerario: 'Numerário' };
+const METODOS_DONATIVO = ['transferencia', 'mbway', 'cheque'];
+const REGIMES = { normal: 'Normal', reduzida: 'Reduzida', isento: 'Isento' };
+const PERIODICIDADES = { mensal: 'Mensal', trimestral: 'Trimestral', semestral: 'Semestral', anual: 'Anual' };
+const PER_N = { mensal: 12, trimestral: 4, semestral: 2, anual: 1 };
+const MESES = ['jan', 'fev', 'mar', 'abr', 'mai', 'jun', 'jul', 'ago', 'set', 'out', 'nov', 'dez'];
+const r2 = v => Math.round(v * 100) / 100;
+const eur = v => (+v || 0).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
+const lerValor = v => { const n = parseFloat(String(v || '').replace(/\s|€/g, '').replace(',', '.')); return isNaN(n) ? NaN : r2(n); };
+
+/* IAS do ano (ou o último conhecido anterior) */
+function ias(ano) {
+  const t = CFG.ias || {}; if (+t[ano]) return +t[ano];
+  const anos = Object.keys(t).map(Number).filter(a => a <= ano).sort((a, b) => b - a);
+  return anos.length ? +t[anos[0]] : 537.13;
+}
+
+/* NIF de pessoa coletiva (só dígito de controlo) */
+function validarNIFColetivo(v) {
+  const n = String(v).replace(/\s/g, ''); if (!/^\d{9}$/.test(n)) return false;
+  let s = 0; for (let i = 0; i < 8; i++) s += +n[i] * (9 - i); const r = s % 11; return (r < 2 ? 0 : 11 - r) === +n[8];
+}
+
+/* Valor por extenso (português europeu) */
+function porExtenso(v) {
+  const U = ['zero', 'um', 'dois', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez', 'onze', 'doze', 'treze', 'catorze', 'quinze', 'dezasseis', 'dezassete', 'dezoito', 'dezanove'];
+  const D = ['', '', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'sessenta', 'setenta', 'oitenta', 'noventa'];
+  const C = ['', 'cento', 'duzentos', 'trezentos', 'quatrocentos', 'quinhentos', 'seiscentos', 'setecentos', 'oitocentos', 'novecentos'];
+  const ate999 = n => { if (n === 100) return 'cem'; const c = Math.floor(n / 100), r = n % 100, p = []; if (c) p.push(C[c]); if (r) p.push(r < 20 ? U[r] : D[Math.floor(r / 10)] + (r % 10 ? ' e ' + U[r % 10] : '')); return p.join(' e '); };
+  const inteiro = n => {
+    const mi = Math.floor(n / 1e6), mil = Math.floor(n % 1e6 / 1000), r = n % 1000, p = [];
+    if (mi) p.push(mi === 1 ? 'um milhão' : ate999(mi) + ' milhões');
+    if (mil) p.push(mil === 1 ? 'mil' : ate999(mil) + ' mil');
+    if (r) p.push(ate999(r));
+    if (p.length > 1 && r && (r < 100 || r % 100 === 0)) { const u = p.pop(); return p.join(' ') + ' e ' + u; }
+    return p.join(' ');
+  };
+  const cent = Math.round(v * 100), e = Math.floor(cent / 100), c = cent % 100;
+  const eS = e ? `${inteiro(e)}${e % 1e6 === 0 ? ' de' : ''} ${e === 1 ? 'euro' : 'euros'}` : '';
+  const cS = c ? `${ate999(c)} ${c === 1 ? 'cêntimo' : 'cêntimos'}` : '';
+  return [eS, cS].filter(Boolean).join(' e ') || 'zero euros';
+}
+
+/* ---------- Períodos de quota ---------- */
+function periodoDe(d) {
+  const p = CFG.periodicidade, y = d.getFullYear(), m = d.getMonth();
+  if (p === 'mensal') return `${y}-${String(m + 1).padStart(2, '0')}`;
+  if (p === 'trimestral') return `${y}-T${Math.floor(m / 3) + 1}`;
+  if (p === 'semestral') return `${y}-S${Math.floor(m / 6) + 1}`;
+  return `${y}`;
+}
+function periodosEntre(d1, d2) {
+  const out = [], step = 12 / PER_N[CFG.periodicidade];
+  let y = d1.getFullYear(), m = Math.floor(d1.getMonth() / step) * step;
+  while (y < d2.getFullYear() || (y === d2.getFullYear() && m <= d2.getMonth())) { out.push(periodoDe(new Date(y, m, 1))); m += step; if (m >= 12) { m = 0; y++; } }
+  return out;
+}
+function nomePeriodo(k) {
+  let r;
+  if ((r = k.match(/^(\d{4})-(\d{2})$/))) return `${MESES[+r[2] - 1]} ${r[1]}`;
+  if ((r = k.match(/^(\d{4})-T(\d)$/))) return `${r[2]}.º trim. ${r[1]}`;
+  if ((r = k.match(/^(\d{4})-S(\d)$/))) return `${r[2]}.º sem. ${r[1]}`;
+  return `ano ${k}`;
+}
+function descrPeriodos(keys) {
+  const k = [...(keys || [])].sort(); if (!k.length) return '';
+  if (k.length <= 4) return k.map(nomePeriodo).join(', ');
+  return `${nomePeriodo(k[0])} a ${nomePeriodo(k[k.length - 1])} (${k.length} períodos)`;
+}
+const valorQuota = m => m.regimeQuota === 'isento' ? 0 : m.regimeQuota === 'reduzida' ? +CFG.quotaReduzida : +CFG.quotaNormal;
+const pagsDe = id => PAGS.filter(p => p.militanteId === id && !p.anulado);
+
+/* Situação de quotas de um militante */
+function situacaoQuotas(m) {
+  const pagos = new Set(pagsDe(m.id).filter(p => p.tipo === 'quota').flatMap(p => p.periodos || []));
+  const atual = periodoDe(hoje());
+  if (m.regimeQuota === 'isento') return { isento: true, pagos, atraso: [], divida: 0, atual, atualPago: true };
+  if (m.estado !== 'ativo') return { inativo: true, pagos, atraso: [], divida: 0, atual, atualPago: true };
+  const datas = [parseISO(m.dataAdmissao), parseISO(CFG.quotasDesde)].filter(Boolean);
+  const ini = datas.length ? new Date(Math.max(...datas)) : hoje();
+  const devidos = ini <= hoje() ? periodosEntre(ini, hoje()) : [];
+  const atraso = devidos.filter(k => k !== atual && !pagos.has(k));
+  const ult = [...pagos].sort().pop();
+  return { pagos, atraso, divida: r2(atraso.length * valorQuota(m)), atual, atualPago: pagos.has(atual) || !devidos.includes(atual), ultimo: ult };
+}
+function pillQuota(sq) {
+  if (sq.isento) return '<span class="pill mute">Isento</span>';
+  if (sq.inativo) return '<span class="pill mute">—</span>';
+  if (sq.atraso.length) return `<span class="pill bad">${sq.atraso.length} em atraso</span>`;
+  return sq.atualPago ? '<span class="pill">Em dia</span>' : '<span class="pill warn">Período atual por pagar</span>';
+}
+
+/* ---------- Verificação legal de um pagamento ---------- */
+function verificarLegal(p) {
+  const ano = +String(p.dataPagamento).slice(0, 4), I = ias(ano), erros = [], avisos = [];
+  if (!(p.valor > 0)) erros.push('Indique um valor superior a zero.');
+  if (p.metodo === 'numerario' && p.valor > 0) {
+    if (p.valor >= r2(0.25 * I)) erros.push(`Em numerário só são admitidos montantes inferiores a 25% do IAS (${eur(0.25 * I)}). Use cheque, transferência ou outro meio bancário — art. 3.º, n.os 2 e 3, da Lei n.º 19/2003.`);
+    const tot = r2(PAGS.filter(x => !x.anulado && x.metodo === 'numerario' && x.ano === ano).reduce((s, x) => s + x.valor, 0));
+    if (tot + p.valor > 50 * I) erros.push(`O total anual recebido em numerário ultrapassaria 50 × IAS (${eur(50 * I)}); já registado: ${eur(tot)} — art. 3.º, n.º 3.`);
+    else if (tot + p.valor > 40 * I) avisos.push(`Numerário em ${ano}: ${eur(tot + p.valor)} de ${eur(50 * I)} permitidos (art. 3.º, n.º 3).`);
+  }
+  if (p.tipo === 'donativo') {
+    if (!METODOS_DONATIVO.includes(p.metodo)) erros.push('Os donativos têm de ser feitos por cheque ou transferência bancária — art. 7.º, n.º 1.');
+    const tot = r2(PAGS.filter(x => !x.anulado && x.tipo === 'donativo' && x.nif === p.nif && x.ano === ano).reduce((s, x) => s + x.valor, 0));
+    if (tot + p.valor > 25 * I) erros.push(`Limite anual de donativos por doador (25 × IAS = ${eur(25 * I)}) ultrapassado: este doador já doou ${eur(tot)} em ${ano} — art. 7.º, n.º 1.`);
+    else if (tot + p.valor > 20 * I) avisos.push(`Donativos deste doador em ${ano}: ${eur(tot + p.valor)} de ${eur(25 * I)} permitidos.`);
+  }
+  if (p.metodo !== 'numerario' && !p.referencia) avisos.push('Recomendado: indique a referência do movimento (n.º de cheque, ID da transferência) para a reconciliação bancária — arts. 9.º e 12.º.');
+  if (p.metodo !== 'numerario') avisos.push('Confirme que o valor foi depositado na conta bancária exclusiva para estas receitas — art. 3.º, n.º 2, e art. 7.º, n.º 2.');
+  return { erros, avisos };
+}
+
+/* ---------- Diálogo: registar pagamento ---------- */
+function dlgPagamento(militanteId, tipoIni = 'quota') {
+  const opts = LISTA.map(x => `<option value="${esc(x.id)}" ${x.id === militanteId ? 'selected' : ''}>${esc(x.nomeCompleto)} — n.º ${esc(x.numMilitante)}</option>`).join('');
+  if (!LISTA.length) return toast('Registe primeiro um militante.', true);
+  abrirDlg(`<div class="dlg-h"><h3>Registar pagamento</h3><button class="btn ghost sm" data-x aria-label="Fechar">${ICON.x}</button></div>
+  <form class="dlg-b" id="pgF" novalidate><div class="form-grid">
+    <div class="f c12"><label for="pg_m">Militante <span class="req">*</span></label><select id="pg_m">${militanteId ? '' : '<option value="">Selecione…</option>'}${opts}</select><div class="hint" id="pg_info"></div></div>
+    <div class="f c12"><label>Tipo de receita</label><div class="seg" id="pg_tipo">${Object.entries(TIPOS_PAG).map(([k, v]) => `<button type="button" data-t="${k}" class="${k === tipoIni ? 'on' : ''}">${v}</button>`).join('')}</div></div>
+    <div class="f c12" id="pg_perWrap"><label>Períodos a pagar</label><div id="pg_per"></div><div class="hint">Clique para selecionar. Períodos já pagos aparecem bloqueados.</div></div>
+    <div class="f c4"><label for="pg_v">Valor (€) <span class="req">*</span></label><input id="pg_v" inputmode="decimal" autocomplete="off"><div class="msg" id="pg_vm"></div></div>
+    <div class="f c4"><label for="pg_met">Meio de pagamento <span class="req">*</span></label><select id="pg_met">${Object.entries(METODOS).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}</select></div>
+    <div class="f c4"><label for="pg_d">Data do pagamento <span class="req">*</span></label><input id="pg_d" type="date" value="${isoDe(hoje())}" max="${isoDe(hoje())}"></div>
+    <div class="f c6"><label for="pg_ref">Referência do movimento</label><input id="pg_ref" maxlength="60" placeholder="n.º cheque / ID transferência"></div>
+    <div class="f c6"><label for="pg_obs">Observações</label><input id="pg_obs" maxlength="200"></div>
+    <div class="c12" id="pg_legal" style="grid-column:span 12"></div>
+  </div></form>
+  <div class="dlg-f"><button class="btn" data-x>Cancelar</button><button class="btn pri" id="pg_ok">${ICON.receipt} Registar e emitir recibo</button></div>`);
+  let tipo = tipoIni, sel = new Set(), valorManual = false;
+  const mil = () => LISTA.find(x => x.id === $('#pg_m').value);
+  const desenharPeriodos = () => {
+    const m = mil(); const box = $('#pg_per');
+    $('#pg_perWrap').hidden = tipo !== 'quota';
+    if (!m) { $('#pg_info').textContent = ''; box.innerHTML = ''; return; }
+    const sq = situacaoQuotas(m);
+    $('#pg_info').innerHTML = `NIF ${esc(m.nif)} · regime ${esc(REGIMES[m.regimeQuota || 'normal'])} · ${eur(valorQuota(m))}/período · ${pillQuota(sq)}${sq.divida ? ` · em dívida ${eur(sq.divida)}` : ''}`;
+    if (tipo !== 'quota') return;
+    if (sq.isento) { box.innerHTML = '<div class="legal">Este militante está isento de quotas. Pode registar um donativo ou uma contribuição.</div>'; return; }
+    const ano = hoje().getFullYear(), anos = new Set([ano, ano + 1]);
+    sq.atraso.forEach(k => anos.add(+k.slice(0, 4)));
+    const html = [...anos].sort().map(a => {
+      const ks = periodosEntre(new Date(a, 0, 1), new Date(a, 11, 31));
+      return `<div class="per-ano"><b>${a}</b><div class="per-grid">${ks.map(k => {
+        const pago = sq.pagos.has(k), atr = sq.atraso.includes(k);
+        return `<button type="button" class="per ${pago ? 'pago' : ''} ${atr ? 'atr' : ''} ${sel.has(k) ? 'on' : ''}" data-k="${k}" ${pago ? 'disabled title="Pago"' : ''}>${esc(nomePeriodo(k).replace(/ \d{4}$/, '').replace(/^ano$/, 'Anual'))}</button>`;
+      }).join('')}</div></div>`;
+    }).join('');
+    box.innerHTML = html + '<div class="per-leg"><span class="per pago">pago</span><span class="per atr">em atraso</span><span class="per on">selecionado</span></div>';
+    $$('#pg_per .per[data-k]').forEach(b => b.onclick = () => { const k = b.dataset.k; sel.has(k) ? sel.delete(k) : sel.add(k); valorManual = false; desenharPeriodos(); calcular(); });
+  };
+  const calcular = () => {
+    const m = mil(); if (tipo === 'quota' && m && !valorManual) $('#pg_v').value = sel.size ? String(r2(sel.size * valorQuota(m)).toFixed(2)).replace('.', ',') : '';
+    verificar();
+  };
+  const dados = () => {
+    const m = mil();
+    return { tipo, militanteId: m?.id, nif: m?.nif, valor: lerValor($('#pg_v').value), metodo: $('#pg_met').value, dataPagamento: $('#pg_d').value, referencia: $('#pg_ref').value.trim(), observacoes: $('#pg_obs').value.trim(), periodos: tipo === 'quota' ? [...sel].sort() : [] };
+  };
+  const verificar = () => {
+    const p = dados(), m = mil(); const { erros, avisos } = verificarLegal(p);
+    if (!m) erros.unshift('Selecione o militante.');
+    if (tipo === 'quota' && m && !sel.size && situacaoQuotas(m).isento === undefined) erros.push('Selecione pelo menos um período.');
+    if (tipo === 'quota' && m && sel.size && p.valor > 0 && Math.abs(p.valor - r2(sel.size * valorQuota(m))) > 0.004) avisos.unshift(`O valor difere do previsto (${sel.size} × ${eur(valorQuota(m))} = ${eur(sel.size * valorQuota(m))}). Justifique nas observações.`);
+    if (!parseISO(p.dataPagamento) || parseISO(p.dataPagamento) > hoje()) erros.push('Data de pagamento inválida.');
+    $('#pg_legal').innerHTML = (p.valor > 0 ? `<div class="legal" style="margin-bottom:8px"><b>${eur(p.valor)}</b> — ${esc(porExtenso(p.valor))}</div>` : '')
+      + erros.map(e => `<div class="alerta bad">${esc(e)}</div>`).join('') + avisos.map(a => `<div class="alerta warn">${esc(a)}</div>`).join('');
+    $('#pg_ok').disabled = erros.length > 0;
+    return erros.length === 0;
+  };
+  $('#pg_m').onchange = () => { sel = new Set(); valorManual = false; const m = mil(); if (m) situacaoQuotas(m).atraso.forEach(k => sel.add(k)); if (m && !sel.size) { const sq = situacaoQuotas(m); if (!sq.isento && !sq.atualPago) sel.add(sq.atual); } desenharPeriodos(); calcular(); };
+  $$('#pg_tipo button').forEach(b => b.onclick = () => {
+    tipo = b.dataset.t; $$('#pg_tipo button').forEach(x => x.classList.toggle('on', x === b));
+    valorManual = false; if (tipo !== 'quota') $('#pg_v').value = '';
+    if (tipo === 'donativo' && !METODOS_DONATIVO.includes($('#pg_met').value)) $('#pg_met').value = 'transferencia';
+    desenharPeriodos(); calcular();
+  });
+  $('#pg_v').oninput = () => { valorManual = true; verificar(); };
+  ['#pg_met', '#pg_d', '#pg_ref'].forEach(id => $(id).addEventListener('input', verificar));
+  $('#pg_m').onchange(); 
+  $('#pg_ok').onclick = async () => {
+    if (!verificar()) return;
+    const p = dados(), m = mil(), agora = new Date(), anoR = agora.getFullYear();
+    const seq = +(CFG.recibos?.[anoR]) || 1;
+    const reg = {
+      ...p, id: uid(), ano: +p.dataPagamento.slice(0, 4), numAno: anoR, numSeq: seq, numRecibo: `${anoR}/${String(seq).padStart(4, '0')}`,
+      dataEmissao: isoDe(agora), nome: m.nomeCompleto, numMilitante: m.numMilitante, morada: `${m.morada}, ${m.codigoPostal} ${m.localidade}`,
+      anulado: false, criadoEm: agora.toISOString()
+    };
+    const cfg2 = { ...CFG, recibos: { ...CFG.recibos, [anoR]: seq + 1 } };
+    try { await DB.emitir(reg, cfg2); } catch (e) { return toast('Não foi possível emitir o recibo: ' + (e?.message || e), true); }
+    CFG = cfg2; await carregar();
+    toast(`Recibo ${reg.numRecibo} emitido.`);
+    verRecibo(reg.id);
+    if (VIEW === 'quotas') vQuotasRedesenhar?.();
+  };
+}
+
+/* ---------- Recibo: ver, imprimir, anular ---------- */
+function htmlRecibo(r) {
+  return `<div class="recibo ${r.anulado ? 'anulado' : ''}">
+    <div class="rc-head"><div>${CFG.logo ? `<img src="${esc(CFG.logo)}" alt="">` : ''}<div><b>${esc(CFG.nomePartido)}</b>${CFG.nifPartido ? `<small>NIF ${esc(CFG.nifPartido)}</small>` : ''}${CFG.sede ? `<small>${esc(CFG.sede)}</small>` : ''}</div></div>
+      <div class="rc-num"><span>Recibo</span><b>N.º ${esc(r.numRecibo)}</b><small>Emitido em ${fmtData(r.dataEmissao)}</small></div></div>
+    <p class="rc-txt">Recebemos de <b>${esc(r.nome)}</b>, NIF <b>${esc(r.nif)}</b>, militante n.º <b>${esc(r.numMilitante)}</b>, a quantia de</p>
+    <div class="rc-valor"><b>${eur(r.valor)}</b><span>(${esc(porExtenso(r.valor))})</span></div>
+    <table class="rc-tbl">
+      <tr><td>Referente a</td><td>${esc(TIPOS_PAG[r.tipo])}${r.tipo === 'quota' ? ' — ' + esc(descrPeriodos(r.periodos)) : ''}</td></tr>
+      <tr><td>Meio de pagamento</td><td>${esc(METODOS[r.metodo])}${r.referencia ? ' · ref. ' + esc(r.referencia) : ''}</td></tr>
+      <tr><td>Data do pagamento</td><td>${fmtData(r.dataPagamento)}</td></tr>
+      <tr><td>Natureza</td><td>${esc(BASE_LEGAL_PAG[r.tipo])}</td></tr>
+      ${r.observacoes ? `<tr><td>Observações</td><td>${esc(r.observacoes)}</td></tr>` : ''}
+    </table>
+    ${r.anulado ? `<div class="rc-anul">ANULADO em ${fmtDataHora(r.anuladoEm)} — ${esc(r.motivoAnulacao)}</div>` : ''}
+    <div class="rc-sign"><div>O(A) Tesoureiro(a)</div></div>
+    <p class="rc-nota">Documento de quitação de receita partidária. Os partidos políticos não estão sujeitos a IRC (art. 10.º da Lei n.º 19/2003).</p>
+  </div>`;
+}
+function verRecibo(id) {
+  const r = PAGS.find(p => p.id === id); if (!r) return;
+  abrirDlg(`<div class="dlg-h"><h3>Recibo ${esc(r.numRecibo)}</h3><button class="btn ghost sm" data-x aria-label="Fechar">${ICON.x}</button></div>
+    <div class="dlg-b">${htmlRecibo(r)}</div>
+    <div class="dlg-f">${r.anulado ? '' : `<button class="btn danger" id="rcAnul" style="margin-right:auto">Anular recibo</button>`}<button class="btn" data-x>Fechar</button><button class="btn pri" id="rcPrint">${ICON.print} Imprimir</button></div>`);
+  $('#rcPrint').onclick = () => { $('#print').innerHTML = `<div class="p-recibo">${htmlRecibo(r)}<div class="rc-corte">✂ — duplicado — ✂</div>${htmlRecibo(r)}</div>`; setTimeout(() => window.print(), 50); };
+  $('#rcAnul') && ($('#rcAnul').onclick = async () => {
+    const motivo = (prompt(`Anular o recibo ${r.numRecibo}?\nO recibo não é apagado: fica marcado como anulado e o número não é reutilizado.\n\nIndique o motivo:`) || '').trim();
+    if (!motivo) return;
+    const novo = { ...r, anulado: true, anuladoEm: new Date().toISOString(), motivoAnulacao: motivo.slice(0, 200) };
+    await DB.putPag(novo); await carregar(); toast(`Recibo ${r.numRecibo} anulado.`); verRecibo(r.id); if (VIEW === 'quotas') vQuotasRedesenhar?.();
+  });
+}
+
+/* ---------- Bloco de quotas na ficha do militante ---------- */
+function blocoQuotasFicha(m) {
+  const sq = situacaoQuotas(m), ult = PAGS.filter(p => p.militanteId === m.id).slice(0, 5);
+  return `<div class="sec-title" style="margin-top:18px;display:block">Quotas e pagamentos</div>
+    <div class="row" style="margin:8px 0">${pillQuota(sq)}<span class="muted">Regime ${esc(REGIMES[m.regimeQuota || 'normal'])} · ${eur(valorQuota(m))}/período${sq.ultimo ? ` · último período pago: ${esc(nomePeriodo(sq.ultimo))}` : ''}${sq.divida ? ` · <b style="color:var(--danger)">em dívida ${eur(sq.divida)}</b>` : ''}</span></div>
+    ${ult.length ? `<table class="mini"><tbody>${ult.map(p => `<tr data-recibo="${esc(p.id)}" tabindex="0"><td class="mono">${esc(p.numRecibo)}</td><td>${esc(TIPOS_PAG[p.tipo])}${p.tipo === 'quota' ? ' · ' + esc(descrPeriodos(p.periodos)) : ''}</td><td class="mono">${fmtData(p.dataPagamento)}</td><td class="mono" style="text-align:right">${p.anulado ? '<span class="pill mute">Anulado</span>' : eur(p.valor)}</td></tr>`).join('')}</tbody></table>` : '<p class="muted" style="margin:4px 0">Sem pagamentos registados.</p>'}`;
+}
+
+/* ---------- Cartão de tesouraria no painel ---------- */
+function cartaoTesourariaPainel() {
+  const ano = hoje().getFullYear(), P = PAGS.filter(p => !p.anulado && p.ano === ano);
+  const tot = r2(P.reduce((s, p) => s + p.valor, 0));
+  const alvo = LISTA.filter(m => m.estado === 'ativo' && m.regimeQuota !== 'isento');
+  const emDia = alvo.filter(m => !situacaoQuotas(m).atraso.length).length;
+  const pct = alvo.length ? Math.round(emDia / alvo.length * 100) : 0;
+  return `<div class="card pad" style="margin-top:16px"><div class="row" style="justify-content:space-between"><h2 style="margin:0">Tesouraria ${ano}</h2><button class="btn sm" data-go="quotas">Ver quotas e recibos →</button></div>
+    <div class="mini-kpis"><div><span>Receitas registadas</span><b>${eur(tot)}</b></div><div><span>Quotas em dia</span><b>${pct}%</b><small>${emDia} de ${alvo.length} militantes</small></div><div><span>Recibos emitidos</span><b>${P.length}</b></div></div></div>`;
+}
+
+/* ---------- Vista: Quotas e recibos ---------- */
+let QF = { aba: 'situacao', q: '', sit: '', ano: String(new Date().getFullYear()), tipo: '' };
+let vQuotasRedesenhar = null;
+function vQuotas() {
+  const ano = hoje().getFullYear(), I = ias(ano);
+  const P = PAGS.filter(p => !p.anulado && p.ano === ano);
+  const soma = f => r2(P.filter(f).reduce((s, p) => s + p.valor, 0));
+  const tQ = soma(p => p.tipo === 'quota'), tD = soma(p => p.tipo === 'donativo'), tE = soma(p => p.tipo === 'eleito'), tN = soma(p => p.metodo === 'numerario');
+  const alvo = LISTA.filter(m => m.estado === 'ativo' && m.regimeQuota !== 'isento');
+  const sits = new Map(LISTA.map(m => [m.id, situacaoQuotas(m)]));
+  const emDia = alvo.filter(m => !sits.get(m.id).atraso.length).length;
+  const divida = r2(alvo.reduce((s, m) => s + sits.get(m.id).divida, 0));
+  const pctN = Math.min(100, tN / (50 * I) * 100);
+  $('#main').innerHTML = `
+  <div class="head"><div><h1>Quotas e recibos</h1><p>Quota ${esc(PERIODICIDADES[CFG.periodicidade].toLowerCase())}: ${eur(CFG.quotaNormal)} (reduzida ${eur(CFG.quotaReduzida)}) · IAS ${ano}: ${eur(I)}</p></div>
+    <button class="btn pri" id="novoPag">${ICON.plus} Registar pagamento</button></div>
+  <div class="kpis">
+    <div class="kpi hero"><div class="lbl">Receitas ${ano}</div><div class="val">${eur(tQ + tD + tE)}</div><div class="sub">Quotas ${eur(tQ)} · Donativos ${eur(tD)} · Eleitos ${eur(tE)}</div></div>
+    <div class="kpi"><div class="lbl">Quotas em dia</div><div class="val">${alvo.length ? Math.round(emDia / alvo.length * 100) : 0}%</div><div class="sub">${emDia} de ${alvo.length} militantes ativos</div></div>
+    <div class="kpi"><div class="lbl">Quotas em atraso</div><div class="val" style="color:var(--danger)">${eur(divida)}</div><div class="sub">${alvo.length - emDia} militante(s)</div></div>
+    <div class="kpi"><div class="lbl">Numerário ${ano} · limite legal</div><div class="val" style="font-size:24px">${eur(tN)}</div><div class="meter"><i style="width:${pctN.toFixed(1)}%;${pctN > 80 ? 'background:var(--danger)' : ''}"></i></div><div class="sub">de ${eur(50 * I)} (50 × IAS, art. 3.º, n.º 3)</div></div>
+  </div>
+  <div class="tabs" role="tablist"><button role="tab" data-aba="situacao">Situação dos militantes</button><button role="tab" data-aba="recibos">Recibos emitidos</button></div>
+  <div id="qConteudo"></div>`;
+  $('#novoPag').onclick = () => dlgPagamento(null);
+  $$('.tabs button').forEach(b => b.onclick = () => { QF.aba = b.dataset.aba; desenhar(); });
+  const desenhar = () => {
+    $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.aba === QF.aba));
+    (QF.aba === 'situacao' ? abaSituacao : abaRecibos)();
+  };
+  const abaSituacao = () => {
+    $('#qConteudo').innerHTML = `<div class="toolbar">
+      <label class="search"><span class="sr">Pesquisar</span>${ICON.search}<input id="qq" placeholder="Pesquisar militante, n.º ou NIF…" value="${esc(QF.q)}"></label>
+      <select id="qs" style="width:auto"><option value="">Todos (ativos)</option><option value="atraso" ${QF.sit === 'atraso' ? 'selected' : ''}>Com quotas em atraso</option><option value="dia" ${QF.sit === 'dia' ? 'selected' : ''}>Em dia</option><option value="isento" ${QF.sit === 'isento' ? 'selected' : ''}>Isentos</option></select>
+      <button class="btn" id="qCsv">Exportar mapa de quotas</button></div><div class="card" id="qTab"></div>`;
+    const rows = () => {
+      const q = norm(QF.q);
+      return LISTA.filter(m => m.estado === 'ativo').map(m => ({ m, s: sits.get(m.id) })).filter(({ m, s }) =>
+        (!q || norm([m.nomeCompleto, m.numMilitante, m.nif].join(' ')).includes(q)) &&
+        (!QF.sit || (QF.sit === 'atraso' && s.atraso.length) || (QF.sit === 'dia' && !s.isento && !s.atraso.length) || (QF.sit === 'isento' && s.isento)))
+        .sort((a, b) => b.s.divida - a.s.divida || a.m.nomeCompleto.localeCompare(b.m.nomeCompleto, 'pt'));
+    };
+    const tab = () => {
+      const R = rows();
+      $('#qTab').innerHTML = R.length ? `<table><thead><tr><th>Militante</th><th class="hide-sm">Regime</th><th class="hide-sm">Último período pago</th><th>Situação</th><th style="text-align:right">Em dívida</th><th></th></tr></thead><tbody>
+        ${R.map(({ m, s }) => `<tr data-id="${esc(m.id)}" tabindex="0"><td><div class="who">${avatar(m)}<div><b>${esc(m.nomeCompleto)}</b><small class="mono">N.º ${esc(m.numMilitante)}</small></div></div></td>
+        <td class="hide-sm">${esc(REGIMES[m.regimeQuota || 'normal'])}<br><small class="muted">${eur(valorQuota(m))}/período</small></td>
+        <td class="hide-sm">${s.ultimo ? esc(nomePeriodo(s.ultimo)) : '<span class="muted">—</span>'}</td><td>${pillQuota(s)}</td>
+        <td class="mono" style="text-align:right;font-weight:700">${s.divida ? eur(s.divida) : '—'}</td>
+        <td style="text-align:right"><button class="btn sm" data-pag="${esc(m.id)}">${ICON.card} Pagar</button></td></tr>`).join('')}</tbody></table>`
+        : `<div class="empty">${ICON.people}<div>Nenhum militante ativo corresponde aos filtros.</div></div>`;
+      $$('#qTab [data-pag]').forEach(b => b.onclick = e => { e.stopPropagation(); dlgPagamento(b.dataset.pag); });
+      ligarLinhas();
+    };
+    $('#qq').oninput = e => { QF.q = e.target.value; tab(); };
+    $('#qs').onchange = e => { QF.sit = e.target.value; tab(); };
+    $('#qCsv').onclick = () => {
+      const lin = [['N.º militante', 'Nome', 'NIF', 'Distrito', 'Concelho', 'Regime', 'Valor/período', 'Último período pago', 'Períodos em atraso', 'Valor em dívida', 'Telemóvel', 'Email']]
+        .concat(rows().map(({ m, s }) => [m.numMilitante, m.nomeCompleto, m.nif, m.distrito, m.concelho, REGIMES[m.regimeQuota || 'normal'], fmtNum(valorQuota(m)), s.ultimo ? nomePeriodo(s.ultimo) : '', s.atraso.map(nomePeriodo).join(', '), fmtNum(s.divida), m.telemovel, m.email]));
+      descarregar(`mapa-quotas_${isoDe(hoje())}.csv`, csv(lin), 'text/csv;charset=utf-8'); toast('Mapa de quotas exportado.');
+    };
+    tab();
+  };
+  const abaRecibos = () => {
+    const anos = [...new Set(PAGS.map(p => String(p.ano)).concat(String(ano)))].sort().reverse();
+    $('#qConteudo').innerHTML = `<div class="toolbar">
+      <label class="search"><span class="sr">Pesquisar</span>${ICON.search}<input id="rq" placeholder="Pesquisar n.º de recibo, nome, NIF ou referência…" value="${esc(QF.q)}"></label>
+      <select id="ra" style="width:auto">${anos.map(a => `<option ${QF.ano === a ? 'selected' : ''}>${a}</option>`).join('')}<option value="" ${QF.ano === '' ? 'selected' : ''}>Todos os anos</option></select>
+      <select id="rt" style="width:auto"><option value="">Todos os tipos</option>${Object.entries(TIPOS_PAG).map(([k, v]) => `<option value="${k}" ${QF.tipo === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <button class="btn" id="rCsv">Exportar para contabilidade</button></div><div class="card" id="rTab"></div>`;
+    const rows = () => { const q = norm(QF.q); return PAGS.filter(p => (!QF.ano || String(p.ano) === QF.ano) && (!QF.tipo || p.tipo === QF.tipo) && (!q || norm([p.numRecibo, p.nome, p.nif, p.referencia, p.numMilitante].join(' ')).includes(q))); };
+    const tab = () => {
+      const R = rows(), tot = r2(R.filter(p => !p.anulado).reduce((s, p) => s + p.valor, 0));
+      $('#rTab').innerHTML = R.length ? `<table><thead><tr><th>Recibo</th><th>Militante</th><th class="hide-sm">Referente a</th><th class="hide-sm">Meio</th><th class="hide-sm">Data</th><th style="text-align:right">Valor</th></tr></thead><tbody>
+        ${R.map(p => `<tr data-recibo="${esc(p.id)}" tabindex="0" class="${p.anulado ? 'anul' : ''}"><td class="mono"><b>${esc(p.numRecibo)}</b></td><td>${esc(p.nome)}<br><small class="muted mono">NIF ${esc(p.nif)}</small></td>
+          <td class="hide-sm">${esc(TIPOS_PAG[p.tipo])}${p.tipo === 'quota' ? '<br><small class="muted">' + esc(descrPeriodos(p.periodos)) + '</small>' : ''}</td><td class="hide-sm">${esc(METODOS[p.metodo])}</td>
+          <td class="mono hide-sm">${fmtData(p.dataPagamento)}</td><td class="mono" style="text-align:right;font-weight:700">${p.anulado ? '<span class="pill mute">Anulado</span>' : eur(p.valor)}</td></tr>`).join('')}
+        </tbody><tfoot><tr><td colspan="5" style="text-align:right;font-weight:700" class="hide-sm">Total (sem anulados)</td><td class="mono" style="text-align:right;font-weight:800">${eur(tot)}</td></tr></tfoot></table>`
+        : `<div class="empty">${ICON.receipt}<div>Sem recibos para estes filtros.</div></div>`;
+      $$('#rTab tr[data-recibo]').forEach(tr => { tr.onclick = () => verRecibo(tr.dataset.recibo); tr.onkeydown = e => { if (e.key === 'Enter') verRecibo(tr.dataset.recibo); }; });
+    };
+    $('#rq').oninput = e => { QF.q = e.target.value; tab(); };
+    $('#ra').onchange = e => { QF.ano = e.target.value; tab(); };
+    $('#rt').onchange = e => { QF.tipo = e.target.value; tab(); };
+    $('#rCsv').onclick = () => {
+      // Discriminação das receitas por alínea do art. 3.º (art. 12.º, n.º 3, al. b))
+      const al = { quota: 'Art. 3.º n.º 1 a)', eleito: 'Art. 3.º n.º 1 b)', donativo: 'Art. 3.º n.º 1 h)' };
+      const lin = [['N.º recibo', 'Data emissão', 'Data pagamento', 'Tipo', 'Classificação legal', 'Períodos', 'Nome', 'NIF', 'N.º militante', 'Meio de pagamento', 'Referência', 'Valor', 'Estado', 'Motivo anulação']]
+        .concat(rows().slice().reverse().map(p => [p.numRecibo, fmtData(p.dataEmissao), fmtData(p.dataPagamento), TIPOS_PAG[p.tipo], al[p.tipo], descrPeriodos(p.periodos), p.nome, p.nif, p.numMilitante, METODOS[p.metodo], p.referencia, fmtNum(p.valor), p.anulado ? 'Anulado' : 'Válido', p.motivoAnulacao || '']));
+      descarregar(`receitas_${QF.ano || 'todos'}_${isoDe(hoje())}.csv`, csv(lin), 'text/csv;charset=utf-8'); toast('Ficheiro para a contabilidade exportado.');
+    };
+    tab();
+  };
+  vQuotasRedesenhar = () => ir('quotas');
+  desenhar();
+}
+const fmtNum = v => (+v || 0).toFixed(2).replace('.', ',');
+/* CSV com ; (Excel PT) e proteção contra injeção de fórmulas */
+function csv(linhas) {
+  const cel = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  return '﻿' + linhas.map(l => l.map(cel).join(';')).join('\r\n');
 }
 
 /* ---------- Arranque ---------- */
