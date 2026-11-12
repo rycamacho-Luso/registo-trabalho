@@ -10,9 +10,11 @@
  * - Só são autorizadas a câmara (fotografia e leitura de QR) e a cópia para a área de transferência.
  * - Uma única instância aberta de cada vez (evita conflitos na base de dados).
  */
-const { app, BrowserWindow, Menu, dialog, net, protocol, session, shell } = require('electron');
+const { app, BrowserWindow, Menu, dialog, ipcMain, net, protocol, session, shell } = require('electron');
+const fs = require('node:fs');
 const path = require('node:path');
 const { pathToFileURL } = require('node:url');
+const { criar: criarPartilha } = require('./partilha');
 
 const WEB = path.join(__dirname, 'web');
 const ORIGEM = 'app://militantes';
@@ -54,7 +56,8 @@ function criarJanela() {
       sandbox: true,
       webSecurity: true,
       spellcheck: true,
-      devTools: !app.isPackaged
+      devTools: !app.isPackaged,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
   janela.once('ready-to-show', () => { janela.maximize(); janela.show(); });
@@ -84,8 +87,8 @@ function acerca() {
     message: `Registo de Militantes ${app.getVersion()}`,
     detail: [
       'Registo e gestão de militantes, quotas, recibos e cartões.',
-      'Os dados são guardados cifrados (AES-256) apenas neste computador.',
-      'A aplicação não comunica com a internet.',
+      'Os dados são guardados cifrados (AES-256) neste computador e, se configurada, na pasta partilhada da sede.',
+      'A aplicação não comunica com a internet (só com a pasta partilhada da rede local).',
       '',
       `Dados da aplicação: ${app.getPath('userData')}`,
       '',
@@ -121,7 +124,36 @@ function menu() {
   Menu.setApplicationMenu(m);
 }
 
+/* ---------- Pasta partilhada (vários computadores na mesma sede) ---------- */
+const ficheiroPartilha = () => path.join(app.getPath('userData'), 'partilha.json');
+let basePartilha = null;
+const partilha = criarPartilha(() => basePartilha);
+function ipcPartilha(nome, fn) {
+  ipcMain.handle('partilha:' + nome, async (ev, ...args) => {
+    const url = ev.senderFrame?.url || '';
+    if (!url.startsWith(ORIGEM + '/')) throw new Error('Origem não autorizada');
+    return fn(...args);
+  });
+}
+function registarPartilha() {
+  try { basePartilha = JSON.parse(fs.readFileSync(ficheiroPartilha(), 'utf8')).base || null; } catch { basePartilha = null; }
+  for (const n of ['disponivel', 'listar', 'listarDirs', 'ler', 'escrever', 'criarExclusivo', 'apagar']) ipcPartilha(n, (...a) => partilha[n](...a));
+  ipcPartilha('estado', async () => ({ configurada: !!basePartilha, caminho: basePartilha }));
+  ipcPartilha('escolher', async () => {
+    const r = await dialog.showOpenDialog(janela, { title: 'Escolher a pasta partilhada da sede', buttonLabel: 'Usar esta pasta', properties: ['openDirectory', 'createDirectory'] });
+    if (r.canceled || !r.filePaths[0]) return { ok: false };
+    const escolhida = r.filePaths[0];
+    const b = path.basename(escolhida) === 'RegistoMilitantes' ? escolhida : path.join(escolhida, 'RegistoMilitantes');
+    await fs.promises.mkdir(b, { recursive: true });
+    basePartilha = b;
+    await fs.promises.writeFile(ficheiroPartilha(), JSON.stringify({ base: b }));
+    return { ok: true, caminho: b };
+  });
+  ipcPartilha('esquecer', async () => { basePartilha = null; await fs.promises.rm(ficheiroPartilha(), { force: true }); return true; });
+}
+
 app.whenReady().then(() => {
+  registarPartilha();
   // Ficheiros da aplicação: só dentro da pasta "web" (impede ../)
   protocol.handle('app', async pedido => {
     const url = new URL(pedido.url);

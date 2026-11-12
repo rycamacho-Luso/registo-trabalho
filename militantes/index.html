@@ -286,6 +286,14 @@ body:not(.sessao) .app{display:none}
 .side-btn{background:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.15)!important;color:#fff!important;flex:1}
 .side-btn svg{width:15px;height:15px}
 @media (max-width:820px){.perfis{grid-template-columns:1fr}}
+
+/* ---------- Vários computadores ---------- */
+.mp-estado{font-size:11.5px;color:rgba(255,255,255,.75);margin-top:8px;display:flex;gap:6px;align-items:center}
+.mp-estado:empty{display:none}
+.mp-dot{width:8px;height:8px;border-radius:50%;background:var(--g-400);flex:none;box-shadow:0 0 0 3px rgba(138,194,62,.25)}
+.mp-dot.bad{background:#F87171;box-shadow:0 0 0 3px rgba(248,113,113,.25)}
+.ou{display:flex;align-items:center;gap:10px;margin:16px 0 12px;color:var(--muted);font-size:12px}
+.ou::before,.ou::after{content:"";flex:1;height:1px;background:var(--line)}
 /* Impressão: só a ficha de inscrição */
 #print{display:none}
 @media print{
@@ -341,7 +349,7 @@ body:not(.sessao) .app{display:none}
       <button data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Configurações</span></button>
       <button data-view="seguranca"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg><span>Segurança</span></button>
     </nav>
-    <div class="side-foot" style="flex-direction:column;align-items:stretch;opacity:1"><div id="sideUser"></div><span style="opacity:.6;display:flex;gap:6px;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Dados cifrados (AES-256) neste computador.</span></div>
+    <div class="side-foot" style="flex-direction:column;align-items:stretch;opacity:1"><div id="sideUser"></div><div id="mpEstado" class="mp-estado"></div><span style="opacity:.6;display:flex;gap:6px;margin-top:8px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Dados cifrados (AES-256) neste computador.</span></div>
   </aside>
   <main class="main" id="main" tabindex="-1"></main>
 </div>
@@ -706,6 +714,7 @@ async function vForm(id) {
     id: uid(), estado: 'ativo', nacionalidade: 'Portuguesa', tipoDoc: 'CC', distrito: '', dataAdmissao: isoDe(hoje()),
     numMilitante: numFmt(CFG.proximoNum), foto: '', regimeQuota: 'normal', declDupla: false, declRestricoes: false, declMagistrado: false, rgpd: false, comunicacoes: false
   };
+  const numAuto = ed ? null : m.numMilitante;
   FORM_SUJO = false;
   let passo = 0;
   const erros = Array(PASSOS.length).fill(false);
@@ -956,6 +965,7 @@ async function vForm(id) {
       if (!ed.rgpd && m.rgpd) m.consentimentoEm = agora;
     }
     m.atualizadoEm = agora;
+    if (!ed && MP.ativo && m.numMilitante === numAuto) { try { m.numMilitante = await proximoMilitante(); } catch (e) { toast(e.message || String(e), true); return; } }
     try {
       await DB.put(m);
       Audit.log(ed ? 'Militante editado' : 'Inscrição registada', `n.º ${m.numMilitante}${ed && ed.estado !== m.estado ? ` — estado: ${ESTADOS[m.estado]}` : ''}`);
@@ -1394,7 +1404,7 @@ function dlgPagamento(militanteId, tipoIni = 'quota') {
   $('#pg_ok').onclick = async () => {
     if (!verificar()) return;
     const p = dados(), m = mil(), agora = new Date(), anoR = agora.getFullYear();
-    const seq = +(CFG.recibos?.[anoR]) || 1;
+    let seq; try { seq = await proximoRecibo(anoR); } catch (e) { return toast(e.message || String(e), true); }
     const reg = {
       ...p, id: uid(), ano: +p.dataPagamento.slice(0, 4), numAno: anoR, numSeq: seq, numRecibo: `${anoR}/${String(seq).padStart(4, '0')}`,
       dataEmissao: isoDe(agora), nome: m.nomeCompleto, numMilitante: m.numMilitante, morada: `${m.morada}, ${m.codigoPostal} ${m.localidade}`,
@@ -1951,34 +1961,42 @@ const Audit = {
   async iniciar() {
     Audit.seq = 0; Audit.prev = '0'.repeat(64);
     const recs = await DB.tx('auditoria', 'readonly', s => DB.req(s.getAll()));
-    if (recs.length) { recs.sort((a, b) => a.id.localeCompare(b.id)); const u = await Cripto.dec(recs[recs.length - 1]); Audit.seq = u.seq; Audit.prev = u.hash; }
+    const pc = Audit.pc(), meus = recs.filter(r => pc ? r.id.startsWith(pc + ':') : !r.id.includes(':'));
+    if (meus.length) { meus.sort((a, b) => a.id.localeCompare(b.id)); const u = await Cripto.dec(meus[meus.length - 1]); Audit.seq = u.seq; Audit.prev = u.hash; }
   },
-  hashDe: e => Cripto.sha256(e.prev + '|' + JSON.stringify([e.seq, e.data, e.uid, e.utilizador, e.acao, e.detalhe])),
+  pc: () => (typeof MP !== 'undefined' && MP.ativo) ? MP.cfg.pcId : '', // cada computador tem a sua cadeia
+  hashDe: e => Cripto.sha256(e.prev + '|' + JSON.stringify(e.pc ? [e.seq, e.data, e.uid, e.utilizador, e.acao, e.detalhe, e.pc] : [e.seq, e.data, e.uid, e.utilizador, e.acao, e.detalhe])),
   log(acao, detalhe = '') {
     const u = SESSAO?.user;
     Audit.fila = Audit.fila.then(async () => {
       if (!Cripto.dek) return;
       const e = { seq: Audit.seq + 1, data: new Date().toISOString(), uid: u?.id || '', utilizador: u ? `${u.utilizador}` : '—', acao, detalhe: String(detalhe).slice(0, 300), prev: Audit.prev };
-      e.hash = await Audit.hashDe(e); e.id = String(e.seq).padStart(10, '0');
+      const pc = Audit.pc(); if (pc) e.pc = pc;
+      e.hash = await Audit.hashDe(e); e.id = (pc ? pc + ':' : '') + String(e.seq).padStart(10, '0');
       const r = await Cripto.enc(e); await DB.tx('auditoria', 'readwrite', s => DB.req(s.put(r)));
       Audit.seq = e.seq; Audit.prev = e.hash;
+      if (pc) await MP.registar([{ t: 'a', op: 'put', id: e.id, o: e }]);
     }).catch(err => console.error('Auditoria:', err));
     return Audit.fila;
   },
   async todos() {
     const recs = await DB.tx('auditoria', 'readonly', s => DB.req(s.getAll()));
-    const L = await Promise.all(recs.map(r => Cripto.dec(r).catch(() => ({ id: r.id, seq: parseInt(r.id, 10), data: '', utilizador: '?', acao: '⚠ Registo ilegível — possível adulteração', detalhe: '', corrompido: true }))));
-    return L.sort((a, b) => b.seq - a.seq);
+    const L = await Promise.all(recs.map(r => Cripto.dec(r).catch(() => { const [a, b] = r.id.includes(':') ? r.id.split(':') : ['', r.id]; return { id: r.id, pc: a, seq: parseInt(b, 10), data: '', utilizador: '?', acao: '⚠ Registo ilegível — possível adulteração', detalhe: '', corrompido: true }; })));
+    return L.sort((a, b) => (b.data || '').localeCompare(a.data || '') || b.seq - a.seq);
   },
   async verificar() {
-    const L = (await Audit.todos()).sort((a, b) => a.seq - b.seq);
-    for (let i = 0; i < L.length; i++) {
-      const e = L[i];
-      if (e.corrompido) return { ok: false, n: L.length, falha: e.seq, motivo: 'registo ilegível (cifra adulterada)' };
-      if (await Audit.hashDe(e) !== e.hash) return { ok: false, n: L.length, falha: e.seq, motivo: 'conteúdo alterado' };
-      if (i && (e.prev !== L[i - 1].hash || e.seq !== L[i - 1].seq + 1)) return { ok: false, n: L.length, falha: e.seq, motivo: 'registo em falta ou fora de ordem' };
+    const T = await Audit.todos(), cadeias = {};
+    T.forEach(e => (cadeias[e.pc || ''] = cadeias[e.pc || ''] || []).push(e));
+    for (const [pc, L0] of Object.entries(cadeias)) {
+      const L = L0.sort((a, b) => a.seq - b.seq), onde = pc ? ` do computador ${pc}` : '';
+      for (let i = 0; i < L.length; i++) {
+        const e = L[i];
+        if (e.corrompido) return { ok: false, n: T.length, falha: e.seq + onde, motivo: 'registo ilegível (cifra adulterada)' };
+        if (await Audit.hashDe(e) !== e.hash) return { ok: false, n: T.length, falha: e.seq + onde, motivo: 'conteúdo alterado' };
+        if (i && (e.prev !== L[i - 1].hash || e.seq !== L[i - 1].seq + 1)) return { ok: false, n: T.length, falha: e.seq + onde, motivo: 'registo em falta ou fora de ordem' };
+      }
     }
-    return { ok: true, n: L.length };
+    return { ok: true, n: T.length };
   },
   async purgar(dias) {
     const lim = Date.now() - dias * 86400000, L = await Audit.todos(), velhos = L.filter(e => Date.parse(e.data) < lim);
@@ -2017,6 +2035,7 @@ const ecra = html => { const a = $('#auth'); a.innerHTML = `<div class="auth-car
 const cabecalhoAuth = sub => `<div class="auth-brand"><div class="brand-logo">${CFG.logo ? `<img src="${esc(CFG.logo)}" alt="">` : '<img src="icon-192.png" alt="">'}</div><div><b>${esc(CFG.nomePartido)}</b><small>${sub}</small></div></div>`;
 
 async function ecraLogin(aviso = '') {
+  if (MP.ativo) { try { if (await PT.disponivel()) await MP.puxarUtilizadores(); } catch { } } // palavras-passe alteradas noutro computador
   const users = (await DB.users()).filter(u => u.ativo);
   ecra(`${cabecalhoAuth('Registo de Militantes')}
     <h1>Iniciar sessão</h1>
@@ -2065,7 +2084,7 @@ async function entrar(u, dek, extra = '') {
   if (pode('auditoria')) { const n = await Audit.purgar(+CFG.auditoriaDias || 730); if (n) Audit.log('Registos de acesso antigos eliminados', `${n} registo(s) com mais de ${CFG.auditoriaDias || 730} dias`); }
   await carregar();
   $('#auth').hidden = true; $('#auth').innerHTML = ''; document.body.classList.add('sessao');
-  desenharUtilizadorLateral(); ultimaAtividade = Date.now();
+  desenharUtilizadorLateral(); ultimaAtividade = Date.now(); MP.estado(); MP.sincronizar(false);
   ir('painel'); aplicarPermissoes();
   if (falhas) toast(`Atenção: ${falhas} tentativa(s) de acesso falhada(s) à sua conta desde ${anterior ? fmtDataHora(anterior) : 'o último acesso'}.`, true);
   if (u.mudarPassword) dlgMudarPassword(true);
@@ -2075,7 +2094,7 @@ async function bloquear(motivo = '') {
   if (!SESSAO) return;
   await Audit.log(motivo ? 'Sessão bloqueada' : 'Fim de sessão', motivo);
   pararCamara?.(); FORM_SUJO = false; fecharDlg(true);
-  Cripto.dek = null; SESSAO = null; LISTA = []; PAGS = [];
+  Cripto.dek = null; SESSAO = null; LISTA = []; PAGS = []; MP.estado();
   $('#main').innerHTML = ''; $('#print').innerHTML = ''; $('#sideUser') && ($('#sideUser').innerHTML = '');
   ecraLogin(motivo);
 }
@@ -2094,7 +2113,9 @@ async function ecraSetup() {
       <div class="f c12"><label for="stP">Palavra-passe</label><input id="stP" type="password" autocomplete="new-password">${medidor('stM')}</div>
       <div class="f c12"><label for="stP2">Confirmar palavra-passe</label><input id="stP2" type="password" autocomplete="new-password"></div>
     </div><div class="msg bad" id="stE" style="margin-top:8px"></div>
-    <button class="btn pri" style="width:100%;margin-top:14px" id="stB">Criar administrador e cifrar dados</button></form>`);
+    <button class="btn pri" style="width:100%;margin-top:14px" id="stB">Criar administrador e cifrar dados</button></form>
+    ${PT && !legM && !legP ? `<div class="ou"><span>ou</span></div><button class="btn" style="width:100%" id="stJ">${ICON.people} Ligar a uma pasta partilhada da sede</button><p class="auth-nota">Use esta opção nos outros computadores da sede, depois de ativar a partilha no computador principal.</p>` : ''}`);
+  $('#stJ') && ($('#stJ').onclick = ecraJuntar);
   $('#stN').focus(); ligarMedidor($('#stP'), 'stM', () => $('#stU').value, () => $('#stN').value);
   $('#stF').onsubmit = async e => {
     e.preventDefault(); const er = $('#stE');
@@ -2211,9 +2232,9 @@ function dlgMudarPassword(forcado) {
 let SF = { aba: 'utilizadores', q: '', u: '' };
 async function vSeguranca() {
   $('#main').innerHTML = `<div class="head"><div><h1>Segurança</h1><p>Utilizadores, perfis de acesso, registo de acessos e recuperação</p></div></div>
-    <div class="tabs" role="tablist"><button data-aba="utilizadores">Utilizadores</button><button data-aba="registo">Registo de acessos</button><button data-aba="sessao">Sessão e recuperação</button></div><div id="sConteudo"></div>`;
+    <div class="tabs" role="tablist"><button data-aba="utilizadores">Utilizadores</button><button data-aba="registo">Registo de acessos</button><button data-aba="sessao">Sessão e recuperação</button><button data-aba="postos">Vários computadores</button></div><div id="sConteudo"></div>`;
   $$('.tabs button').forEach(b => b.onclick = () => { SF.aba = b.dataset.aba; desenhar(); });
-  const desenhar = () => { $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.aba === SF.aba)); ({ utilizadores: abaUtil, registo: abaRegisto, sessao: abaSessao })[SF.aba](); };
+  const desenhar = () => { $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.aba === SF.aba)); ({ utilizadores: abaUtil, registo: abaRegisto, sessao: abaSessao, postos: abaPostos })[SF.aba](); };
   const abaUtil = async () => {
     const U = await DB.users();
     $('#sConteudo').innerHTML = `<div class="toolbar" style="justify-content:flex-end"><button class="btn pri" id="nU">${ICON.plus} Novo utilizador</button></div>
@@ -2402,6 +2423,302 @@ let ultimaAtividade = Date.now();
 ['pointerdown', 'keydown', 'mousemove', 'wheel', 'touchstart'].forEach(ev => addEventListener(ev, () => { ultimaAtividade = Date.now(); }, { passive: true }));
 setInterval(() => { if (SESSAO && Date.now() - ultimaAtividade > (+CFG.bloqueioMin || 10) * 60000) bloquear('Sessão bloqueada por inatividade.'); }, 15000);
 
+/* =====================================================================
+   VÁRIOS COMPUTADORES NA MESMA SEDE (pasta partilhada na rede local)
+   - Cada computador mantém uma cópia local cifrada e escreve as suas alterações
+     na pasta partilhada como lotes cifrados (AES-256-GCM, mesma chave de dados).
+   - Sincronização a cada 10 s; em caso de conflito vence a alteração mais recente.
+   - Recibos anulados nunca "desanulam".
+   - Números de militante e de recibo atribuídos sob bloqueio exclusivo na pasta:
+     uma única série para toda a sede, sem números repetidos.
+   - Disponível na aplicação para Windows (window.partilha, via preload).
+   ===================================================================== */
+const PT = window.partilha || null;
+const serW = w => w && { ...w, salt: b64(w.salt), iv: b64(w.iv), ct: b64(w.ct) };
+const desW = w => w && { ...w, salt: unb64(w.salt), iv: unb64(w.iv), ct: unb64(w.ct) };
+const serU = u => ({ ...u, wrap: serW(u.wrap) });
+const desU = u => ({ ...u, wrap: desW(u.wrap) });
+const MP = {
+  cfg: null, o: {}, aplicando: false, online: null, ultimaSync: 0, ocupado: false, filaEsc: Promise.resolve(), ultimoPosto: 0, redesenhar: false,
+  get ativo() { return !!(PT && MP.cfg?.ativo); },
+  async carregarCfg() { MP.cfg = await DB.tx('config', 'readonly', s => DB.req(s.get('multiposto'))) || null; },
+  guardarCfg() { return DB.tx('config', 'readwrite', s => DB.req(s.put(MP.cfg, 'multiposto'))); },
+  async lerJSON(rel) { const s = await PT.ler(rel); return s == null ? null : JSON.parse(td.decode(unb64(s))); },
+  escreverJSON(rel, o) { return PT.escrever(rel, b64(te.encode(JSON.stringify(o)))); },
+  async encLote(nome, obj) {
+    const iv = rnd(12), ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv, additionalData: te.encode(nome) }, Cripto.dek, te.encode(JSON.stringify(obj)));
+    const u = new Uint8Array(12 + ct.byteLength); u.set(iv); u.set(new Uint8Array(ct), 12); return b64(u);
+  },
+  async decLote(nome, s) { const u = unb64(s); return JSON.parse(td.decode(await crypto.subtle.decrypt({ name: 'AES-GCM', iv: u.slice(0, 12), additionalData: te.encode(nome) }, Cripto.dek, u.slice(12)))); },
+
+  /* Regista alterações locais para envio (cifradas e guardadas antes de enviar: nada se perde se a rede falhar) */
+  async registar(alts) {
+    if (!MP.ativo || MP.aplicando || !alts.length || !Cripto.dek) return;
+    const ts = new Date().toISOString();
+    for (const a of alts) { a.ts = ts; a.pc = MP.cfg.pcId; if (a.t !== 'a') MP.cfg.versoes[a.t + ':' + a.id] = ts + '|' + MP.cfg.pcId; }
+    const nome = `dados/${MP.cfg.pcId}/${String(++MP.cfg.seq).padStart(10, '0')}.bin`;
+    MP.cfg.pendentes.push({ nome, b: await MP.encLote(nome, alts) });
+    await MP.guardarCfg(); MP.escoar();
+  },
+  escoar() {
+    MP.filaEsc = MP.filaEsc.then(async () => {
+      while (MP.cfg?.pendentes?.length) {
+        const p = MP.cfg.pendentes[0];
+        try { await PT.escrever(p.nome, p.b); } catch { MP.online = false; MP.estado(); return false; }
+        MP.cfg.pendentes.shift(); await MP.guardarCfg();
+      }
+      return true;
+    });
+    return MP.filaEsc;
+  },
+
+  /* Aplica alterações de outros computadores (vence a mais recente) */
+  async aplicar(alts) {
+    let mudou = false; MP.aplicando = true;
+    try {
+      for (const a of alts) {
+        if (a.t === 'a') {
+          const ex = await DB.tx('auditoria', 'readonly', s => DB.req(s.getKey(a.id)));
+          if (!ex) { const r = await Cripto.enc(a.o); await DB.tx('auditoria', 'readwrite', s => DB.req(s.put(r))); }
+          continue;
+        }
+        const k = a.t + ':' + a.id, v = a.ts + '|' + a.pc, cur = MP.cfg.versoes[k];
+        if (cur && cur >= v) continue;
+        MP.cfg.versoes[k] = v; mudou = true;
+        if (a.t === 'm') { if (a.op === 'del') await MP.o.del(a.id); else await MP.o.put(a.o); }
+        else if (a.t === 'p') {
+          if (a.op === 'del') { await DB.tx('p3', 'readwrite', s => DB.req(s.delete(a.id))); continue; }
+          let o = a.o; const r0 = await DB.tx('p3', 'readonly', s => DB.req(s.get(a.id)));
+          if (r0) { const loc = await Cripto.dec(r0); if (loc.anulado && !o.anulado) o = { ...o, anulado: true, anuladoEm: loc.anuladoEm, motivoAnulacao: loc.motivoAnulacao }; }
+          try { await MP.o.putPag(o); } catch (e) { Audit.log('Conflito de numeração de recibo', `${o.numRecibo} recebido de outro posto foi rejeitado`); }
+        }
+      }
+    } finally { MP.aplicando = false; }
+    return mudou;
+  },
+  async puxar() {
+    let mudou = false;
+    for (const pc of await PT.listarDirs('dados')) {
+      if (pc === MP.cfg.pcId || !/^[A-Z0-9]{8}$/.test(pc)) continue;
+      const cur = MP.cfg.cursores[pc] || 0;
+      const fich = (await PT.listar('dados/' + pc)).filter(n => /^\d{10}\.bin$/.test(n)).map(n => parseInt(n, 10)).filter(n => n > cur).sort((a, b) => a - b);
+      for (const n of fich) {
+        const nome = `dados/${pc}/${String(n).padStart(10, '0')}.bin`, s = await PT.ler(nome);
+        if (s == null) break;
+        let alts; try { alts = await MP.decLote(nome, s); } catch { console.error('Lote ilegível', nome); MP.cfg.cursores[pc] = n; continue; }
+        if (await MP.aplicar(alts)) mudou = true;
+        MP.cfg.cursores[pc] = n;
+      }
+    }
+    if (await MP.puxarUtilizadores()) mudou = true;
+    const c = await MP.lerJSON('config.json');
+    if (c && (c.alteradoEm || '') > (CFG.alteradoEm || '')) { CFG = { ...CFG_PADRAO, ...c }; MP.aplicando = true; try { await MP.o.setCfg(CFG); } finally { MP.aplicando = false; } aplicarMarca(); mudou = true; }
+    const org = await MP.lerJSON('org.json'), rec = await DB.getRec();
+    if (org?.rec && (org.rec.criadaEm || '') > (rec?.criadaEm || '')) await MP.o.setRec(desW(org.rec));
+    return mudou;
+  },
+  async puxarUtilizadores() {
+    let mudou = false; const locais = new Map((await DB.users()).map(u => [u.id, u]));
+    for (const f of await PT.listar('utilizadores')) {
+      if (!/\.json$/.test(f)) continue;
+      let u; try { u = desU(await MP.lerJSON('utilizadores/' + f)); } catch { continue; }
+      const l = locais.get(u.id);
+      if (l && (u.alteradoEm || '') <= (l.alteradoEm || '')) continue;
+      await MP.o.putUser(u); mudou = true;
+      if (SESSAO && SESSAO.user.id === u.id) { SESSAO.user = u; if (!u.ativo) setTimeout(() => bloquear('A sua conta foi desativada por um administrador.'), 0); }
+    }
+    return mudou;
+  },
+  async sincronizar(manual = false) {
+    if (!MP.ativo || !SESSAO || MP.ocupado) return;
+    MP.ocupado = true;
+    try {
+      if (!(await PT.disponivel())) { MP.online = false; if (manual) toast('Pasta partilhada indisponível. Verifique a ligação à rede.', true); return; }
+      await MP.escoar();
+      const mudou = await MP.puxar();
+      await MP.guardarCfg(); MP.online = true; MP.ultimaSync = Date.now();
+      if (Date.now() - MP.ultimoPosto > 60000) { MP.ultimoPosto = Date.now(); MP.escreverJSON(`postos/${MP.cfg.pcId}.json`, { nome: MP.cfg.nomePC, ultimaSync: new Date().toISOString(), utilizador: SESSAO.user.utilizador }).catch(() => {}); }
+      if (mudou) {
+        await carregar();
+        if (!$('#dlg').open && !['novo', 'editar'].includes(VIEW) && VIEW !== 'cartoes') ir(VIEW); else MP.redesenhar = true;
+      }
+      if (manual) toast('Sincronizado.');
+    } catch (e) { MP.online = false; console.error('Sincronização:', e); if (manual) toast('Erro ao sincronizar: ' + (e.message || e), true); }
+    finally { MP.ocupado = false; MP.estado(); }
+  },
+  estado() {
+    const el = $('#mpEstado'); if (!el) return;
+    if (!MP.ativo || !SESSAO) { el.innerHTML = ''; return; }
+    const pend = MP.cfg.pendentes.length;
+    el.innerHTML = MP.online === false
+      ? `<span class="mp-dot bad"></span>Rede indisponível — a trabalhar localmente${pend ? ` (${pend} por enviar)` : ''}`
+      : `<span class="mp-dot"></span>${esc(MP.cfg.nomePC)} · sincronizado${MP.ultimaSync ? ' às ' + new Date(MP.ultimaSync).toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) : ''}`;
+  },
+
+  /* Numeração única para toda a sede (bloqueio exclusivo na pasta partilhada) */
+  async comBloqueio(fn) {
+    const nome = 'contadores.lock', ini = Date.now();
+    for (;;) {
+      if (await PT.criarExclusivo(nome, b64(te.encode(JSON.stringify({ pc: MP.cfg.pcId, ts: Date.now() }))))) break;
+      try { const l = await MP.lerJSON(nome); if (l && Date.now() - l.ts > 20000) { await PT.apagar(nome); continue; } } catch { }
+      if (Date.now() - ini > 10000) throw new Error('A numeração está a ser usada por outro computador. Tente novamente dentro de instantes.');
+      await new Promise(r => setTimeout(r, 120 + Math.random() * 180));
+    }
+    try { return await fn(); } finally { await PT.apagar(nome).catch(() => { }); }
+  },
+  async contadores(fn) {
+    if (!(await PT.disponivel())) throw new Error('Pasta partilhada indisponível: para garantir números únicos em toda a sede, a atribuição de números exige ligação à rede.');
+    return MP.comBloqueio(async () => { const c = await MP.lerJSON('contadores.json') || { militante: 1, recibos: {} }; c.recibos = c.recibos || {}; const r = await fn(c); await MP.escreverJSON('contadores.json', c); return r; });
+  },
+
+  /* Ativar a partilha a partir deste computador (que passa a ser a origem dos dados) */
+  async ativarAqui(nomePC) {
+    const est = await PT.escolher(); if (!est?.ok) return false;
+    const org = await MP.lerJSON('org.json');
+    if (org) { await PT.esquecer(); throw new Error('Esta pasta já tem dados de outro computador. Para juntar este computador a eles, use um computador sem dados e escolha "Ligar a uma pasta partilhada" no ecrã inicial.'); }
+    MP.cfg = { ativo: true, orgId: uid(), pcId: novoCodigo(), nomePC, seq: 0, cursores: {}, versoes: {}, pendentes: [] };
+    await MP.guardarCfg();
+    await MP.escreverJSON('org.json', { app: 'registo-militantes', orgId: MP.cfg.orgId, criadoEm: new Date().toISOString(), rec: serW(await DB.getRec()) });
+    for (const u of await DB.users()) { u.alteradoEm = u.alteradoEm || new Date().toISOString(); await MP.o.putUser(u); await MP.escreverJSON('utilizadores/' + u.id + '.json', serU(u)); }
+    CFG.alteradoEm = new Date().toISOString(); await MP.o.setCfg(CFG); await MP.escreverJSON('config.json', CFG);
+    const maxNum = Math.max(0, ...LISTA.map(m => parseInt(String(m.numMilitante).replace(/\D/g, ''), 10) || 0));
+    await MP.escreverJSON('contadores.json', { militante: Math.max(+CFG.proximoNum || 1, maxNum + 1), recibos: { ...CFG.recibos } });
+    const M = await DB.all(), P = await DB.allPag(), A = await Audit.todos();
+    for (let i = 0; i < M.length; i += 20) await MP.registar(M.slice(i, i + 20).map(m => ({ t: 'm', op: 'put', id: m.id, o: m })));
+    for (let i = 0; i < P.length; i += 100) await MP.registar(P.slice(i, i + 100).map(p => ({ t: 'p', op: 'put', id: p.id, o: p })));
+    for (let i = 0; i < A.length; i += 200) await MP.registar(A.slice(i, i + 200).filter(e => !e.corrompido).map(e => ({ t: 'a', op: 'put', id: e.id, o: e })));
+    await MP.escoar(); await Audit.iniciar();
+    Audit.log('Partilha entre computadores ativada', `posto ${nomePC}; ${M.length} militante(s), ${P.length} recibo(s)`);
+    MP.online = true; MP.ultimaSync = Date.now(); MP.estado();
+    return true;
+  },
+  async desligar() {
+    Audit.log('Computador desligado da partilha', MP.cfg.nomePC); await MP.escoar();
+    MP.cfg.ativo = false; await MP.guardarCfg(); await PT.esquecer(); await Audit.iniciar(); MP.estado();
+  }
+};
+
+/* Ligar um computador novo (sem dados) a uma pasta partilhada existente */
+async function ecraJuntar() {
+  const est = await PT.escolher(); if (!est?.ok) return;
+  const org = await MP.lerJSON('org.json').catch(() => null);
+  const users = (await PT.listar('utilizadores')).length;
+  if (!org || !users) { await PT.esquecer(); toast('Esta pasta não tem dados do Registo de Militantes. No computador principal, ative primeiro a partilha em Segurança → Vários computadores.', true); return; }
+  ecra(`${cabecalhoAuth('Ligar este computador à sede')}
+    <h1>Ligar este computador</h1>
+    <p class="muted">Pasta: <b class="mono" style="word-break:break-all">${esc(est.caminho)}</b><br>Entre com um utilizador já existente. Os dados da sede serão copiados (cifrados) para este computador.</p>
+    <form id="jnF" novalidate autocomplete="off"><div class="form-grid">
+      <div class="f c12"><label for="jnN">Nome deste computador</label><input id="jnN" maxlength="40" placeholder="ex.: Secretaria 2"></div>
+      <div class="f c12"><label for="jnU">Utilizador</label><input id="jnU" autocapitalize="none" spellcheck="false"></div>
+      <div class="f c12"><label for="jnP">Palavra-passe</label><input id="jnP" type="password"></div>
+    </div><div class="msg bad" id="jnE" style="margin-top:8px"></div>
+    <button class="btn pri" style="width:100%;margin-top:14px" id="jnB">Ligar e copiar os dados</button></form>
+    <button class="btn ghost sm" id="jnV" style="margin-top:10px;width:100%">← Voltar</button>`);
+  $('#jnN').focus();
+  $('#jnV').onclick = async () => { await PT.esquecer(); ecraSetup(); };
+  $('#jnF').onsubmit = async e => {
+    e.preventDefault(); const er = $('#jnE'), nomePC = $('#jnN').value.trim(), ut = $('#jnU').value.trim().toLowerCase(), pw = $('#jnP').value;
+    if (nomePC.length < 2) return er.textContent = 'Indique um nome para este computador.';
+    $('#jnB').disabled = true; $('#jnB').textContent = 'A verificar…';
+    const lista = [];
+    for (const f of await PT.listar('utilizadores')) { try { lista.push(desU(await MP.lerJSON('utilizadores/' + f))); } catch { } }
+    const u = lista.find(x => x.utilizador === ut && x.ativo && x.wrap);
+    let dek = null; if (u) { try { dek = await Cripto.desembrulhar(u.wrap, pw); } catch { } }
+    if (!dek) { $('#jnB').disabled = false; $('#jnB').textContent = 'Ligar e copiar os dados'; return er.textContent = 'Utilizador ou palavra-passe incorretos.'; }
+    $('#jnB').textContent = 'A copiar os dados da sede…';
+    try {
+      MP.cfg = { ativo: true, orgId: org.orgId, pcId: novoCodigo(), nomePC, seq: 0, cursores: {}, versoes: {}, pendentes: [] };
+      await MP.guardarCfg();
+      for (const x of lista) await MP.o.putUser(x);
+      if (org.rec) await MP.o.setRec(desW(org.rec));
+      Cripto.dek = dek;
+      await MP.puxar(); await MP.guardarCfg();
+      MP.online = true; MP.ultimaSync = Date.now();
+      await entrar(lista.find(x => x.id === u.id), dek, `Computador "${nomePC}" ligado à pasta partilhada`);
+    } catch (err) { er.textContent = 'Erro: ' + (err?.message || err); $('#jnB').disabled = false; $('#jnB').textContent = 'Tentar novamente'; }
+  };
+}
+
+/* Numeração: recibos e militantes */
+async function proximoRecibo(ano) {
+  if (!MP.ativo) return +(CFG.recibos?.[ano]) || 1;
+  return MP.contadores(c => {
+    const conhecido = Math.max(0, ...PAGS.filter(p => p.numAno === ano).map(p => p.numSeq || 0));
+    const seq = Math.max(+c.recibos[ano] || 1, +(CFG.recibos?.[ano]) || 1, conhecido + 1);
+    c.recibos[ano] = seq + 1; return seq;
+  });
+}
+async function proximoMilitante() {
+  return MP.contadores(c => {
+    const conhecido = Math.max(0, ...LISTA.map(m => parseInt(String(m.numMilitante).replace(/\D/g, ''), 10) || 0));
+    let n = Math.max(+c.militante || 1, +CFG.proximoNum || 1, conhecido + 1);
+    while (LISTA.some(m => m.numMilitante === numFmt(n))) n++;
+    c.militante = n + 1; return numFmt(n);
+  });
+}
+
+/* Interceção das escritas locais para as partilhar */
+{
+  const o = MP.o;
+  for (const k of ['put', 'del', 'putPag', 'emitir', 'clear', 'clearPag', 'putUser', 'setCfg', 'setRec']) o[k] = DB[k];
+  DB.put = async m => { await o.put(m); await MP.registar([{ t: 'm', op: 'put', id: m.id, o: m }]); };
+  DB.del = async id => { await o.del(id); await MP.registar([{ t: 'm', op: 'del', id }]); };
+  DB.putPag = async p => { await o.putPag(p); await MP.registar([{ t: 'p', op: 'put', id: p.id, o: p }]); };
+  DB.emitir = async (p, cfg) => { if (MP.ativo) cfg.alteradoEm = new Date().toISOString(); await o.emitir(p, cfg); await MP.registar([{ t: 'p', op: 'put', id: p.id, o: p }]); if (MP.ativo) MP.escreverJSON('config.json', cfg).catch(() => { }); };
+  DB.clear = async () => { const ids = await DB.tx('m3', 'readonly', s => DB.req(s.getAllKeys())); await o.clear(); await MP.registar(ids.map(id => ({ t: 'm', op: 'del', id }))); };
+  DB.clearPag = async () => { const ids = await DB.tx('p3', 'readonly', s => DB.req(s.getAllKeys())); await o.clearPag(); await MP.registar(ids.map(id => ({ t: 'p', op: 'del', id }))); };
+  DB.putUser = async u => {
+    const partilhar = MP.ativo && !MP.aplicando; if (partilhar) u.alteradoEm = new Date().toISOString();
+    await o.putUser(u); if (partilhar) MP.escreverJSON('utilizadores/' + u.id + '.json', serU(u)).catch(() => { });
+  };
+  DB.setCfg = async c => {
+    const partilhar = MP.ativo && !MP.aplicando; if (partilhar) c.alteradoEm = new Date().toISOString();
+    await o.setCfg(c); if (partilhar) MP.escreverJSON('config.json', c).catch(() => { });
+  };
+  DB.setRec = async w => {
+    await o.setRec(w);
+    if (MP.ativo && !MP.aplicando) { const org = await MP.lerJSON('org.json').catch(() => null); if (org) MP.escreverJSON('org.json', { ...org, rec: serW(w) }).catch(() => { }); }
+  };
+}
+setInterval(() => MP.sincronizar(false), 10000);
+
+/* Separador "Vários computadores" (Segurança) */
+async function abaPostos() {
+  const box = $('#sConteudo');
+  if (!PT) { box.innerHTML = `<div class="card pad"><h2>Vários computadores</h2><p class="muted">Disponível apenas na <b>aplicação para Windows</b> (o navegador não pode aceder a pastas da rede).</p></div>`; return; }
+  if (!MP.ativo) {
+    box.innerHTML = `<div class="grid2"><div class="card pad"><h2>Partilhar os dados entre computadores da sede</h2>
+      <p class="muted" style="margin-top:0">Use uma <b>pasta partilhada da rede local</b> (num dos computadores ou num disco de rede/NAS) a que os computadores da sede tenham acesso. A pasta só guarda dados <b>cifrados</b>.</p>
+      <ol class="muted" style="font-size:13.5px;padding-left:18px"><li>Neste computador (o que já tem os dados): escolha a pasta e ative.</li><li>Nos outros computadores: instale a aplicação e, no ecrã inicial, escolha <b>"Ligar a uma pasta partilhada"</b>.</li></ol>
+      <div class="f" style="margin-top:12px"><label for="mpN">Nome deste computador</label><input id="mpN" maxlength="40" value="Principal"></div>
+      <button class="btn pri" id="mpA" style="margin-top:14px">Escolher pasta partilhada e ativar</button></div>
+      <div class="card pad"><h2>Requisitos e cuidados</h2><ul class="muted" style="margin:0;padding-left:18px;font-size:13.5px">
+        <li>Permissões da pasta (Windows): só as contas da sede, com leitura e escrita.</li>
+        <li>O computador ou disco onde está a pasta tem de estar ligado para emitir recibos e atribuir números de militante.</li>
+        <li>Sem rede, cada computador continua a funcionar e envia as alterações quando a ligação voltar.</li>
+        <li>Relógios dos computadores certos (sincronização automática de hora do Windows): em edições simultâneas da mesma ficha vence a mais recente.</li>
+        <li>Continue a fazer cópias de segurança cifradas regularmente.</li></ul></div></div>`;
+    $('#mpA').onclick = async () => {
+      const nome = $('#mpN').value.trim(); if (nome.length < 2) return toast('Indique um nome para este computador.', true);
+      if (!confirm('Ativar a partilha? Todos os dados deste computador serão copiados, cifrados, para a pasta que escolher.')) return;
+      try { $('#mpA').disabled = true; $('#mpA').textContent = 'A copiar os dados…'; if (await MP.ativarAqui(nome)) { toast('Partilha ativada.'); abaPostos(); } else { $('#mpA').disabled = false; $('#mpA').textContent = 'Escolher pasta partilhada e ativar'; } }
+      catch (e) { toast(e.message || String(e), true); $('#mpA').disabled = false; $('#mpA').textContent = 'Escolher pasta partilhada e ativar'; }
+    };
+    return;
+  }
+  const est = await PT.estado(), postos = [];
+  for (const f of await PT.listar('postos').catch(() => [])) { try { postos.push({ id: f.replace('.json', ''), ...(await MP.lerJSON('postos/' + f)) }); } catch { } }
+  box.innerHTML = `<div class="grid2"><div class="card pad"><h2>Partilha ativa</h2>
+      <div class="dl" style="grid-template-columns:1fr"><div><span>Pasta partilhada</span><b class="mono" style="word-break:break-all">${esc(est.caminho || '—')}</b></div>
+      <div><span>Este computador</span><b>${esc(MP.cfg.nomePC)} <small class="muted mono">(${esc(MP.cfg.pcId)})</small></b></div>
+      <div><span>Estado</span><b>${MP.online === false ? '<span class="pill bad">Rede indisponível</span>' : '<span class="pill">Ligado</span>'} ${MP.cfg.pendentes.length ? `<span class="pill warn">${MP.cfg.pendentes.length} alteração(ões) por enviar</span>` : ''}</b></div>
+      <div><span>Última sincronização</span><b>${MP.ultimaSync ? fmtDataHora(new Date(MP.ultimaSync).toISOString()) : '—'}</b></div></div>
+      <div class="row" style="margin-top:16px"><button class="btn pri" id="mpS">Sincronizar agora</button><button class="btn danger" id="mpD">Desligar este computador</button></div></div>
+    <div class="card pad"><h2>Computadores ligados</h2>${postos.length ? `<table class="mini"><tbody>${postos.map(p => `<tr><td><b>${esc(p.nome || p.id)}</b>${p.id === MP.cfg.pcId ? ' <small class="muted">(este)</small>' : ''}</td><td class="muted">${esc(p.utilizador || '')}</td><td class="mono muted">${p.ultimaSync ? fmtDataHora(p.ultimaSync) : '—'}</td></tr>`).join('')}</tbody></table>` : '<p class="muted">Ainda sem registos.</p>'}</div></div>`;
+  $('#mpS').onclick = async () => { await MP.sincronizar(true); abaPostos(); };
+  $('#mpD').onclick = async () => { if (!confirm('Desligar este computador da pasta partilhada? Os dados locais mantêm-se, mas deixam de ser sincronizados.')) return; await MP.desligar(); toast('Computador desligado da partilha.'); abaPostos(); };
+}
+
 /* ---------- Arranque ---------- */
 window.addEventListener('beforeunload', e => { if (FORM_SUJO) { e.preventDefault(); e.returnValue = ''; } });
 (async () => {
@@ -2409,6 +2726,7 @@ window.addEventListener('beforeunload', e => { if (FORM_SUJO) { e.preventDefault
   CFG = { ...CFG_PADRAO, ...(await DB.getCfg() || {}) };
   if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
   aplicarMarca();
+  await MP.carregarCfg();
   if ((await DB.users()).length) ecraLogin(); else ecraSetup();
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
 })();

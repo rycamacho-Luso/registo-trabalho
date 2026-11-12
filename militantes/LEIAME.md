@@ -95,6 +95,27 @@ A pasta `desktop/` transforma a aplicação num programa de Windows (Electron 44
 
 **Programadores:** `cd desktop && npm ci && npm run iniciar` (executar) ou `npm run dist` (compilar em Windows).
 
+## Vários computadores na mesma sede (versão 1.1)
+
+Os computadores da sede partilham os mesmos dados através de uma **pasta partilhada da rede local** — sem servidor de internet, sem custos.
+
+**Como funciona**
+- Cada computador mantém uma cópia local cifrada e continua a funcionar se a rede falhar; as alterações são enviadas quando a ligação voltar.
+- Na pasta partilhada só existem dados **cifrados** (AES-256-GCM, a mesma chave de dados): ninguém consegue ler os ficheiros fora da aplicação.
+- Sincronização automática a cada 10 segundos (ou *Sincronizar agora*).
+- **Uma única série** de números de militante e de recibos para toda a sede, atribuída com bloqueio exclusivo na pasta: dois computadores nunca dão o mesmo número. Sem ligação à pasta, a aplicação **recusa** emitir recibos ou atribuir números (para não criar duplicados); o resto continua a funcionar.
+- Utilizadores, palavras-passe, perfis e configurações são comuns a todos os computadores.
+- Edições simultâneas da mesma ficha: vence a mais recente. Um recibo anulado num computador fica anulado em todos.
+- Cada computador tem a sua própria cadeia no registo de acessos; *Verificar integridade* confirma todas.
+
+**Instalação na sede (3 computadores)**
+1. Escolher o local da pasta partilhada: um disco de rede (NAS) ou o computador que fica sempre ligado. Criar a pasta (ex.: `D:\Partilhas\Partido`) e partilhá-la no Windows (*Propriedades → Partilha*) **só** com as contas de utilizador das pessoas da sede, com leitura e escrita.
+2. No computador que já tem os dados: *Segurança → Vários computadores* → nome do computador → **Escolher pasta partilhada e ativar** (escolher a pasta partilhada, ex.: `\\PC-SECRETARIA\Partido`). É criada a subpasta `RegistoMilitantes`.
+3. Nos outros dois computadores: instalar a aplicação e, no ecrã inicial, **Ligar a uma pasta partilhada da sede** → escolher a mesma pasta → entrar com um utilizador existente.
+4. Confirmar em *Segurança → Vários computadores* que os três aparecem em *Computadores ligados*.
+
+**Cuidados:** o relógio dos computadores deve estar certo (sincronização automática de hora do Windows); o computador/NAS da pasta tem de estar ligado para emitir recibos; continuar a fazer cópias de segurança cifradas.
+
 ## Base legal usada
 
 Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), com as alterações das LO n.º 2/2008 e n.º 1/2018.
@@ -110,4 +131,4 @@ Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos
 
 ## Próximas fases (proposta)
 
-- Sincronização entre sedes (servidor central ou troca de ficheiros cifrados), se necessária.
+- Várias sedes em locais diferentes (servidor central), se o partido vier a precisar.
