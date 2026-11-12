@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#006530">
+<meta name="description" content="Registo e gestão de militantes de partido político — dados guardados localmente.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<title>Registo de Militantes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* Paleta retirada de https://mpt.pt/styles.css (escala --g-*) e do verde do logótipo (#006530) */
+:root{
+  --brand:#006530; --brand-d:#004D24;
+  --g-50:#F2FAE6; --g-100:#E1F4C7; --g-200:#C8E89A; --g-300:#A8D767; --g-400:#8AC23E;
+  --g-500:#6FA831; --g-600:#588C26; --g-700:#45711F; --g-800:#34561A; --g-900:#243C13; --g-950:#11200A;
+  --bg:#F6F8F5; --surface:#FFFFFF; --surface-2:#FCFCFB; --ink:#16201A; --muted:#6A7464; --line:#D9E0D5; --line-2:#EDF1EA;
+  --accent:var(--brand); --accent-soft:var(--g-50); --ring:rgba(111,168,49,.35);
+  --ok:#2E7D32; --warn:#B45309; --warn-2:#FEF3E2; --danger:#B42318; --danger-2:#FDECEA;
+  --side:linear-gradient(170deg,#004D24 0%,#11200A 100%); --side-ink:#EAF5DC;
+  --shadow-sm:0 2px 4px rgba(17,32,10,.04); --shadow-md:0 8px 24px rgba(17,32,10,.07); --shadow-lg:0 24px 60px rgba(17,32,10,.14);
+  --r-sm:10px; --r-md:16px; --r-lg:22px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#0E150F; --surface:#151F16; --surface-2:#1A261B; --ink:#E6EFE2; --muted:#9AA894; --line:#2A3A2B; --line-2:#1F2C20;
+    --accent:#8AC23E; --accent-soft:#1D2E15; --ring:rgba(138,194,62,.35);
+    --warn:#F59E0B; --warn-2:#2E2210; --danger:#F87171; --danger-2:#331817; --ok:#6FCF73;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0E150F; --surface:#151F16; --surface-2:#1A261B; --ink:#E6EFE2; --muted:#9AA894; --line:#2A3A2B; --line-2:#1F2C20;
+  --accent:#8AC23E; --accent-soft:#1D2E15; --ring:rgba(138,194,62,.35);
+  --warn:#F59E0B; --warn-2:#2E2210; --danger:#F87171; --danger-2:#331817; --ok:#6FCF73;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{font-family:Manrope,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit;color:inherit}
+.app{display:grid;grid-template-columns:260px 1fr;min-height:100vh}
+
+/* ---------- Barra lateral ---------- */
+.side{background:var(--side);color:var(--side-ink);padding:22px 16px;display:flex;flex-direction:column;gap:6px;position:sticky;top:0;height:100vh}
+.brand{display:flex;align-items:center;gap:12px;padding:4px 8px 22px}
+.brand-logo{width:46px;height:46px;border-radius:14px;background:#fff;display:grid;place-items:center;overflow:hidden;flex:none}
+.brand-logo img{max-width:100%;max-height:100%;object-fit:contain}
+.brand b{display:block;font-size:17px;font-weight:800;letter-spacing:-.01em;color:#fff}
+.brand small{display:block;font-size:12px;opacity:.75}
+.nav{display:flex;flex-direction:column;gap:4px}
+.nav button{all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:12px;font-weight:600;color:var(--side-ink);opacity:.85;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.08);opacity:1}
+.nav button.on{background:var(--g-400);color:var(--g-950);opacity:1;box-shadow:0 8px 20px rgba(111,168,49,.3)}
+.nav button:focus-visible{outline:2px solid var(--g-300);outline-offset:2px}
+.nav svg{width:20px;height:20px;flex:none}
+.side-foot{margin-top:auto;font-size:12px;opacity:.7;padding:12px 10px;border-top:1px solid rgba(255,255,255,.12);display:flex;gap:8px;align-items:flex-start}
+.side-foot svg{width:16px;height:16px;flex:none;margin-top:2px}
+
+/* ---------- Área principal ---------- */
+.main{padding:28px 36px 60px;max-width:1280px;width:100%}
+.head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.head h1{margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em}
+.head p{margin:4px 0 0;color:var(--muted)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surface);padding:10px 18px;border-radius:999px;font-weight:700;cursor:pointer;transition:.15s;white-space:nowrap}
+.btn:hover{border-color:var(--g-400)}
+.btn:focus-visible{outline:none;box-shadow:0 0 0 4px var(--ring)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff;box-shadow:0 8px 20px rgba(0,101,48,.22)}
+.btn.pri:hover{background:var(--brand-d)}
+.btn.danger{color:var(--danger);border-color:color-mix(in srgb,var(--danger) 35%,transparent)}
+.btn.danger:hover{background:var(--danger-2)}
+.btn.ghost{background:transparent;border-color:transparent}
+.btn.sm{padding:7px 12px;font-size:13px}
+.btn svg{width:18px;height:18px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.card{background:var(--surface);border:1px solid var(--line-2);border-radius:var(--r-lg);box-shadow:var(--shadow-sm)}
+.card.pad{padding:22px}
+.card h2{margin:0 0 14px;font-size:17px;font-weight:800}
+
+/* KPIs */
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:20px}
+.kpi{padding:20px;border-radius:var(--r-lg);background:var(--surface);border:1px solid var(--line-2);position:relative;overflow:hidden}
+.kpi .lbl{color:var(--muted);font-size:13px;font-weight:600}
+.kpi .val{font-size:34px;font-weight:800;letter-spacing:-.03em;margin-top:6px;font-variant-numeric:tabular-nums}
+.kpi .sub{font-size:12.5px;color:var(--muted)}
+.kpi.hero{background:linear-gradient(135deg,#006530,#34561A);color:#fff;border:none}
+.kpi.hero .lbl,.kpi.hero .sub{color:rgba(255,255,255,.8)}
+.kpi.hero::after{content:"";position:absolute;right:-30px;top:-30px;width:130px;height:130px;border-radius:50%;background:rgba(168,215,103,.18)}
+.grid2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+.bars{display:flex;flex-direction:column;gap:10px}
+.bar-row{display:grid;grid-template-columns:150px 1fr 40px;align-items:center;gap:10px;font-size:13.5px}
+.bar-row .track{height:10px;background:var(--line-2);border-radius:99px;overflow:hidden}
+.bar-row .fill{height:100%;background:linear-gradient(90deg,var(--g-500),var(--g-400));border-radius:99px}
+.bar-row .n{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.empty{padding:40px 20px;text-align:center;color:var(--muted)}
+.empty svg{width:56px;height:56px;color:var(--g-300);margin-bottom:8px}
+
+/* Lista */
+.toolbar{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.search{flex:1;min-width:240px;position:relative}
+.search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:18px;height:18px;color:var(--muted)}
+.search input{width:100%;padding:11px 14px 11px 42px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;padding:12px 14px;border-bottom:1px solid var(--line)}
+td{padding:12px 14px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+tbody tr{cursor:pointer;transition:background .12s}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr:focus-visible{outline:2px solid var(--g-400);outline-offset:-2px}
+.who{display:flex;align-items:center;gap:12px}
+.av{width:40px;height:40px;border-radius:12px;object-fit:cover;background:var(--g-100);color:var(--g-800);display:grid;place-items:center;font-weight:800;font-size:14px;flex:none}
+.who b{display:block;font-weight:700}
+.who small{color:var(--muted)}
+.mono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;background:var(--g-50);color:var(--g-700)}
+.pill.warn{background:var(--warn-2);color:var(--warn)}
+.pill.bad{background:var(--danger-2);color:var(--danger)}
+.pill.mute{background:var(--line-2);color:var(--muted)}
+:root[data-theme="dark"] .pill:not(.warn):not(.bad):not(.mute){background:#1D2E15;color:var(--g-300)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .pill:not(.warn):not(.bad):not(.mute){background:#1D2E15;color:var(--g-300)}}
+
+/* Formulários */
+.steps{display:flex;gap:6px;margin-bottom:20px;flex-wrap:wrap}
+.step{display:flex;align-items:center;gap:10px;padding:8px 14px 8px 8px;border-radius:99px;background:var(--surface);border:1px solid var(--line-2);font-weight:700;font-size:13.5px;color:var(--muted);cursor:pointer}
+.step i{font-style:normal;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:var(--line-2);font-size:12.5px}
+.step.on{color:var(--ink);border-color:var(--g-400);box-shadow:0 0 0 3px var(--ring)}
+.step.on i{background:var(--brand);color:#fff}
+.step.done i{background:var(--g-400);color:var(--g-950)}
+.step.err i{background:var(--danger);color:#fff}
+.form-grid{display:grid;grid-template-columns:repeat(12,1fr);gap:16px 18px}
+.f{display:flex;flex-direction:column;gap:6px;grid-column:span 6}
+.f.c12{grid-column:span 12}.f.c8{grid-column:span 8}.f.c4{grid-column:span 4}.f.c3{grid-column:span 3}
+.f label{font-weight:700;font-size:13.5px}
+.f label .req{color:var(--danger)}
+.f .hint{font-size:12.5px;color:var(--muted)}
+.f .msg{font-size:12.5px;font-weight:600;min-height:0}
+.f .msg.bad{color:var(--danger)}
+.f .msg.ok{color:var(--ok)}
+.f .msg.warn{color:var(--warn)}
+input,select,textarea{width:100%;padding:11px 14px;border:1.5px solid var(--line);border-radius:12px;background:var(--surface-2);transition:.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--g-500);box-shadow:0 0 0 4px var(--ring);background:var(--surface)}
+input.bad,select.bad,textarea.bad{border-color:var(--danger)}
+input.ok{border-color:var(--g-500)}
+textarea{min-height:90px;resize:vertical}
+.sec-title{grid-column:span 12;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--accent);margin-top:6px;padding-bottom:6px;border-bottom:1px solid var(--line-2)}
+.check{grid-column:span 12;display:flex;gap:12px;align-items:flex-start;padding:14px 16px;border:1.5px solid var(--line);border-radius:14px;background:var(--surface-2);cursor:pointer}
+.check input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--brand);flex:none}
+.check small{display:block;color:var(--muted);margin-top:2px}
+.check.bad{border-color:var(--danger)}
+.legal{grid-column:span 12;font-size:12.5px;color:var(--muted);background:var(--accent-soft);border-radius:12px;padding:12px 14px;border-left:4px solid var(--g-400)}
+.form-foot{display:flex;justify-content:space-between;gap:10px;margin-top:22px;padding-top:18px;border-top:1px solid var(--line-2)}
+
+/* Foto */
+.photo-wrap{display:grid;grid-template-columns:auto 1fr;gap:24px;align-items:start}
+.photo-box{width:240px;height:320px;border-radius:18px;background:var(--g-50);border:2px dashed var(--g-300);display:grid;place-items:center;overflow:hidden;position:relative;color:var(--g-600);text-align:center;font-size:13px}
+.photo-box img{width:100%;height:100%;object-fit:cover}
+.photo-box svg{width:56px;height:56px}
+.crop{position:relative;width:300px;height:400px;border-radius:16px;overflow:hidden;background:#000;cursor:grab;touch-action:none;margin:0 auto}
+.crop canvas{display:block}
+.crop .guide{position:absolute;inset:0;pointer-events:none;background:radial-gradient(ellipse 34% 30% at 50% 42%,transparent 98%,rgba(0,0,0,.35) 100%)}
+video{width:100%;max-width:480px;border-radius:16px;background:#000;display:block;margin:0 auto}
+
+/* Ficha */
+.ficha{display:grid;grid-template-columns:220px 1fr;gap:26px}
+.ficha .foto{width:220px;height:293px;border-radius:18px;object-fit:cover;background:var(--g-100);display:grid;place-items:center;font-size:56px;font-weight:800;color:var(--g-700)}
+.dl{display:grid;grid-template-columns:repeat(2,1fr);gap:14px 22px}
+.dl div span{display:block;font-size:12px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+.dl div b{font-weight:600;word-break:break-word}
+
+/* Modal e toasts */
+dialog{border:none;border-radius:var(--r-lg);padding:0;max-width:min(860px,94vw);width:100%;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-lg)}
+dialog::backdrop{background:rgba(17,32,10,.55);backdrop-filter:blur(3px)}
+.dlg-h{display:flex;justify-content:space-between;align-items:center;padding:18px 22px;border-bottom:1px solid var(--line-2)}
+.dlg-h h3{margin:0;font-size:18px;font-weight:800}
+.dlg-b{padding:22px;max-height:72vh;overflow:auto}
+.dlg-f{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line-2);flex-wrap:wrap}
+.toasts{position:fixed;right:20px;bottom:20px;display:flex;flex-direction:column;gap:8px;z-index:99}
+.toast{background:var(--g-950);color:#fff;padding:12px 18px;border-radius:14px;box-shadow:var(--shadow-lg);font-weight:600;display:flex;gap:10px;align-items:center;animation:in .25s ease}
+.toast.bad{background:var(--danger)}
+@keyframes in{from{transform:translateY(10px);opacity:0}}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.muted{color:var(--muted)}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.hidden{display:none!important}
+
+/* Impressão: só a ficha de inscrição */
+#print{display:none}
+@media print{
+  @page{size:A4;margin:16mm}
+  body{background:#fff;color:#000;font-size:11pt}
+  .app,.toasts,dialog{display:none!important}
+  #print{display:block}
+  .p-head{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #006530;padding-bottom:10px;margin-bottom:14px}
+  .p-head h1{font-size:18pt;margin:0;color:#006530}
+  .p-head img{max-height:60px}
+  .p-grid{display:grid;grid-template-columns:1fr 3.5cm;gap:16px}
+  .p-foto{width:3.5cm;height:4.5cm;object-fit:cover;border:1px solid #999}
+  .p-sec{font-weight:800;color:#006530;text-transform:uppercase;font-size:9.5pt;letter-spacing:.06em;margin:14px 0 6px;border-bottom:1px solid #ccc}
+  .p-tbl{width:100%;border-collapse:collapse}
+  .p-tbl td{border:1px solid #bbb;padding:5px 8px;font-size:10pt;vertical-align:top}
+  .p-tbl td:first-child{width:38%;background:#f2faE6;font-weight:700}
+  .p-decl{font-size:9.5pt;margin:4px 0}
+  .p-sign{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:36px}
+  .p-sign div{border-top:1px solid #000;padding-top:4px;font-size:9pt;text-align:center}
+  .p-rgpd{font-size:8pt;color:#333;margin-top:18px;border-top:1px solid #ccc;padding-top:8px}
+}
+
+/* Responsivo (janelas estreitas) */
+@media (max-width:1100px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:12px 16px}
+  .brand{padding:0;margin-right:auto}
+  .nav{flex-direction:row;overflow-x:auto;width:100%}
+  .nav button span{display:none}
+  .side-foot{display:none}
+  .main{padding:20px 16px 60px}
+  .f,.f.c8,.f.c4,.f.c3{grid-column:span 12}
+  .photo-wrap,.ficha{grid-template-columns:1fr}
+  .dl{grid-template-columns:1fr}
+  .hide-sm{display:none}
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand">
+      <div class="brand-logo" id="brandLogo"></div>
+      <div><b id="brandName">Partido</b><small>Registo de Militantes</small></div>
+    </div>
+    <nav class="nav" aria-label="Navegação principal">
+      <button data-view="painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Painel</span></button>
+      <button data-view="lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Militantes</span></button>
+      <button data-view="novo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><span>Nova inscrição</span></button>
+      <button data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Configurações</span></button>
+    </nav>
+    <div class="side-foot"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Os dados ficam apenas neste computador. Faça cópias de segurança regulares.</span></div>
+  </aside>
+  <main class="main" id="main" tabindex="-1"></main>
+</div>
+
+<dialog id="dlg"><div id="dlgInner"></div></dialog>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div id="print"></div>
+
+<script>
+'use strict';
+/* =====================================================================
+   Registo de Militantes — Fase 1
+   Base legal de referência:
+   - Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), versão
+     consolidada da CNE com LO 2/2008 e LO 1/2018:
+       art. 19.º (liberdade de filiação; estrangeiros residentes, n.º 4)
+       art. 20.º (filiação pessoal; proibição de dupla filiação, n.º 2)
+       art. 21.º (restrições: militares e forças de segurança, n.º 1)
+   - RGPD (Reg. UE 2016/679), art. 9.º n.º 2 al. d) — opiniões políticas
+     tratadas por partido, relativas aos seus membros.
+   ===================================================================== */
+
+/* ---------- Utilitários ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const hoje = () => { const d = new Date(); d.setHours(0,0,0,0); return d; };
+const parseISO = s => { if (!/^\d{4}-\d{2}-\d{2}$/.test(s || '')) return null; const [y,m,d] = s.split('-').map(Number); const dt = new Date(y, m-1, d); return (dt.getFullYear()===y && dt.getMonth()===m-1 && dt.getDate()===d) ? dt : null; };
+const isoDe = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const fmtData = s => { const d = parseISO(s); return d ? d.toLocaleDateString('pt-PT') : '—'; };
+const fmtDataHora = s => s ? new Date(s).toLocaleString('pt-PT') : '—';
+const idadeEm = (nasc, ref = hoje()) => { let a = ref.getFullYear() - nasc.getFullYear(); const m = ref.getMonth() - nasc.getMonth(); if (m < 0 || (m === 0 && ref.getDate() < nasc.getDate())) a--; return a; };
+const diasAte = d => Math.round((d - hoje()) / 86400000);
+const iniciais = n => (n || '?').trim().split(/\s+/).filter(Boolean).map(p => p[0]).filter((_, i, a) => i === 0 || i === a.length - 1).join('').toUpperCase();
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+const norm = s => String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+function toast(msg, bad = false) { const t = document.createElement('div'); t.className = 'toast' + (bad ? ' bad' : ''); t.textContent = msg; $('#toasts').append(t); setTimeout(() => t.remove(), 3800); }
+
+const DISTRITOS = ['Aveiro','Beja','Braga','Bragança','Castelo Branco','Coimbra','Évora','Faro','Guarda','Leiria','Lisboa','Portalegre','Porto','Santarém','Setúbal','Viana do Castelo','Vila Real','Viseu','Região Autónoma dos Açores','Região Autónoma da Madeira','Estrangeiro'];
+const TIPOS_DOC = {
+  CC: 'Cartão de Cidadão',
+  TR: 'Título / Autorização de Residência',
+  CUE: 'Certificado de Registo de Cidadão da UE',
+  PASS: 'Passaporte'
+};
+const ESTADOS = { ativo: 'Ativo', suspenso: 'Suspenso', cessado: 'Filiação cessada' };
+
+/* ---------- Validações ---------- */
+const Val = {
+  /* NIF português: 9 dígitos, dígito de controlo módulo 11 (pesos 9..2).
+     Pessoas singulares: começa por 1, 2 ou 3; 45 = singular não residente. */
+  nif(v) {
+    const n = String(v || '').replace(/\s/g, '');
+    if (!n) return { ok: false, msg: 'Indique o NIF.' };
+    if (!/^\d{9}$/.test(n)) return { ok: false, msg: 'O NIF tem de ter exatamente 9 algarismos.' };
+    let soma = 0; for (let i = 0; i < 8; i++) soma += +n[i] * (9 - i);
+    const r = soma % 11, cd = r < 2 ? 0 : 11 - r;
+    if (cd !== +n[8]) return { ok: false, msg: 'NIF inválido (dígito de controlo não confere).' };
+    if (!/^[123]/.test(n) && !n.startsWith('45')) return { ok: false, msg: 'Este NIF não é de pessoa singular (deve começar por 1, 2, 3 ou 45).' };
+    return { ok: true, msg: 'NIF válido.', val: n };
+  },
+  /* N.º de documento do Cartão de Cidadão: 8 díg. (n.º civil) + 1 díg. controlo
+     + 2 caracteres de versão + 1 díg. controlo. Algoritmo da AMA:
+     da direita para a esquerda, duplica posições pares (2.ª, 4.ª…), letras A=10…Z=35,
+     subtrai 9 se >9, soma total múltipla de 10. */
+  cc(v) {
+    const n = String(v || '').toUpperCase().replace(/[\s-]/g, '');
+    if (!n) return { ok: false, msg: 'Indique o número do documento.' };
+    if (!/^\d{9}[A-Z0-9]{2}\d$/.test(n)) return { ok: false, msg: 'Formato esperado: 12345678 9 ZZ0 (12 caracteres).' };
+    let soma = 0;
+    for (let i = n.length - 1, pos = 0; i >= 0; i--, pos++) {
+      const ch = n[i]; let val = /\d/.test(ch) ? +ch : ch.charCodeAt(0) - 55;
+      if (pos % 2 === 1) { val *= 2; if (val > 9) val -= 9; }
+      soma += val;
+    }
+    if (soma % 10 !== 0) return { ok: false, msg: 'Número do Cartão de Cidadão inválido (controlo não confere).' };
+    return { ok: true, msg: 'Número de Cartão de Cidadão válido.', val: `${n.slice(0,8)} ${n[8]} ${n.slice(9)}` };
+  },
+  docGenerico(v) {
+    const n = String(v || '').trim().toUpperCase();
+    if (!n) return { ok: false, msg: 'Indique o número do documento.' };
+    if (!/^[A-Z0-9 \-\/]{5,20}$/.test(n)) return { ok: false, msg: 'Use 5 a 20 letras/algarismos.' };
+    return { ok: true, msg: '', val: n };
+  },
+  /* Validade do documento: não pode estar caducado; aviso se caduca em ≤ 60 dias.
+     O CC tem validade máxima de 10 anos (Lei n.º 7/2007, na redação atual). */
+  validade(v, tipo, nasc) {
+    const d = parseISO(v);
+    if (!d) return { ok: false, msg: 'Indique a data de validade.' };
+    const dias = diasAte(d);
+    if (dias < 0) return { ok: false, msg: `Documento caducado há ${-dias} dia(s). Peça um documento válido.` };
+    const max = hoje(); max.setFullYear(max.getFullYear() + 10); max.setDate(max.getDate() + 1);
+    if (tipo === 'CC' && d > max) return { ok: false, msg: 'Validade superior a 10 anos — verifique a data (o CC tem validade máxima de 10 anos).' };
+    if (nasc && d < nasc) return { ok: false, msg: 'A validade não pode ser anterior à data de nascimento.' };
+    if (dias <= 60) return { ok: true, warn: true, msg: `Atenção: o documento caduca dentro de ${dias} dia(s).` };
+    return { ok: true, msg: `Válido até ${d.toLocaleDateString('pt-PT')}.` };
+  },
+  nascimento(v, idadeMin) {
+    const d = parseISO(v);
+    if (!d) return { ok: false, msg: 'Indique a data de nascimento.' };
+    if (d > hoje()) return { ok: false, msg: 'A data de nascimento não pode ser futura.' };
+    const a = idadeEm(d);
+    if (a > 120) return { ok: false, msg: 'Data de nascimento improvável — verifique.' };
+    if (a < idadeMin) return { ok: false, msg: `Idade ${a} anos — a idade mínima definida para filiação é ${idadeMin} anos.` };
+    return { ok: true, msg: `${a} anos.` };
+  },
+  nome(v) {
+    const n = String(v || '').trim().replace(/\s+/g, ' ');
+    if (!n) return { ok: false, msg: 'Indique o nome completo.' };
+    if (!/^[\p{L}][\p{L}' .\-]+$/u.test(n)) return { ok: false, msg: 'O nome só pode conter letras, espaços, hífen e apóstrofo.' };
+    if (n.split(' ').length < 2) return { ok: false, msg: 'Indique o nome completo (pelo menos nome e apelido), tal como no documento.' };
+    // Se escrito todo em minúsculas ou maiúsculas, normaliza (partículas da/de/do/das/dos/e ficam em minúsculas)
+    const titulo = (n === n.toLowerCase() || n === n.toUpperCase())
+      ? n.toLowerCase().split(' ').map((p, i) => (i && /^(da|de|do|das|dos|e|d')$/.test(p)) ? p : p.replace(/(^|[-'])(\p{L})/gu, (_, a, b) => a + b.toUpperCase())).join(' ')
+      : n;
+    return { ok: true, msg: '', val: titulo };
+  },
+  cp(v) {
+    const n = String(v || '').trim();
+    if (!n) return { ok: false, msg: 'Indique o código postal.' };
+    if (!/^\d{4}-\d{3}$/.test(n)) return { ok: false, msg: 'Formato: 1234-567.' };
+    if (+n.slice(0, 4) < 1000) return { ok: false, msg: 'Código postal inexistente (os CP portugueses começam em 1000).' };
+    return { ok: true, msg: '' };
+  },
+  tel(v, obrig) {
+    const n = String(v || '').replace(/[\s().-]/g, '');
+    if (!n) return obrig ? { ok: false, msg: 'Indique um contacto telefónico.' } : { ok: true, msg: '' };
+    if (/^(\+351|00351)?[29]\d{8}$/.test(n)) return { ok: true, msg: '' };
+    if (/^(\+|00)\d{8,15}$/.test(n)) return { ok: true, msg: 'Número internacional.' };
+    return { ok: false, msg: 'Número inválido (9 algarismos, a começar por 2 ou 9, ou formato internacional +…).' };
+  },
+  email(v) {
+    const n = String(v || '').trim();
+    if (!n) return { ok: true, msg: '' };
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(n) ? { ok: true, msg: '' } : { ok: false, msg: 'Endereço de email inválido.' };
+  },
+  req(v, nome) { return String(v || '').trim() ? { ok: true, msg: '' } : { ok: false, msg: `Preencha: ${nome}.` }; },
+  eleitor(v) {
+    const n = String(v || '').trim();
+    if (!n) return { ok: true, msg: '' };
+    return /^\d{1,10}$/.test(n) ? { ok: true, msg: '' } : { ok: false, msg: 'Apenas algarismos.' };
+  }
+};
+
+/* ---------- Base de dados local (IndexedDB) ---------- */
+const DB = {
+  db: null,
+  open() {
+    return new Promise((res, rej) => {
+      const r = indexedDB.open('registo-militantes', 1);
+      r.onupgradeneeded = () => {
+        const db = r.result;
+        const s = db.createObjectStore('militantes', { keyPath: 'id' });
+        s.createIndex('nif', 'nif', { unique: true });
+        s.createIndex('numMilitante', 'numMilitante', { unique: true });
+        db.createObjectStore('config');
+      };
+      r.onsuccess = () => { DB.db = r.result; res(); };
+      r.onerror = () => rej(r.error);
+    });
+  },
+  tx(store, mode, fn) {
+    return new Promise((res, rej) => {
+      const t = DB.db.transaction(store, mode); const s = t.objectStore(store); let out;
+      Promise.resolve(fn(s)).then(v => out = v);
+      t.oncomplete = () => res(out); t.onerror = () => rej(t.error); t.onabort = () => rej(t.error);
+    });
+  },
+  req: r => new Promise((res, rej) => { r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); }),
+  all() { return DB.tx('militantes', 'readonly', s => DB.req(s.getAll())); },
+  get(id) { return DB.tx('militantes', 'readonly', s => DB.req(s.get(id))); },
+  put(m) { return DB.tx('militantes', 'readwrite', s => DB.req(s.put(m))); },
+  del(id) { return DB.tx('militantes', 'readwrite', s => DB.req(s.delete(id))); },
+  clear() { return DB.tx('militantes', 'readwrite', s => DB.req(s.clear())); },
+  getCfg() { return DB.tx('config', 'readonly', s => DB.req(s.get('cfg'))); },
+  setCfg(c) { return DB.tx('config', 'readwrite', s => DB.req(s.put(c, 'cfg'))); }
+};
+
+const CFG_PADRAO = { nomePartido: 'MPT — Partido da Terra', sigla: 'MPT', idadeMin: 18, prefixo: '', proximoNum: 1, logo: '', tema: 'auto' };
+let CFG = { ...CFG_PADRAO };
+let LISTA = [];
+
+async function carregar() { LISTA = await DB.all(); LISTA.sort((a, b) => a.nomeCompleto.localeCompare(b.nomeCompleto, 'pt')); }
+function aplicarMarca() {
+  $('#brandName').textContent = CFG.sigla || 'Partido';
+  const box = $('#brandLogo'); box.innerHTML = '';
+  if (CFG.logo) { const i = new Image(); i.src = CFG.logo; i.alt = 'Logótipo'; box.append(i); }
+  else box.innerHTML = '<img src="icon-192.png" alt="">';
+  document.documentElement.dataset.theme = CFG.tema === 'auto' ? '' : CFG.tema;
+  if (CFG.tema === 'auto') delete document.documentElement.dataset.theme;
+}
+const numFmt = n => (CFG.prefixo || '') + String(n).padStart(5, '0');
+
+/* Estado do documento de identificação */
+function estadoDoc(m) {
+  const d = parseISO(m.validadeDoc); if (!d) return { cls: 'mute', txt: '—' };
+  const dias = diasAte(d);
+  if (dias < 0) return { cls: 'bad', txt: 'Doc. caducado' };
+  if (dias <= 60) return { cls: 'warn', txt: `Caduca em ${dias} d` };
+  return { cls: '', txt: 'Doc. válido' };
+}
+
+/* ---------- Router ---------- */
+let VIEW = 'painel';
+function ir(view, arg) {
+  VIEW = view;
+  $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view || (view === 'editar' && b.dataset.view === 'novo')));
+  const m = $('#main'); m.innerHTML = ''; window.scrollTo(0, 0);
+  ({ painel: vPainel, lista: vLista, novo: () => vForm(null), editar: () => vForm(arg), config: vConfig })[view]();
+  m.focus({ preventScroll: true });
+}
+$$('.nav button').forEach(b => b.addEventListener('click', () => {
+  if ((VIEW === 'novo' || VIEW === 'editar') && FORM_SUJO && !confirm('Há alterações por guardar. Sair mesmo assim?')) return;
+  ir(b.dataset.view);
+}));
+
+const ICON = {
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  user: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>',
+  people: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  cam: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>',
+  up: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/></svg>',
+  print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>',
+  edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+  trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
+};
+const avatar = (m, cls = 'av') => m.foto ? `<img class="${cls}" src="${esc(m.foto)}" alt="">` : `<div class="${cls}">${esc(iniciais(m.nomeCompleto))}</div>`;
+
+/* ---------- Painel ---------- */
+function vPainel() {
+  const L = LISTA, ativos = L.filter(m => m.estado === 'ativo');
+  const h = hoje(), mesIni = new Date(h.getFullYear(), h.getMonth(), 1);
+  const novos = L.filter(m => (parseISO(m.dataAdmissao) || 0) >= mesIni).length;
+  const cad = L.filter(m => m.estado === 'ativo' && estadoDoc(m).cls === 'bad').length;
+  const aCad = L.filter(m => m.estado === 'ativo' && estadoDoc(m).cls === 'warn').length;
+  const porDist = {}; ativos.forEach(m => porDist[m.distrito] = (porDist[m.distrito] || 0) + 1);
+  const dist = Object.entries(porDist).sort((a, b) => b[1] - a[1]).slice(0, 10), maxD = dist[0]?.[1] || 1;
+  const faixas = { '18–29': 0, '30–44': 0, '45–64': 0, '65+': 0, '< 18': 0 };
+  ativos.forEach(m => { const d = parseISO(m.dataNascimento); if (!d) return; const a = idadeEm(d); faixas[a < 18 ? '< 18' : a < 30 ? '18–29' : a < 45 ? '30–44' : a < 65 ? '45–64' : '65+']++; });
+  if (!faixas['< 18']) delete faixas['< 18'];
+  const maxF = Math.max(1, ...Object.values(faixas));
+  const recentes = [...L].sort((a, b) => (b.criadoEm || '').localeCompare(a.criadoEm || '')).slice(0, 6);
+  const barras = (pares, max) => pares.map(([k, v]) => `<div class="bar-row"><span>${esc(k)}</span><div class="track"><div class="fill" style="width:${(v / max * 100).toFixed(1)}%"></div></div><span class="n">${v}</span></div>`).join('');
+
+  $('#main').innerHTML = `
+  <div class="head"><div><h1>Painel</h1><p>${esc(CFG.nomePartido)} · ${h.toLocaleDateString('pt-PT', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p></div>
+    <button class="btn pri" data-go="novo">${ICON.plus} Nova inscrição</button></div>
+  <div class="kpis">
+    <div class="kpi hero"><div class="lbl">Militantes ativos</div><div class="val">${ativos.length}</div><div class="sub">${L.length} registo${L.length === 1 ? '' : 's'} no total</div></div>
+    <div class="kpi"><div class="lbl">Novas adesões este mês</div><div class="val">${novos}</div><div class="sub">desde ${mesIni.toLocaleDateString('pt-PT')}</div></div>
+    <div class="kpi"><div class="lbl">Documentos a caducar</div><div class="val" style="color:var(--warn)">${aCad}</div><div class="sub">nos próximos 60 dias</div></div>
+    <div class="kpi"><div class="lbl">Documentos caducados</div><div class="val" style="color:var(--danger)">${cad}</div><div class="sub">militantes ativos a atualizar</div></div>
+  </div>
+  <div class="grid2">
+    <div class="card pad"><h2>Militantes ativos por distrito</h2>${dist.length ? `<div class="bars">${barras(dist, maxD)}</div>` : `<div class="empty">${ICON.people}<div>Ainda não há militantes registados.</div></div>`}</div>
+    <div class="card pad"><h2>Faixa etária</h2>${ativos.length ? `<div class="bars">${barras(Object.entries(faixas), maxF)}</div>` : '<div class="empty">Sem dados.</div>'}</div>
+  </div>
+  <div class="card pad" style="margin-top:16px"><h2>Últimas inscrições</h2>
+    ${recentes.length ? `<table><tbody>${recentes.map(m => `<tr data-id="${esc(m.id)}" tabindex="0"><td><div class="who">${avatar(m)}<div><b>${esc(m.nomeCompleto)}</b><small class="mono">N.º ${esc(m.numMilitante)}</small></div></div></td><td class="hide-sm">${esc(m.concelho)}, ${esc(m.distrito)}</td><td class="mono hide-sm">${fmtData(m.dataAdmissao)}</td></tr>`).join('')}</tbody></table>`
+      : `<div class="empty">${ICON.user}<div>Comece por registar o primeiro militante.</div></div>`}
+  </div>`;
+  ligarLinhas();
+}
+function ligarLinhas() {
+  $$('#main [data-go]').forEach(b => b.onclick = () => ir(b.dataset.go));
+  $$('#main tr[data-id]').forEach(tr => { tr.onclick = () => abrirFicha(tr.dataset.id); tr.onkeydown = e => { if (e.key === 'Enter') abrirFicha(tr.dataset.id); }; });
+}
+
+/* ---------- Lista ---------- */
+let FILTRO = { q: '', distrito: '', estado: 'ativo' };
+function vLista() {
+  $('#main').innerHTML = `
+  <div class="head"><div><h1>Militantes</h1><p id="contagem"></p></div>
+    <div class="row"><button class="btn" id="btnCsv">Exportar CSV</button><button class="btn pri" data-go="novo">${ICON.plus} Nova inscrição</button></div></div>
+  <div class="toolbar">
+    <label class="search"><span class="sr">Pesquisar</span>${ICON.search}<input id="q" placeholder="Pesquisar por nome, n.º de militante, NIF, email ou concelho…" value="${esc(FILTRO.q)}"></label>
+    <select id="fDist" style="width:auto"><option value="">Todos os distritos</option>${DISTRITOS.map(d => `<option ${FILTRO.distrito === d ? 'selected' : ''}>${esc(d)}</option>`).join('')}</select>
+    <select id="fEst" style="width:auto"><option value="">Todos os estados</option>${Object.entries(ESTADOS).map(([k, v]) => `<option value="${k}" ${FILTRO.estado === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+  </div>
+  <div class="card" id="tabela"></div>`;
+  const desenhar = () => {
+    const q = norm(FILTRO.q);
+    const L = LISTA.filter(m => (!FILTRO.distrito || m.distrito === FILTRO.distrito) && (!FILTRO.estado || m.estado === FILTRO.estado) &&
+      (!q || norm([m.nomeCompleto, m.numMilitante, m.nif, m.email, m.concelho, m.localidade].join(' ')).includes(q)));
+    $('#contagem').textContent = `${L.length} de ${LISTA.length} registo(s)`;
+    $('#tabela').innerHTML = L.length ? `<table><thead><tr><th>Militante</th><th class="hide-sm">NIF</th><th class="hide-sm">Concelho / Distrito</th><th class="hide-sm">Admissão</th><th>Estado</th><th class="hide-sm">Documento</th></tr></thead><tbody>
+      ${L.map(m => { const ed = estadoDoc(m); return `<tr data-id="${esc(m.id)}" tabindex="0">
+        <td><div class="who">${avatar(m)}<div><b>${esc(m.nomeCompleto)}</b><small class="mono">N.º ${esc(m.numMilitante)}</small></div></div></td>
+        <td class="mono hide-sm">${esc(m.nif)}</td><td class="hide-sm">${esc(m.concelho)}<br><small class="muted">${esc(m.distrito)}</small></td>
+        <td class="mono hide-sm">${fmtData(m.dataAdmissao)}</td>
+        <td><span class="pill ${m.estado === 'ativo' ? '' : m.estado === 'suspenso' ? 'warn' : 'mute'}">${esc(ESTADOS[m.estado] || m.estado)}</span></td>
+        <td class="hide-sm"><span class="pill ${ed.cls}">${esc(ed.txt)}</span></td></tr>`; }).join('')}</tbody></table>`
+      : `<div class="empty">${ICON.search}<div>Nenhum militante corresponde aos filtros.</div></div>`;
+    ligarLinhas();
+  };
+  $('#q').oninput = e => { FILTRO.q = e.target.value; desenhar(); };
+  $('#fDist').onchange = e => { FILTRO.distrito = e.target.value; desenhar(); };
+  $('#fEst').onchange = e => { FILTRO.estado = e.target.value; desenhar(); };
+  $('#btnCsv').onclick = exportarCSV;
+  desenhar(); ligarLinhas();
+}
+
+/* ---------- Formulário de inscrição (assistente por passos) ---------- */
+let FORM_SUJO = false;
+const PASSOS = ['Identificação', 'Documento e NIF', 'Morada e contactos', 'Filiação e declarações', 'Fotografia', 'Revisão'];
+async function vForm(id) {
+  const ed = id ? await DB.get(id) : null;
+  const m = ed ? structuredClone(ed) : {
+    id: uid(), estado: 'ativo', nacionalidade: 'Portuguesa', tipoDoc: 'CC', distrito: '', dataAdmissao: isoDe(hoje()),
+    numMilitante: numFmt(CFG.proximoNum), foto: '', declDupla: false, declRestricoes: false, declMagistrado: false, rgpd: false, comunicacoes: false
+  };
+  FORM_SUJO = false;
+  let passo = 0;
+  const erros = Array(PASSOS.length).fill(false);
+
+  $('#main').innerHTML = `
+  <div class="head"><div><h1>${ed ? 'Editar militante' : 'Nova inscrição'}</h1><p>${ed ? esc(ed.nomeCompleto) + ' · N.º ' + esc(ed.numMilitante) : 'Preencha os dados tal como constam do documento de identificação.'}</p></div></div>
+  <div class="steps" id="steps"></div>
+  <form class="card pad" id="frm" novalidate autocomplete="off">
+    <div id="paineis"></div>
+    <div class="form-foot"><button type="button" class="btn" id="ant">← Anterior</button>
+      <div class="row"><button type="button" class="btn ghost" id="cancel">Cancelar</button><button type="button" class="btn pri" id="seg">Seguinte →</button></div></div>
+  </form>`;
+
+  const campo = (k, lbl, { tipo = 'text', cls = '', req = false, hint = '', attrs = '', opts = null } = {}) => {
+    const v = m[k] ?? '';
+    const ctrl = opts ? `<select id="f_${k}" name="${k}" ${attrs}>${opts}</select>`
+      : tipo === 'textarea' ? `<textarea id="f_${k}" name="${k}" ${attrs}>${esc(v)}</textarea>`
+      : `<input id="f_${k}" name="${k}" type="${tipo}" value="${esc(v)}" ${attrs}>`;
+    return `<div class="f ${cls}"><label for="f_${k}">${lbl}${req ? ' <span class="req">*</span>' : ''}</label>${ctrl}${hint ? `<div class="hint">${hint}</div>` : ''}<div class="msg" id="m_${k}" role="status"></div></div>`;
+  };
+  const sel = (arr, v, vazio) => (vazio ? `<option value="">${vazio}</option>` : '') + arr.map(x => Array.isArray(x) ? `<option value="${esc(x[0])}" ${x[0] === v ? 'selected' : ''}>${esc(x[1])}</option>` : `<option ${x === v ? 'selected' : ''}>${esc(x)}</option>`).join('');
+  const chk = (k, titulo, sub, req) => `<label class="check" id="c_${k}"><input type="checkbox" name="${k}" ${m[k] ? 'checked' : ''}><div><b>${titulo}${req ? ' <span class="req" style="color:var(--danger)">*</span>' : ''}</b><small>${sub}</small></div></label>`;
+  const idadeMin = +CFG.idadeMin || 18;
+  const maxNasc = (() => { const d = hoje(); d.setFullYear(d.getFullYear() - idadeMin); return isoDe(d); })();
+
+  const html = [
+    `<div class="form-grid">
+      <div class="sec-title">Identificação civil</div>
+      ${campo('nomeCompleto', 'Nome completo', { cls: 'c12', req: true, hint: 'Exatamente como consta do documento de identificação.', attrs: 'maxlength="150" autocapitalize="words"' })}
+      ${campo('dataNascimento', 'Data de nascimento', { tipo: 'date', cls: 'c4', req: true, attrs: `max="${maxNasc}" min="1900-01-01"` })}
+      ${campo('sexo', 'Sexo', { cls: 'c4', opts: sel([['F', 'Feminino'], ['M', 'Masculino'], ['ND', 'Prefiro não indicar']], m.sexo, '—') })}
+      ${campo('estadoCivil', 'Estado civil', { cls: 'c4', opts: sel(['Solteiro(a)', 'Casado(a)', 'União de facto', 'Divorciado(a)', 'Viúvo(a)'], m.estadoCivil, '—') })}
+      ${campo('nacionalidade', 'Nacionalidade', { cls: 'c4', req: true, attrs: 'list="dlNac" maxlength="60"' })}
+      ${campo('naturalidade', 'Naturalidade (freguesia / concelho)', { cls: 'c8', attrs: 'maxlength="100"' })}
+      ${campo('profissao', 'Profissão', { cls: 'c6', attrs: 'maxlength="80"' })}
+      ${campo('habilitacoes', 'Habilitações literárias', { cls: 'c6', opts: sel(['Ensino básico', 'Ensino secundário', 'Ensino profissional', 'Licenciatura', 'Mestrado', 'Doutoramento'], m.habilitacoes, '—') })}
+      <datalist id="dlNac"><option>Portuguesa</option><option>Brasileira</option><option>Cabo-verdiana</option><option>Angolana</option><option>Espanhola</option><option>Francesa</option><option>Romena</option><option>Ucraniana</option></datalist>
+      <div class="legal" id="avNac" hidden>Cidadão estrangeiro: nos termos do <b>art. 19.º, n.º 4, da Lei dos Partidos Políticos</b>, estrangeiros e apátridas legalmente residentes em Portugal podem filiar-se, gozando dos direitos de participação compatíveis com o seu estatuto de direitos políticos. Deve usar título de residência ou certificado de registo UE.</div>
+    </div>`,
+    `<div class="form-grid">
+      <div class="sec-title">Documento de identificação</div>
+      ${campo('tipoDoc', 'Tipo de documento', { cls: 'c6', req: true, opts: sel(Object.entries(TIPOS_DOC), m.tipoDoc) })}
+      ${campo('numDoc', 'N.º do documento', { cls: 'c6', req: true, hint: 'Cartão de Cidadão: n.º de documento completo, no verso (ex.: 12345678 9 ZZ0).', attrs: 'maxlength="20" spellcheck="false" style="text-transform:uppercase"' })}
+      ${campo('validadeDoc', 'Data de validade', { tipo: 'date', cls: 'c6', req: true })}
+      ${campo('numEleitor', 'N.º de eleitor', { cls: 'c6', hint: 'Opcional. Pode ser consultado em recenseamento.mai.gov.pt.', attrs: 'inputmode="numeric" maxlength="10"' })}
+      <div class="sec-title">Dados fiscais</div>
+      ${campo('nif', 'NIF — Número de Identificação Fiscal', { cls: 'c6', req: true, hint: 'Necessário para emissão de recibos de quotas (Lei n.º 19/2003).', attrs: 'inputmode="numeric" maxlength="9" spellcheck="false"' })}
+    </div>`,
+    `<div class="form-grid">
+      <div class="sec-title">Morada</div>
+      ${campo('morada', 'Morada (rua, n.º, andar)', { cls: 'c12', req: true, attrs: 'maxlength="160"' })}
+      ${campo('codigoPostal', 'Código postal', { cls: 'c3', req: true, attrs: 'placeholder="1234-567" maxlength="8" inputmode="numeric"' })}
+      ${campo('localidade', 'Localidade', { cls: 'c3', req: true, attrs: 'maxlength="60"' })}
+      ${campo('freguesia', 'Freguesia', { cls: 'c6', attrs: 'maxlength="80"' })}
+      ${campo('concelho', 'Concelho', { cls: 'c6', req: true, attrs: 'maxlength="60"' })}
+      ${campo('distrito', 'Distrito / Região autónoma', { cls: 'c6', req: true, opts: sel(DISTRITOS, m.distrito, 'Selecione…') })}
+      <div class="sec-title">Contactos</div>
+      ${campo('telemovel', 'Telemóvel', { tipo: 'tel', cls: 'c4', req: true, attrs: 'placeholder="912 345 678" maxlength="20"' })}
+      ${campo('telefone', 'Telefone fixo', { tipo: 'tel', cls: 'c4', attrs: 'maxlength="20"' })}
+      ${campo('email', 'Email', { tipo: 'email', cls: 'c4', attrs: 'maxlength="120"' })}
+    </div>`,
+    `<div class="form-grid">
+      <div class="sec-title">Dados de filiação</div>
+      ${campo('numMilitante', 'N.º de militante', { cls: 'c4', req: true, hint: 'Atribuído automaticamente; pode ser alterado.', attrs: 'maxlength="20"' })}
+      ${campo('dataAdmissao', 'Data de admissão', { tipo: 'date', cls: 'c4', req: true, attrs: `max="${isoDe(hoje())}"` })}
+      ${campo('estado', 'Estado', { cls: 'c4', opts: sel(Object.entries(ESTADOS), m.estado) })}
+      ${campo('estrutura', 'Estrutura / núcleo local', { cls: 'c6', hint: 'Ex.: Concelhia de Coimbra.', attrs: 'maxlength="80"' })}
+      ${campo('proponente', 'Militante proponente (n.º ou nome)', { cls: 'c6', attrs: 'maxlength="80"' })}
+      ${campo('observacoes', 'Observações', { tipo: 'textarea', cls: 'c12', attrs: 'maxlength="1000"' })}
+      <div class="sec-title">Declarações do candidato</div>
+      ${chk('declDupla', 'Declaro que não estou filiado(a) em qualquer outro partido político.', 'Art. 20.º, n.º 2, da Lei Orgânica n.º 2/2003: “Ninguém pode estar filiado simultaneamente em mais de um partido político.”', true)}
+      ${chk('declRestricoes', 'Declaro que não sou militar ou agente militarizado dos quadros permanentes, nem agente dos serviços ou forças de segurança, em serviço efetivo.', 'Art. 21.º, n.º 1, da Lei Orgânica n.º 2/2003.', true)}
+      ${chk('declMagistrado', 'Sou magistrado judicial ou do Ministério Público, ou diplomata de carreira, na efetividade.', 'Art. 21.º, n.º 2: a filiação não é proibida, mas fica vedada a atividade político-partidária de caráter público.', false)}
+      <div class="sec-title">Proteção de dados (RGPD)</div>
+      <div class="legal">Os dados recolhidos revelam opiniões políticas (categoria especial — art. 9.º do RGPD). O tratamento pelo partido é lícito ao abrigo do <b>art. 9.º, n.º 2, alínea d)</b>, apenas para os seus membros, e os dados não podem ser comunicados a terceiros sem consentimento. O titular tem direito de acesso, retificação, apagamento, limitação e portabilidade, e pode reclamar junto da CNPD.</div>
+      ${chk('rgpd', 'Tomei conhecimento da informação sobre o tratamento dos meus dados pessoais e autorizo o seu tratamento para gestão da filiação.', 'Obrigatório para a inscrição. A data e hora deste consentimento são registadas.', true)}
+      ${chk('comunicacoes', 'Aceito receber comunicações do partido (email/SMS).', 'Facultativo — pode ser retirado a qualquer momento.', false)}
+    </div>`,
+    `<div class="photo-wrap">
+      <div class="photo-box" id="fotoBox">${m.foto ? `<img src="${esc(m.foto)}" alt="Fotografia">` : `<div>${ICON.user}<div>Sem fotografia</div></div>`}</div>
+      <div>
+        <h2 style="margin:0 0 6px;font-size:17px">Fotografia do militante</h2>
+        <p class="muted" style="margin:0 0 16px">Fotografia tipo passe, de frente, fundo claro. Formato final 3×4 (450×600 px, JPEG). Pode carregar um ficheiro ou usar a câmara do computador.</p>
+        <div class="row">
+          <label class="btn pri">${ICON.up} Carregar ficheiro<input type="file" id="fotoFile" accept="image/jpeg,image/png,image/webp" class="sr"></label>
+          <button type="button" class="btn" id="fotoCam">${ICON.cam} Usar câmara</button>
+          <button type="button" class="btn danger" id="fotoDel" ${m.foto ? '' : 'hidden'}>${ICON.trash} Remover</button>
+        </div>
+        <p class="muted" style="font-size:12.5px;margin-top:14px">Ficheiros até 10 MB. A imagem é reduzida e guardada apenas neste computador.</p>
+      </div>
+    </div>`,
+    `<div id="revisao"></div>`
+  ];
+  $('#paineis').innerHTML = html.map((h, i) => `<section data-p="${i}" ${i ? 'hidden' : ''}>${h}</section>`).join('');
+
+  /* Ler valores do formulário para o objeto */
+  const ler = () => {
+    $$('#frm [name]').forEach(el => { m[el.name] = el.type === 'checkbox' ? el.checked : el.value.trim(); });
+  };
+  const setMsg = (k, r) => {
+    const el = $(`#f_${k}`), msg = $(`#m_${k}`); if (!el || !msg) return;
+    el.classList.toggle('bad', !r.ok); el.classList.toggle('ok', r.ok && !!r.msg && !r.warn);
+    msg.className = 'msg ' + (!r.ok ? 'bad' : r.warn ? 'warn' : 'ok'); msg.textContent = r.msg || '';
+    el.setAttribute('aria-invalid', !r.ok);
+  };
+  /* Validação por passo. Devolve true se válido. */
+  const validar = async (p, mostrar = true) => {
+    ler(); const R = {};
+    if (p === 0) {
+      R.nomeCompleto = Val.nome(m.nomeCompleto);
+      R.dataNascimento = Val.nascimento(m.dataNascimento, idadeMin);
+      R.nacionalidade = Val.req(m.nacionalidade, 'nacionalidade');
+    }
+    if (p === 1) {
+      R.numDoc = m.tipoDoc === 'CC' ? Val.cc(m.numDoc) : Val.docGenerico(m.numDoc);
+      if (m.tipoDoc === 'CC' && norm(m.nacionalidade) !== 'portuguesa') R.numDoc = { ok: R.numDoc.ok, warn: R.numDoc.ok, msg: R.numDoc.ok ? 'Cartão de Cidadão válido — confirme a nacionalidade (o CC é emitido a cidadãos portugueses e, por convenção, a brasileiros com estatuto de igualdade).' : R.numDoc.msg };
+      R.validadeDoc = Val.validade(m.validadeDoc, m.tipoDoc, parseISO(m.dataNascimento));
+      R.nif = Val.nif(m.nif);
+      R.numEleitor = Val.eleitor(m.numEleitor);
+      // Duplicados (NIF e documento)
+      if (R.nif.ok) { const d = LISTA.find(x => x.nif === R.nif.val && x.id !== m.id); if (d) R.nif = { ok: false, msg: `NIF já registado: ${d.nomeCompleto} (n.º ${d.numMilitante}).` }; }
+      if (R.numDoc.ok) { const nd = R.numDoc.val || m.numDoc; const d = LISTA.find(x => x.numDoc === nd && x.id !== m.id); if (d) R.numDoc = { ok: false, msg: `Documento já registado: ${d.nomeCompleto}.` }; }
+    }
+    if (p === 2) {
+      R.morada = Val.req(m.morada, 'morada'); R.codigoPostal = Val.cp(m.codigoPostal); R.localidade = Val.req(m.localidade, 'localidade');
+      R.concelho = Val.req(m.concelho, 'concelho'); R.distrito = Val.req(m.distrito, 'distrito');
+      R.telemovel = Val.tel(m.telemovel, true); R.telefone = Val.tel(m.telefone, false); R.email = Val.email(m.email);
+    }
+    if (p === 3) {
+      R.numMilitante = Val.req(m.numMilitante, 'n.º de militante');
+      if (R.numMilitante.ok) { const d = LISTA.find(x => x.numMilitante === m.numMilitante && x.id !== m.id); if (d) R.numMilitante = { ok: false, msg: `N.º já atribuído a ${d.nomeCompleto}.` }; }
+      const da = parseISO(m.dataAdmissao);
+      R.dataAdmissao = !da ? { ok: false, msg: 'Indique a data de admissão.' } : da > hoje() ? { ok: false, msg: 'A data de admissão não pode ser futura.' } : { ok: true, msg: '' };
+      const nasc = parseISO(m.dataNascimento);
+      if (da && nasc && idadeEm(nasc, da) < idadeMin) R.dataAdmissao = { ok: false, msg: `Na data de admissão o candidato ainda não tinha ${idadeMin} anos.` };
+      for (const k of ['declDupla', 'declRestricoes', 'rgpd']) { R[k] = { ok: !!m[k] }; }
+    }
+    let ok = Object.values(R).every(r => r.ok);
+    if (mostrar) {
+      for (const [k, r] of Object.entries(R)) {
+        if (k.startsWith('decl') || k === 'rgpd') $(`#c_${k}`)?.classList.toggle('bad', !r.ok); else setMsg(k, r);
+      }
+      if (R.numDoc?.ok && R.numDoc.val) { $('#f_numDoc').value = R.numDoc.val; m.numDoc = R.numDoc.val; }
+      if (R.nif?.ok) { $('#f_nif').value = R.nif.val; m.nif = R.nif.val; }
+      if (R.nomeCompleto?.ok) { $('#f_nomeCompleto').value = R.nomeCompleto.val; m.nomeCompleto = R.nomeCompleto.val; }
+    }
+    erros[p] = !ok;
+    return ok;
+  };
+
+  const desenharPassos = () => {
+    $('#steps').innerHTML = PASSOS.map((t, i) => `<button type="button" class="step ${i === passo ? 'on' : ''} ${erros[i] ? 'err' : i < passo ? 'done' : ''}" data-s="${i}"><i>${erros[i] ? '!' : i < passo ? '✓' : i + 1}</i>${t}</button>`).join('');
+    $$('#steps .step').forEach(b => b.onclick = async () => { const alvo = +b.dataset.s; if (alvo > passo) { for (let i = passo; i < alvo; i++) if (!(await validar(i))) { mostrarPasso(i); return; } } mostrarPasso(alvo); });
+  };
+  const mostrarPasso = p => {
+    passo = p; $$('#paineis section').forEach(s => s.hidden = +s.dataset.p !== p);
+    $('#ant').disabled = p === 0; $('#seg').innerHTML = p === PASSOS.length - 1 ? (ed ? 'Guardar alterações' : 'Confirmar inscrição') : 'Seguinte →';
+    if (p === PASSOS.length - 1) revisao();
+    desenharPassos();
+    $('#paineis section:not([hidden]) input, #paineis section:not([hidden]) select')?.focus();
+  };
+  const revisao = () => {
+    ler();
+    const linha = (l, v) => `<div><span>${l}</span><b>${esc(v || '—')}</b></div>`;
+    $('#revisao').innerHTML = `<div class="ficha"><div>${m.foto ? `<img class="foto" src="${esc(m.foto)}" alt="">` : `<div class="foto">${esc(iniciais(m.nomeCompleto))}</div>`}</div>
+      <div><h2 style="margin:0 0 4px;font-size:22px">${esc(m.nomeCompleto)}</h2><p class="muted" style="margin:0 0 18px">N.º de militante ${esc(m.numMilitante)} · admissão em ${fmtData(m.dataAdmissao)}</p>
+      <div class="dl">${linha('Data de nascimento', fmtData(m.dataNascimento))}${linha('Nacionalidade', m.nacionalidade)}${linha(TIPOS_DOC[m.tipoDoc], m.numDoc)}${linha('Validade', fmtData(m.validadeDoc))}
+      ${linha('NIF', m.nif)}${linha('N.º de eleitor', m.numEleitor)}${linha('Morada', `${m.morada}, ${m.codigoPostal} ${m.localidade}`)}${linha('Concelho / Distrito', `${m.concelho} · ${m.distrito}`)}
+      ${linha('Telemóvel', m.telemovel)}${linha('Email', m.email)}${linha('Estrutura', m.estrutura)}${linha('Estado', ESTADOS[m.estado])}</div>
+      ${m.declMagistrado ? '<div class="legal" style="margin-top:16px">Magistrado/diplomata na efetividade: está vedada a atividade político-partidária de caráter público (art. 21.º, n.º 2).</div>' : ''}
+      ${!m.foto ? '<p class="muted" style="margin-top:16px">⚠ Sem fotografia — pode acrescentá-la mais tarde.</p>' : ''}</div></div>`;
+  };
+
+  /* Eventos */
+  $('#frm').addEventListener('input', () => { FORM_SUJO = true; });
+  $('#frm').addEventListener('change', e => {
+    FORM_SUJO = true;
+    if (e.target.name === 'nacionalidade') $('#avNac').hidden = !e.target.value || norm(e.target.value) === 'portuguesa';
+    if (e.target.name === 'tipoDoc') $('#m_numDoc').textContent = '';
+  });
+  // Validação imediata ao sair de cada campo
+  $('#frm').addEventListener('focusout', e => {
+    const k = e.target.name; if (!k) return; ler();
+    const f = {
+      nomeCompleto: () => Val.nome(m.nomeCompleto), dataNascimento: () => Val.nascimento(m.dataNascimento, idadeMin),
+      numDoc: () => m.tipoDoc === 'CC' ? Val.cc(m.numDoc) : Val.docGenerico(m.numDoc), validadeDoc: () => Val.validade(m.validadeDoc, m.tipoDoc, parseISO(m.dataNascimento)),
+      nif: () => Val.nif(m.nif), codigoPostal: () => Val.cp(m.codigoPostal), telemovel: () => Val.tel(m.telemovel, true),
+      telefone: () => Val.tel(m.telefone, false), email: () => Val.email(m.email), numEleitor: () => Val.eleitor(m.numEleitor)
+    }[k];
+    if (f && e.target.value) setMsg(k, f());
+  });
+  $('#f_nacionalidade').dispatchEvent(new Event('change', { bubbles: true })); FORM_SUJO = false;
+  $('#ant').onclick = () => mostrarPasso(Math.max(0, passo - 1));
+  $('#cancel').onclick = () => { if (!FORM_SUJO || confirm('Descartar as alterações?')) { FORM_SUJO = false; ed ? abrirFicha(ed.id, true) : ir('painel'); } };
+  $('#seg').onclick = async () => {
+    if (passo < PASSOS.length - 1) { if (await validar(passo)) mostrarPasso(passo + 1); else { desenharPassos(); toast('Corrija os campos assinalados.', true); $('#paineis section:not([hidden]) .bad')?.focus(); } return; }
+    for (let i = 0; i < 4; i++) if (!(await validar(i))) { mostrarPasso(i); toast('Há dados por corrigir neste passo.', true); return; }
+    await guardar();
+  };
+
+  /* Fotografia */
+  const atualizarFoto = () => {
+    $('#fotoBox').innerHTML = m.foto ? `<img src="${esc(m.foto)}" alt="Fotografia">` : `<div>${ICON.user}<div>Sem fotografia</div></div>`;
+    $('#fotoDel').hidden = !m.foto; FORM_SUJO = true;
+  };
+  $('#fotoFile').onchange = e => {
+    const f = e.target.files[0]; e.target.value = ''; if (!f) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(f.type)) return toast('Formato não suportado (use JPG, PNG ou WEBP).', true);
+    if (f.size > 10 * 1024 * 1024) return toast('Ficheiro demasiado grande (máx. 10 MB).', true);
+    const url = URL.createObjectURL(f); const img = new Image();
+    img.onload = () => { recortar(img, d => { m.foto = d; atualizarFoto(); }); URL.revokeObjectURL(url); };
+    img.onerror = () => toast('Não foi possível ler a imagem.', true);
+    img.src = url;
+  };
+  $('#fotoCam').onclick = () => camara(img => recortar(img, d => { m.foto = d; atualizarFoto(); }));
+  $('#fotoDel').onclick = () => { m.foto = ''; atualizarFoto(); };
+
+  async function guardar() {
+    ler();
+    const agora = new Date().toISOString();
+    if (!ed) {
+      m.criadoEm = agora; m.consentimentoEm = agora; m.historico = [{ data: agora, acao: 'Inscrição registada' }];
+    } else {
+      m.historico = [...(ed.historico || []), { data: agora, acao: ed.estado !== m.estado ? `Estado alterado: ${ESTADOS[ed.estado]} → ${ESTADOS[m.estado]}` : 'Dados atualizados' }];
+      if (!ed.rgpd && m.rgpd) m.consentimentoEm = agora;
+    }
+    m.atualizadoEm = agora;
+    try {
+      await DB.put(m);
+    } catch (err) { toast('Não foi possível guardar: ' + (err?.name === 'ConstraintError' ? 'NIF ou n.º de militante duplicado.' : err?.message), true); return; }
+    if (!ed) { // avança numeração automática
+      const n = parseInt(String(m.numMilitante).replace(/\D/g, ''), 10);
+      if (!isNaN(n) && n >= CFG.proximoNum) { CFG.proximoNum = n + 1; await DB.setCfg(CFG); }
+    }
+    FORM_SUJO = false; await carregar();
+    toast(ed ? 'Alterações guardadas.' : `Militante n.º ${m.numMilitante} inscrito com sucesso.`);
+    abrirFicha(m.id, true);
+  }
+  mostrarPasso(0);
+}
+
+/* ---------- Recorte de fotografia (3:4) ---------- */
+function recortar(img, cb) {
+  const W = 300, H = 400;
+  abrirDlg(`<div class="dlg-h"><h3>Ajustar fotografia</h3><button class="btn ghost sm" data-x aria-label="Fechar">${ICON.x}</button></div>
+    <div class="dlg-b"><div class="crop" id="crop"><canvas id="cv" width="${W * 2}" height="${H * 2}" style="width:${W}px;height:${H}px"></canvas><div class="guide"></div></div>
+    <div class="row" style="justify-content:center;margin-top:16px"><span class="muted">Zoom</span><input type="range" id="zoom" min="1" max="4" step="0.01" value="1" style="width:240px"></div>
+    <p class="muted" style="text-align:center;font-size:13px">Arraste a imagem para centrar o rosto na oval.</p></div>
+    <div class="dlg-f"><button class="btn" data-x>Cancelar</button><button class="btn pri" id="okCrop">Usar fotografia</button></div>`);
+  const cv = $('#cv'), ctx = cv.getContext('2d');
+  const base = Math.max(W / img.width, H / img.height);
+  let z = 1, ox = 0, oy = 0;
+  const limitar = () => { const s = base * z, w = img.width * s, h = img.height * s; ox = Math.min(0, Math.max(W - w, ox)); oy = Math.min(0, Math.max(H - h, oy)); };
+  const centrar = () => { const s = base * z; ox = (W - img.width * s) / 2; oy = (H - img.height * s) / 2; };
+  const draw = () => { limitar(); ctx.setTransform(2, 0, 0, 2, 0, 0); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H); const s = base * z; ctx.drawImage(img, ox, oy, img.width * s, img.height * s); };
+  centrar(); draw();
+  $('#zoom').oninput = e => { const cx = W / 2, cy = H / 2, s0 = base * z; z = +e.target.value; const s1 = base * z; ox = cx - (cx - ox) * s1 / s0; oy = cy - (cy - oy) * s1 / s0; draw(); };
+  let drag = null;
+  cv.onpointerdown = e => { drag = { x: e.clientX, y: e.clientY, ox, oy }; cv.setPointerCapture(e.pointerId); };
+  cv.onpointermove = e => { if (!drag) return; ox = drag.ox + e.clientX - drag.x; oy = drag.oy + e.clientY - drag.y; draw(); };
+  cv.onpointerup = () => drag = null;
+  cv.onwheel = e => { e.preventDefault(); const zz = $('#zoom'); zz.value = Math.min(4, Math.max(1, z - e.deltaY * 0.002)); zz.dispatchEvent(new Event('input')); };
+  $('#okCrop').onclick = () => {
+    const out = document.createElement('canvas'); out.width = 450; out.height = 600;
+    const o = out.getContext('2d'); const k = 450 / W, s = base * z * k;
+    o.fillStyle = '#fff'; o.fillRect(0, 0, 450, 600); o.drawImage(img, ox * k, oy * k, img.width * s, img.height * s);
+    cb(out.toDataURL('image/jpeg', 0.85)); fecharDlg();
+  };
+}
+async function camara(cb) {
+  if (!navigator.mediaDevices?.getUserMedia) return toast('A câmara não está disponível neste navegador.', true);
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 960 }, facingMode: 'user' }, audio: false }); }
+  catch (e) { return toast('Sem acesso à câmara: ' + (e.name === 'NotAllowedError' ? 'permissão recusada.' : 'nenhuma câmara encontrada.'), true); }
+  const parar = () => stream.getTracks().forEach(t => t.stop());
+  abrirDlg(`<div class="dlg-h"><h3>Tirar fotografia</h3><button class="btn ghost sm" data-x aria-label="Fechar">${ICON.x}</button></div>
+    <div class="dlg-b"><video id="vid" autoplay playsinline muted></video></div>
+    <div class="dlg-f"><button class="btn" data-x>Cancelar</button><button class="btn pri" id="snap">${ICON.cam} Capturar</button></div>`, parar);
+  const v = $('#vid'); v.srcObject = stream;
+  $('#snap').onclick = () => {
+    const c = document.createElement('canvas'); c.width = v.videoWidth; c.height = v.videoHeight;
+    const x = c.getContext('2d'); x.translate(c.width, 0); x.scale(-1, 1); x.drawImage(v, 0, 0);
+    parar(); fecharDlg(true);
+    const img = new Image(); img.onload = () => cb(img); img.src = c.toDataURL('image/jpeg', 0.92);
+  };
+}
+
+/* ---------- Diálogo genérico ---------- */
+let aoFechar = null;
+function abrirDlg(html, onClose) {
+  const d = $('#dlg'); if (d.open) fecharDlg();
+  $('#dlgInner').innerHTML = html; aoFechar = onClose || null;
+  $$('#dlgInner [data-x]').forEach(b => b.onclick = () => fecharDlg());
+  d.showModal();
+}
+function fecharDlg(semCallback) { const d = $('#dlg'); if (!semCallback && aoFechar) aoFechar(); aoFechar = null; if (d.open) d.close(); }
+$('#dlg').addEventListener('cancel', e => { e.preventDefault(); fecharDlg(); });
+
+/* ---------- Ficha do militante ---------- */
+async function abrirFicha(id, irLista) {
+  const m = await DB.get(id); if (!m) return;
+  if (irLista && VIEW !== 'lista') ir('lista');
+  const ed = estadoDoc(m), nasc = parseISO(m.dataNascimento);
+  const linha = (l, v) => `<div><span>${l}</span><b>${esc(v || '—')}</b></div>`;
+  abrirDlg(`<div class="dlg-h"><h3>Ficha de militante</h3><button class="btn ghost sm" data-x aria-label="Fechar">${ICON.x}</button></div>
+  <div class="dlg-b"><div class="ficha">
+    <div>${m.foto ? `<img class="foto" src="${esc(m.foto)}" alt="Fotografia de ${esc(m.nomeCompleto)}">` : `<div class="foto">${esc(iniciais(m.nomeCompleto))}</div>`}
+      <div class="row" style="margin-top:12px"><span class="pill ${m.estado === 'ativo' ? '' : m.estado === 'suspenso' ? 'warn' : 'mute'}">${esc(ESTADOS[m.estado])}</span><span class="pill ${ed.cls}">${esc(ed.txt)}</span></div></div>
+    <div><h2 style="margin:0;font-size:22px;font-weight:800">${esc(m.nomeCompleto)}</h2>
+      <p class="muted mono" style="margin:2px 0 18px">N.º ${esc(m.numMilitante)} · admitido(a) em ${fmtData(m.dataAdmissao)}</p>
+      <div class="dl">
+        ${linha('Data de nascimento', nasc ? `${fmtData(m.dataNascimento)} (${idadeEm(nasc)} anos)` : '')}${linha('Nacionalidade', m.nacionalidade)}
+        ${linha(TIPOS_DOC[m.tipoDoc] || 'Documento', m.numDoc)}${linha('Validade do documento', fmtData(m.validadeDoc))}
+        ${linha('NIF', m.nif)}${linha('N.º de eleitor', m.numEleitor)}
+        ${linha('Morada', [m.morada, `${m.codigoPostal || ''} ${m.localidade || ''}`.trim()].filter(Boolean).join(', '))}${linha('Freguesia / Concelho', [m.freguesia, m.concelho].filter(Boolean).join(' · '))}
+        ${linha('Distrito', m.distrito)}${linha('Telemóvel', m.telemovel)}${linha('Email', m.email)}${linha('Profissão', m.profissao)}
+        ${linha('Estrutura', m.estrutura)}${linha('Proponente', m.proponente)}
+        ${linha('Consentimento RGPD', m.consentimentoEm ? fmtDataHora(m.consentimentoEm) : 'Não registado')}${linha('Comunicações', m.comunicacoes ? 'Aceita' : 'Não aceita')}
+      </div>
+      ${m.observacoes ? `<div class="legal" style="margin-top:16px;white-space:pre-wrap">${esc(m.observacoes)}</div>` : ''}
+      <details style="margin-top:16px"><summary class="muted" style="cursor:pointer;font-weight:700">Histórico (${(m.historico || []).length})</summary>
+        <ul style="margin:8px 0 0;padding-left:18px">${(m.historico || []).map(h => `<li class="muted"><span class="mono">${fmtDataHora(h.data)}</span> — ${esc(h.acao)}</li>`).join('')}</ul></details>
+    </div></div></div>
+  <div class="dlg-f"><button class="btn danger" id="fDel" style="margin-right:auto">${ICON.trash} Eliminar</button>
+    <button class="btn" id="fPrint">${ICON.print} Imprimir ficha</button><button class="btn pri" id="fEdit">${ICON.edit} Editar</button></div>`);
+  $('#fEdit').onclick = () => { fecharDlg(); ir('editar', m.id); };
+  $('#fPrint').onclick = () => imprimir(m);
+  $('#fDel').onclick = async () => {
+    if (!confirm(`Eliminar definitivamente o registo de ${m.nomeCompleto}?\n\nPara desfiliações normais, prefira alterar o estado para “Filiação cessada”. A eliminação deve ser usada para exercer o direito ao apagamento (art. 17.º do RGPD).`)) return;
+    await DB.del(m.id); await carregar(); fecharDlg(); toast('Registo eliminado.'); ir(VIEW === 'painel' ? 'painel' : 'lista');
+  };
+}
+
+/* ---------- Impressão da ficha de inscrição ---------- */
+function imprimir(m) {
+  const L = (l, v) => `<tr><td>${l}</td><td>${esc(v || '')}</td></tr>`;
+  $('#print').innerHTML = `
+  <div class="p-head"><div><h1>Ficha de Inscrição de Militante</h1><div>${esc(CFG.nomePartido)}</div></div>${CFG.logo ? `<img src="${esc(CFG.logo)}" alt="">` : ''}</div>
+  <div class="p-grid"><div>
+    <div class="p-sec">Filiação</div><table class="p-tbl">${L('N.º de militante', m.numMilitante)}${L('Data de admissão', fmtData(m.dataAdmissao))}${L('Estrutura', m.estrutura)}${L('Proponente', m.proponente)}</table>
+    <div class="p-sec">Identificação</div><table class="p-tbl">${L('Nome completo', m.nomeCompleto)}${L('Data de nascimento', fmtData(m.dataNascimento))}${L('Nacionalidade', m.nacionalidade)}${L('Naturalidade', m.naturalidade)}${L(TIPOS_DOC[m.tipoDoc], m.numDoc)}${L('Validade', fmtData(m.validadeDoc))}${L('NIF', m.nif)}${L('N.º de eleitor', m.numEleitor)}${L('Profissão', m.profissao)}</table>
+  </div><div>${m.foto ? `<img class="p-foto" src="${esc(m.foto)}" alt="">` : '<div class="p-foto" style="display:grid;place-items:center;font-size:8pt;color:#777">Fotografia</div>'}</div></div>
+  <div class="p-sec">Morada e contactos</div><table class="p-tbl">${L('Morada', m.morada)}${L('Código postal / Localidade', `${m.codigoPostal} ${m.localidade}`)}${L('Freguesia / Concelho / Distrito', [m.freguesia, m.concelho, m.distrito].filter(Boolean).join(' / '))}${L('Telemóvel / Telefone', [m.telemovel, m.telefone].filter(Boolean).join(' / '))}${L('Email', m.email)}</table>
+  <div class="p-sec">Declarações</div>
+  <p class="p-decl">${m.declDupla ? '☒' : '☐'} Declaro não estar filiado(a) em qualquer outro partido político (art. 20.º, n.º 2, da Lei Orgânica n.º 2/2003).</p>
+  <p class="p-decl">${m.declRestricoes ? '☒' : '☐'} Declaro não ser militar ou agente militarizado dos quadros permanentes, nem agente dos serviços ou forças de segurança, em serviço efetivo (art. 21.º, n.º 1).</p>
+  <p class="p-decl">${m.rgpd ? '☒' : '☐'} Autorizo o tratamento dos meus dados pessoais para gestão da filiação. ${m.comunicacoes ? '☒' : '☐'} Aceito receber comunicações do partido.</p>
+  <div class="p-sign"><div>Local e data</div><div>Assinatura do(a) candidato(a)</div></div>
+  <div class="p-rgpd"><b>Informação sobre proteção de dados:</b> o responsável pelo tratamento é ${esc(CFG.nomePartido)}. Os dados destinam-se exclusivamente à gestão da filiação e da vida interna do partido, com fundamento no art. 9.º, n.º 2, al. d), do Regulamento (UE) 2016/679, e não são comunicados a terceiros sem consentimento. São conservados enquanto durar a filiação e pelo período legalmente exigido após a sua cessação. O titular pode exercer os direitos de acesso, retificação, apagamento, limitação, oposição e portabilidade, e apresentar reclamação à Comissão Nacional de Proteção de Dados (CNPD).</div>`;
+  setTimeout(() => window.print(), 50);
+}
+
+/* ---------- Exportação / importação ---------- */
+function descarregar(nome, conteudo, tipo) { const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([conteudo], { type: tipo })); a.download = nome; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000); }
+function exportarCSV() {
+  const cols = [['numMilitante', 'N.º militante'], ['nomeCompleto', 'Nome completo'], ['dataNascimento', 'Data nascimento'], ['sexo', 'Sexo'], ['nacionalidade', 'Nacionalidade'], ['tipoDoc', 'Tipo doc.'], ['numDoc', 'N.º documento'], ['validadeDoc', 'Validade doc.'], ['nif', 'NIF'], ['numEleitor', 'N.º eleitor'], ['morada', 'Morada'], ['codigoPostal', 'Código postal'], ['localidade', 'Localidade'], ['freguesia', 'Freguesia'], ['concelho', 'Concelho'], ['distrito', 'Distrito'], ['telemovel', 'Telemóvel'], ['email', 'Email'], ['estrutura', 'Estrutura'], ['dataAdmissao', 'Data admissão'], ['estado', 'Estado'], ['comunicacoes', 'Aceita comunicações']];
+  // Proteção contra injeção de fórmulas no Excel (=, +, -, @)
+  const cel = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
+  const linhas = [cols.map(c => cel(c[1])).join(';'), ...LISTA.map(m => cols.map(([k]) => cel(k === 'estado' ? ESTADOS[m[k]] : typeof m[k] === 'boolean' ? (m[k] ? 'Sim' : 'Não') : m[k])).join(';'))];
+  descarregar(`militantes_${isoDe(hoje())}.csv`, '﻿' + linhas.join('\r\n'), 'text/csv;charset=utf-8');
+  toast('CSV exportado. Contém dados pessoais — guarde-o em local seguro.');
+}
+async function exportarBackup() {
+  const dados = { app: 'registo-militantes', versao: 1, exportadoEm: new Date().toISOString(), config: CFG, militantes: await DB.all() };
+  descarregar(`copia-seguranca-militantes_${isoDe(hoje())}.json`, JSON.stringify(dados), 'application/json');
+  CFG.ultimoBackup = new Date().toISOString(); await DB.setCfg(CFG);
+  toast('Cópia de segurança criada.'); if (VIEW === 'config') ir('config');
+}
+async function importarBackup(file) {
+  let d; try { d = JSON.parse(await file.text()); } catch { return toast('Ficheiro inválido.', true); }
+  if (d?.app !== 'registo-militantes' || !Array.isArray(d.militantes)) return toast('Este ficheiro não é uma cópia de segurança desta aplicação.', true);
+  const campos = ['id', 'nomeCompleto', 'nif', 'numMilitante'];
+  const validos = d.militantes.filter(m => m && typeof m === 'object' && campos.every(c => typeof m[c] === 'string' && m[c]) && (!m.foto || /^data:image\/(jpeg|png|webp);base64,/.test(m.foto)));
+  if (!confirm(`Importar ${validos.length} registo(s)? Registos com o mesmo identificador serão substituídos.${validos.length < d.militantes.length ? `\n${d.militantes.length - validos.length} registo(s) inválidos serão ignorados.` : ''}`)) return;
+  let ok = 0, falha = 0;
+  for (const m of validos) { try { await DB.put(m); ok++; } catch { falha++; } }
+  if (d.config && typeof d.config === 'object') {
+    const c = d.config; CFG.proximoNum = Math.max(CFG.proximoNum, +c.proximoNum || 1); await DB.setCfg(CFG);
+  }
+  await carregar(); toast(`${ok} registo(s) importado(s)${falha ? `, ${falha} em conflito (NIF/n.º duplicado)` : ''}.`, !!falha); ir('lista');
+}
+
+/* ---------- Configurações ---------- */
+function vConfig() {
+  const ub = CFG.ultimoBackup ? fmtDataHora(CFG.ultimoBackup) : 'nunca';
+  $('#main').innerHTML = `
+  <div class="head"><div><h1>Configurações</h1><p>Dados da organização, regras de inscrição e cópias de segurança.</p></div></div>
+  <div class="grid2">
+    <form class="card pad" id="cfgF"><h2>Organização</h2><div class="form-grid">
+      <div class="f c12"><label for="c_nome">Nome do partido</label><input id="c_nome" maxlength="100" value="${esc(CFG.nomePartido)}"></div>
+      <div class="f c4"><label for="c_sigla">Sigla</label><input id="c_sigla" maxlength="12" value="${esc(CFG.sigla)}"></div>
+      <div class="f c4"><label for="c_idade">Idade mínima</label><input id="c_idade" type="number" min="14" max="18" value="${esc(CFG.idadeMin)}"><div class="hint">Conforme os estatutos.</div></div>
+      <div class="f c4"><label for="c_tema">Tema</label><select id="c_tema">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Escuro']].map(([k, v]) => `<option value="${k}" ${CFG.tema === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+      <div class="f c6"><label for="c_pref">Prefixo do n.º de militante</label><input id="c_pref" maxlength="6" value="${esc(CFG.prefixo)}" placeholder="ex.: MPT-"></div>
+      <div class="f c6"><label for="c_prox">Próximo n.º</label><input id="c_prox" type="number" min="1" value="${esc(CFG.proximoNum)}"></div>
+      <div class="f c12"><label>Logótipo (opcional)</label><div class="row"><label class="btn sm">${ICON.up} Carregar imagem<input type="file" id="c_logo" accept="image/png,image/jpeg,image/svg+xml,image/webp" class="sr"></label>${CFG.logo ? '<button type="button" class="btn sm danger" id="c_logoDel">Remover</button>' : ''}</div><div class="hint">Aparece na barra lateral e na ficha impressa. Use o logótipo oficial com autorização do partido.</div></div>
+    </div><div class="form-foot"><span></span><button class="btn pri" type="submit">Guardar configurações</button></div></form>
+    <div style="display:flex;flex-direction:column;gap:16px">
+      <div class="card pad"><h2>Cópias de segurança</h2><p class="muted" style="margin-top:0">Última cópia: <b>${ub}</b>. Os dados estão apenas neste computador — se o navegador for limpo, perdem-se. Guarde as cópias num disco cifrado.</p>
+        <div class="row"><button class="btn pri" id="bk">Criar cópia (JSON)</button><label class="btn">Restaurar cópia<input type="file" id="rs" accept="application/json,.json" class="sr"></label><button class="btn" id="csv">Exportar CSV</button></div></div>
+      <div class="card pad"><h2>Base legal</h2><ul class="muted" style="margin:0;padding-left:18px;font-size:13.5px">
+        <li>Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), arts. 19.º a 21.º — filiação e restrições.</li>
+        <li>Lei n.º 19/2003 — financiamento dos partidos (quotas e donativos).</li>
+        <li>Regulamento (UE) 2016/679 (RGPD), art. 9.º, n.º 2, al. d), e Lei n.º 58/2019.</li></ul></div>
+      <div class="card pad"><h2 style="color:var(--danger)">Zona de perigo</h2><p class="muted" style="margin-top:0">Apaga todos os registos deste computador. Faça antes uma cópia de segurança.</p><button class="btn danger" id="wipe">${ICON.trash} Apagar todos os dados</button></div>
+    </div>
+  </div>`;
+  let logo = CFG.logo;
+  $('#c_logo').onchange = e => { const f = e.target.files[0]; if (!f) return; if (f.size > 1024 * 1024) return toast('Logótipo demasiado grande (máx. 1 MB).', true); const r = new FileReader(); r.onload = () => { logo = r.result; toast('Logótipo carregado — clique em Guardar.'); }; r.readAsDataURL(f); };
+  $('#c_logoDel') && ($('#c_logoDel').onclick = () => { logo = ''; toast('Logótipo removido — clique em Guardar.'); });
+  $('#cfgF').onsubmit = async e => {
+    e.preventDefault();
+    const idade = Math.min(18, Math.max(14, parseInt($('#c_idade').value, 10) || 18));
+    CFG = { ...CFG, nomePartido: $('#c_nome').value.trim() || CFG_PADRAO.nomePartido, sigla: $('#c_sigla').value.trim(), idadeMin: idade, tema: $('#c_tema').value, prefixo: $('#c_pref').value.trim(), proximoNum: Math.max(1, parseInt($('#c_prox').value, 10) || 1), logo };
+    await DB.setCfg(CFG); aplicarMarca(); toast('Configurações guardadas.'); ir('config');
+  };
+  $('#bk').onclick = exportarBackup; $('#csv').onclick = exportarCSV;
+  $('#rs').onchange = e => { const f = e.target.files[0]; e.target.value = ''; if (f) importarBackup(f); };
+  $('#wipe').onclick = async () => {
+    const t = prompt('Esta ação é irreversível. Escreva APAGAR para confirmar.');
+    if (t !== 'APAGAR') return;
+    await DB.clear(); await carregar(); toast('Todos os registos foram apagados.'); ir('painel');
+  };
+}
+
+/* ---------- Arranque ---------- */
+window.addEventListener('beforeunload', e => { if (FORM_SUJO) { e.preventDefault(); e.returnValue = ''; } });
+(async () => {
+  try { await DB.open(); } catch (e) { $('#main').innerHTML = '<div class="card pad"><h2>Erro</h2><p>Não foi possível abrir a base de dados local. Verifique se o navegador permite armazenamento.</p></div>'; return; }
+  CFG = { ...CFG_PADRAO, ...(await DB.getCfg() || {}) };
+  if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
+  aplicarMarca(); await carregar(); ir('painel');
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
