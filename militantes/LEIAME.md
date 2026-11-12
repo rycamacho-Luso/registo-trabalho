@@ -1,4 +1,4 @@
-# Registo de Militantes — Fases 1 e 2
+# Registo de Militantes — Fases 1, 2 e 3
 
 Aplicação para computador (PWA instalável, funciona sem internet) para registo de militantes de partido político em Portugal. Cores retiradas do site oficial do MPT (`https://mpt.pt/styles.css`, escala de verdes `--g-*`, e verde do logótipo `#006530`); letra Manrope, a mesma do site.
 
@@ -42,6 +42,17 @@ Aplicação para computador (PWA instalável, funciona sem internet) para regist
 
 O IAS de cada ano é editável em *Configurações* (2026: Portaria n.º 480-A/2025/1).
 
+## O que faz a Fase 3 — Cartão de militante e moradas oficiais
+
+- **Cartão de militante** em PDF, no formato de cartão bancário CR80 (85,6 × 54 mm), para impressoras de cartões PVC, ou em **folha A4 com 10 cartões** e linhas de corte.
+- O cartão tem fotografia, nome, n.º de militante, data de admissão, validade (configurável, por omissão 2 anos), estrutura e **código QR**.
+- O QR contém só `MIL1` + um código aleatório de 8 caracteres (ex.: `MIL16VF9WJNB`): **nenhum dado pessoal** (RGPD, art. 5.º, n.º 1, al. c)). Só letras e algarismos, para os leitores USB funcionarem com o teclado português.
+- **Nova via** em caso de perda ou roubo: gera um código novo e o anterior passa a ser recusado como "substituído".
+- **Emissão em lote** no separador *Cartões*, com indicação de quem não tem cartão, quem o tem a caducar ou caducado, e quem não tem fotografia.
+- **Verificação** (ex.: à entrada de congressos): câmara do PC, leitor de QR USB ou código escrito à mão. Mostra fotografia, estado da filiação, validade e quotas.
+- **Concelhos e freguesias oficiais** — CAOP2025 da Direção-Geral do Território (Aviso n.º 3502/2026/2): 308 municípios e 3259 freguesias, já com as desagregações de 2025. Ao escolher o concelho, o distrito e a lista de freguesias são preenchidos automaticamente.
+- Funciona sem internet: as bibliotecas (jsPDF, qrcode-generator, jsQR) estão em `lib/` (licenças em `lib/LICENCAS.txt`).
+
 ## Base legal usada
 
 Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), com as alterações das LO n.º 2/2008 e n.º 1/2018.
@@ -57,6 +68,5 @@ Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos
 
 ## Próximas fases (proposta)
 
-- **Fase 3**: cartão de militante em PDF com fotografia e código QR; lista oficial de concelhos e freguesias (CAOP).
 - **Fase 4**: utilizadores com palavra-passe e perfis, cifra da base de dados, registo de acessos (RGPD).
 - **Fase 5**: versão `.exe` (Electron/Tauri) e sincronização entre sedes, se necessário.

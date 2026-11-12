@@ -248,6 +248,17 @@ tr.anul td{opacity:.55}
   .rc-corte{text-align:center;color:#888;font-size:8pt;margin:4mm 0}
 }
 @media (max-width:820px){.per-grid{grid-template-columns:repeat(4,1fr)}.mini-kpis{grid-template-columns:1fr}}
+
+/* ---------- Fase 3: cartões ---------- */
+.cartao-prev{display:grid;place-items:center;min-height:200px;background:repeating-conic-gradient(var(--line-2) 0 25%,transparent 0 50%) 0 0/20px 20px;border-radius:16px;padding:18px}
+.cartao-prev img{width:100%;max-width:520px;aspect-ratio:85.6/54;border-radius:18px;box-shadow:var(--shadow-lg)}
+.verif{margin-top:6px;padding:16px 18px;border-radius:14px;font-size:18px;letter-spacing:.02em}
+.verif.ok{background:var(--g-100);color:var(--g-800)}
+.verif.warn{background:var(--warn-2);color:var(--warn)}
+.verif.bad{background:var(--danger-2);color:var(--danger)}
+:root[data-theme="dark"] .verif.ok{background:#1D2E15;color:var(--g-300)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .verif.ok{background:#1D2E15;color:var(--g-300)}}
+#vCamBox video{max-width:100%}
 /* Impressão: só a ficha de inscrição */
 #print{display:none}
 @media print{
@@ -298,6 +309,7 @@ tr.anul td{opacity:.55}
       <button data-view="painel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="2"/><rect x="14" y="3" width="7" height="5" rx="2"/><rect x="14" y="12" width="7" height="9" rx="2"/><rect x="3" y="16" width="7" height="5" rx="2"/></svg><span>Painel</span></button>
       <button data-view="lista"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Militantes</span></button>
       <button data-view="quotas"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg><span>Quotas e recibos</span></button>
+      <button data-view="cartoes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="11" r="2.5"/><path d="M4.5 17a3.5 3.5 0 0 1 7 0M14 9h5M14 13h5"/></svg><span>Cartões</span></button>
       <button data-view="novo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg><span>Nova inscrição</span></button>
       <button data-view="config"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Configurações</span></button>
     </nav>
@@ -310,6 +322,8 @@ tr.anul td{opacity:.55}
 <div class="toasts" id="toasts" aria-live="polite"></div>
 <div id="print"></div>
 
+<script src="caop2025.js"></script>
+<script src="lib/qrcode.js"></script>
 <script>
 'use strict';
 /* =====================================================================
@@ -503,7 +517,8 @@ const CFG_PADRAO = {
   // Fase 2 — tesouraria
   nifPartido: '', sede: '', periodicidade: 'mensal', quotaNormal: 2, quotaReduzida: 1, quotasDesde: `${new Date().getFullYear()}-01-01`,
   ias: { 2024: 509.26, 2025: 522.50, 2026: 537.13 }, // Portarias anuais do IAS (2026: Portaria n.º 480-A/2025/1)
-  recibos: {}
+  recibos: {},
+  cartaoAnos: 2 // Fase 3 — validade do cartão de militante
 };
 let CFG = { ...CFG_PADRAO };
 let LISTA = [];
@@ -535,10 +550,10 @@ function estadoDoc(m) {
 /* ---------- Router ---------- */
 let VIEW = 'painel';
 function ir(view, arg) {
-  VIEW = view;
+  VIEW = view; pararCamara?.();
   $$('.nav button').forEach(b => b.classList.toggle('on', b.dataset.view === view || (view === 'editar' && b.dataset.view === 'novo')));
   const m = $('#main'); m.innerHTML = ''; window.scrollTo(0, 0);
-  ({ painel: vPainel, lista: vLista, quotas: vQuotas, novo: () => vForm(null), editar: () => vForm(arg), config: vConfig })[view]();
+  ({ painel: vPainel, lista: vLista, quotas: vQuotas, cartoes: vCartoes, novo: () => vForm(null), editar: () => vForm(arg), config: vConfig })[view]();
   m.focus({ preventScroll: true });
 }
 $$('.nav button').forEach(b => b.addEventListener('click', () => {
@@ -557,6 +572,7 @@ const ICON = {
   edit: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
   trash: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/></svg>',
   card: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20M6 15h4"/></svg>',
+  idcard: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><circle cx="8" cy="11" r="2.5"/><path d="M4.5 17a3.5 3.5 0 0 1 7 0M14 9h5M14 13h5"/></svg>',
   receipt: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 2v20l3-2 3 2 3-2 3 2 3-2 1 .7V2l-1 .7-3-2-3 2-3-2-3 2-3-2z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>'
 };
@@ -699,9 +715,10 @@ async function vForm(id) {
       ${campo('morada', 'Morada (rua, n.º, andar)', { cls: 'c12', req: true, attrs: 'maxlength="160"' })}
       ${campo('codigoPostal', 'Código postal', { cls: 'c3', req: true, attrs: 'placeholder="1234-567" maxlength="8" inputmode="numeric"' })}
       ${campo('localidade', 'Localidade', { cls: 'c3', req: true, attrs: 'maxlength="60"' })}
-      ${campo('freguesia', 'Freguesia', { cls: 'c6', attrs: 'maxlength="80"' })}
-      ${campo('concelho', 'Concelho', { cls: 'c6', req: true, attrs: 'maxlength="60"' })}
-      ${campo('distrito', 'Distrito / Região autónoma', { cls: 'c6', req: true, opts: sel(DISTRITOS, m.distrito, 'Selecione…') })}
+      ${campo('concelho', 'Concelho (município)', { cls: 'c6', req: true, hint: 'Comece a escrever e escolha da lista oficial (CAOP 2025, 308 municípios).', attrs: 'maxlength="60" list="dlConc" autocomplete="off"' })}
+      ${campo('distrito', 'Distrito / Região autónoma', { cls: 'c6', req: true, hint: 'Preenchido automaticamente a partir do concelho.', opts: sel(DISTRITOS, m.distrito, 'Selecione…') })}
+      ${campo('freguesia', 'Freguesia', { cls: 'c12', req: true, opts: optsFreguesia(m.concelho, m.freguesia) })}
+      <datalist id="dlConc">${DATALIST_CONC}</datalist>
       <div class="sec-title">Contactos</div>
       ${campo('telemovel', 'Telemóvel', { tipo: 'tel', cls: 'c4', req: true, attrs: 'placeholder="912 345 678" maxlength="20"' })}
       ${campo('telefone', 'Telefone fixo', { tipo: 'tel', cls: 'c4', attrs: 'maxlength="20"' })}
@@ -773,6 +790,18 @@ async function vForm(id) {
     if (p === 2) {
       R.morada = Val.req(m.morada, 'morada'); R.codigoPostal = Val.cp(m.codigoPostal); R.localidade = Val.req(m.localidade, 'localidade');
       R.concelho = Val.req(m.concelho, 'concelho'); R.distrito = Val.req(m.distrito, 'distrito');
+      if (m.distrito !== 'Estrangeiro' && R.concelho.ok) { // Validação contra a CAOP2025
+        const c = caopConc(m.concelho);
+        if (!c) R.concelho = { ok: false, msg: 'Concelho não consta da lista oficial (CAOP 2025). Escolha uma opção da lista.' };
+        else {
+          m.concelho = c[1]; const fc = $('#f_concelho'); if (fc) fc.value = c[1];
+          if (c[2] !== m.distrito) R.distrito = { ok: false, msg: `${c[1]} pertence a: ${c[2]}.` };
+          const f = c[3].find(x => x[1] === m.freguesia);
+          if (!m.freguesia) R.freguesia = { ok: false, msg: 'Escolha a freguesia.' };
+          else if (!f) R.freguesia = { ok: true, warn: true, msg: 'Esta freguesia não consta da CAOP 2025 (pode ter sido agregada ou desagregada). Escolha a atual, se possível.' };
+          m.dtmnfr = f ? f[0] : '';
+        }
+      } else if (m.distrito === 'Estrangeiro') m.dtmnfr = '';
       R.telemovel = Val.tel(m.telemovel, true); R.telefone = Val.tel(m.telefone, false); R.email = Val.email(m.email);
     }
     if (p === 3) {
@@ -822,6 +851,9 @@ async function vForm(id) {
 
   /* Eventos */
   $('#frm').addEventListener('input', () => { FORM_SUJO = true; });
+  // Ao corrigir um campo, retira o aviso de erro anterior
+  const limparErro = e => { const k = e.target.name; if (!k) return; e.target.classList.remove('bad'); $(`#c_${k}`)?.classList.remove('bad'); const mm = $(`#m_${k}`); if (mm?.classList.contains('bad')) { mm.textContent = ''; mm.className = 'msg'; } };
+  $('#frm').addEventListener('input', limparErro); $('#frm').addEventListener('change', limparErro);
   $('#frm').addEventListener('change', e => {
     FORM_SUJO = true;
     if (e.target.name === 'nacionalidade') $('#avNac').hidden = !e.target.value || norm(e.target.value) === 'portuguesa';
@@ -839,6 +871,12 @@ async function vForm(id) {
     if (f && e.target.value) setMsg(k, f());
   });
   $('#f_nacionalidade').dispatchEvent(new Event('change', { bubbles: true })); FORM_SUJO = false;
+  // Concelho → distrito e freguesias automáticos (CAOP2025)
+  $('#f_concelho').addEventListener('input', () => {
+    const c = caopConc($('#f_concelho').value); if (!c) return;
+    $('#f_distrito').value = c[2]; $('#f_freguesia').innerHTML = optsFreguesia(c[1], ''); $('#m_distrito').textContent = ''; $('#f_distrito').classList.remove('bad');
+  });
+  $('#f_distrito').addEventListener('change', () => { if ($('#f_distrito').value === 'Estrangeiro') $('#f_freguesia').innerHTML = '<option value="">— não aplicável —</option>'; });
   $('#ant').onclick = () => mostrarPasso(Math.max(0, passo - 1));
   $('#cancel').onclick = () => { if (!FORM_SUJO || confirm('Descartar as alterações?')) { FORM_SUJO = false; ed ? abrirFicha(ed.id, true) : ir('painel'); } };
   $('#seg').onclick = async () => {
@@ -964,6 +1002,7 @@ async function abrirFicha(id, irLista) {
         ${linha('Morada', [m.morada, `${m.codigoPostal || ''} ${m.localidade || ''}`.trim()].filter(Boolean).join(', '))}${linha('Freguesia / Concelho', [m.freguesia, m.concelho].filter(Boolean).join(' · '))}
         ${linha('Distrito', m.distrito)}${linha('Telemóvel', m.telemovel)}${linha('Email', m.email)}${linha('Profissão', m.profissao)}
         ${linha('Estrutura', m.estrutura)}${linha('Proponente', m.proponente)}
+        <div><span>Cartão de militante</span><b>${esc(estadoCartao(m).txt)}${m.cartao ? ` · ${esc(fmtCod(m.cartao.codigo))} · até ${fmtData(m.cartao.validade)}` : ''}</b></div>
         ${linha('Consentimento RGPD', m.consentimentoEm ? fmtDataHora(m.consentimentoEm) : 'Não registado')}${linha('Comunicações', m.comunicacoes ? 'Aceita' : 'Não aceita')}
       </div>
       ${m.observacoes ? `<div class="legal" style="margin-top:16px;white-space:pre-wrap">${esc(m.observacoes)}</div>` : ''}
@@ -972,10 +1011,11 @@ async function abrirFicha(id, irLista) {
         <ul style="margin:8px 0 0;padding-left:18px">${(m.historico || []).map(h => `<li class="muted"><span class="mono">${fmtDataHora(h.data)}</span> — ${esc(h.acao)}</li>`).join('')}</ul></details>
     </div></div></div>
   <div class="dlg-f"><button class="btn danger" id="fDel" style="margin-right:auto">${ICON.trash} Eliminar</button>
-    <button class="btn" id="fPrint">${ICON.print} Imprimir ficha</button><button class="btn" id="fPag">${ICON.card} Registar pagamento</button><button class="btn pri" id="fEdit">${ICON.edit} Editar</button></div>`);
+    <button class="btn" id="fPrint">${ICON.print} Imprimir ficha</button><button class="btn" id="fCart" ${m.estado === 'ativo' ? '' : 'disabled title="Só para filiação ativa"'}>${ICON.idcard} Cartão</button><button class="btn" id="fPag">${ICON.card} Registar pagamento</button><button class="btn pri" id="fEdit">${ICON.edit} Editar</button></div>`);
   $('#fEdit').onclick = () => { fecharDlg(); ir('editar', m.id); };
   $('#fPrint').onclick = () => imprimir(m);
   $('#fPag').onclick = () => dlgPagamento(m.id);
+  $('#fCart').onclick = () => dlgCartao(m.id);
   $$('#dlgInner [data-recibo]').forEach(el => el.onclick = () => verRecibo(el.dataset.recibo));
   $('#fDel').onclick = async () => {
     const nRec = PAGS.filter(p => p.militanteId === m.id).length;
@@ -1055,8 +1095,9 @@ function vConfig() {
       <div class="f c4"><label for="c_sigla">Sigla</label><input id="c_sigla" maxlength="12" value="${esc(CFG.sigla)}"></div>
       <div class="f c4"><label for="c_idade">Idade mínima</label><input id="c_idade" type="number" min="14" max="18" value="${esc(CFG.idadeMin)}"><div class="hint">Conforme os estatutos.</div></div>
       <div class="f c4"><label for="c_tema">Tema</label><select id="c_tema">${[['auto', 'Automático'], ['light', 'Claro'], ['dark', 'Escuro']].map(([k, v]) => `<option value="${k}" ${CFG.tema === k ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
-      <div class="f c6"><label for="c_pref">Prefixo do n.º de militante</label><input id="c_pref" maxlength="6" value="${esc(CFG.prefixo)}" placeholder="ex.: MPT-"></div>
-      <div class="f c6"><label for="c_prox">Próximo n.º</label><input id="c_prox" type="number" min="1" value="${esc(CFG.proximoNum)}"></div>
+      <div class="f c4"><label for="c_cart">Validade do cartão (anos)</label><input id="c_cart" type="number" min="1" max="10" value="${esc(CFG.cartaoAnos || 2)}"></div>
+      <div class="f c4"><label for="c_pref">Prefixo do n.º de militante</label><input id="c_pref" maxlength="6" value="${esc(CFG.prefixo)}" placeholder="ex.: MPT-"></div>
+      <div class="f c4"><label for="c_prox">Próximo n.º</label><input id="c_prox" type="number" min="1" value="${esc(CFG.proximoNum)}"></div>
       <div class="sec-title">Tesouraria (recibos)</div>
       <div class="f c6"><label for="c_nifp">NIF do partido</label><input id="c_nifp" maxlength="9" inputmode="numeric" value="${esc(CFG.nifPartido)}"><div class="msg" id="m_nifp"></div></div>
       <div class="f c6"><label for="c_sede">Morada da sede</label><input id="c_sede" maxlength="160" value="${esc(CFG.sede)}"></div>
@@ -1074,7 +1115,8 @@ function vConfig() {
       <div class="card pad"><h2>Base legal</h2><ul class="muted" style="margin:0;padding-left:18px;font-size:13.5px">
         <li>Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), arts. 19.º a 21.º — filiação e restrições.</li>
         <li>Lei n.º 19/2003 — financiamento dos partidos: receitas próprias (art. 3.º), numerário (art. 3.º, n.os 2 e 3), donativos (arts. 7.º e 8.º), contabilidade (art. 12.º).</li>
-        <li>Regulamento (UE) 2016/679 (RGPD), art. 9.º, n.º 2, al. d), e Lei n.º 58/2019.</li></ul></div>
+        <li>Regulamento (UE) 2016/679 (RGPD), art. 9.º, n.º 2, al. d), e Lei n.º 58/2019.</li>
+        <li>Carta Administrativa Oficial de Portugal — CAOP2025 (DGT, Aviso n.º 3502/2026/2): ${(window.CAOP || []).length} municípios, ${(window.CAOP || []).reduce((s, c) => s + c[3].length, 0)} freguesias.</li></ul></div>
       <div class="card pad"><h2 style="color:var(--danger)">Zona de perigo</h2><p class="muted" style="margin-top:0">Apaga todos os militantes e recibos deste computador. Faça antes uma cópia de segurança.</p><button class="btn danger" id="wipe">${ICON.trash} Apagar todos os dados</button></div>
     </div>
   </div>`;
@@ -1092,6 +1134,7 @@ function vConfig() {
     if (!parseISO($('#c_qd').value)) return toast('Indique a data a partir da qual as quotas são exigíveis.', true);
     CFG.ias = { ...CFG.ias, [new Date().getFullYear()]: Math.round(iasV * 100) / 100 };
     CFG = { ...CFG, nifPartido: nifp, sede: $('#c_sede').value.trim(), periodicidade: $('#c_per').value, quotaNormal: Math.round(qn * 100) / 100, quotaReduzida: Math.round(qr * 100) / 100, quotasDesde: $('#c_qd').value };
+    CFG.cartaoAnos = Math.min(10, Math.max(1, parseInt($('#c_cart').value, 10) || 2));
     CFG = { ...CFG, nomePartido: $('#c_nome').value.trim() || CFG_PADRAO.nomePartido, sigla: $('#c_sigla').value.trim(), idadeMin: idade, tema: $('#c_tema').value, prefixo: $('#c_pref').value.trim(), proximoNum: Math.max(1, parseInt($('#c_prox').value, 10) || 1), logo };
     await DB.setCfg(CFG); aplicarMarca(); toast('Configurações guardadas.'); ir('config');
   };
@@ -1473,6 +1516,316 @@ const fmtNum = v => (+v || 0).toFixed(2).replace('.', ',');
 function csv(linhas) {
   const cel = v => { let s = String(v ?? ''); if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; return '"' + s.replace(/"/g, '""') + '"'; };
   return '﻿' + linhas.map(l => l.map(cel).join(';')).join('\r\n');
+}
+
+/* =====================================================================
+   FASE 3 — Cartão de militante (PDF + QR) e verificação
+   - O QR contém apenas sigla, n.º de militante e um código aleatório do cartão
+     (minimização de dados — art. 5.º, n.º 1, al. c), do RGPD): sem nome, NIF ou morada.
+   - Cada nova via gera um código novo; os códigos anteriores ficam inválidos.
+   - "Pessoal e intransmissível": art. 20.º, n.º 1, da Lei Orgânica n.º 2/2003.
+   ===================================================================== */
+const carregarScript = (() => {
+  const cache = {};
+  return src => cache[src] || (cache[src] = new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src; s.onload = res;
+    s.onerror = () => { delete cache[src]; rej(new Error('Não foi possível carregar ' + src)); }; document.head.append(s);
+  }));
+})();
+const ALFA = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // sem 0/O e 1/I para evitar confusões
+const novoCodigo = () => [...crypto.getRandomValues(new Uint8Array(8))].map(b => ALFA[b % 32]).join('');
+const fmtCod = c => c ? c.slice(0, 4) + '-' + c.slice(4) : '';
+// Só letras e algarismos: leitores USB (que "escrevem" como teclado) leem igual em qualquer disposição de teclado
+const payloadQR = m => `MIL1${m.cartao.codigo}`;
+
+function estadoCartao(m) {
+  if (!m.cartao) return { cls: 'mute', txt: 'Sem cartão', k: 'sem' };
+  if (m.estado !== 'ativo') return { cls: 'bad', txt: 'Inválido — filiação não ativa', k: 'inativo' };
+  const d = diasAte(parseISO(m.cartao.validade));
+  if (d < 0) return { cls: 'bad', txt: 'Caducado', k: 'caducado' };
+  if (d <= 60) return { cls: 'warn', txt: `Caduca em ${d} d`, k: 'acaducar' };
+  return { cls: '', txt: 'Válido', k: 'valido' };
+}
+
+/* Emite (ou reutiliza) o cartão. novaVia = substituição por perda/roubo/alteração de dados. */
+async function garantirCartao(id, novaVia = false) {
+  const m = await DB.get(id); if (!m) throw new Error('Militante não encontrado.');
+  if (m.estado !== 'ativo') throw new Error(`${m.nomeCompleto}: só militantes com filiação ativa podem ter cartão.`);
+  const ec = estadoCartao(m);
+  if (!novaVia && (ec.k === 'valido' || ec.k === 'acaducar')) return m;
+  const via = (m.cartao?.via || 0) + 1, emit = hoje(), val = new Date(emit);
+  val.setFullYear(val.getFullYear() + (+CFG.cartaoAnos || 2)); val.setDate(val.getDate() - 1);
+  const agora = new Date().toISOString();
+  if (m.cartao) m.cartoesAnteriores = [...(m.cartoesAnteriores || []), { codigo: m.cartao.codigo, via: m.cartao.via, ate: isoDe(emit) }];
+  m.cartao = { codigo: novoCodigo(), via, emitidoEm: isoDe(emit), validade: isoDe(val) };
+  m.historico = [...(m.historico || []), { data: agora, acao: `Cartão emitido — ${via}.ª via, código ${fmtCod(m.cartao.codigo)}, válido até ${fmtData(m.cartao.validade)}${novaVia ? ' (substitui a via anterior)' : ''}` }];
+  m.atualizadoEm = agora; await DB.put(m);
+  return m;
+}
+
+/* ---------- Desenho do cartão (CR80: 85,6 × 54 mm a 300 ppp) ---------- */
+const carregarImg = src => new Promise(res => { if (!src) return res(null); const i = new Image(); i.onload = () => res(i); i.onerror = () => res(null); i.src = src; });
+function rrect(x, X, Y, W, H, r) { x.beginPath(); x.moveTo(X + r, Y); x.arcTo(X + W, Y, X + W, Y + H, r); x.arcTo(X + W, Y + H, X, Y + H, r); x.arcTo(X, Y + H, X, Y, r); x.arcTo(X, Y, X + W, Y, r); x.closePath(); }
+function desenharQR(x, texto, X, Y, S) {
+  const q = qrcode(0, 'M'); q.addData(texto); q.make();
+  const n = q.getModuleCount(), quiet = 2, cel = Math.floor(S / (n + quiet * 2)), off = Math.floor((S - cel * n) / 2);
+  x.fillStyle = '#fff'; x.fillRect(X, Y, S, S); x.fillStyle = '#11200A';
+  for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (q.isDark(r, c)) x.fillRect(X + off + c * cel, Y + off + r * cel, cel, cel);
+}
+function ajustarTexto(x, txt, maxW, font, tamanhos) {
+  for (const t of tamanhos) { x.font = font(t); if (x.measureText(txt).width <= maxW) return t; }
+  return tamanhos[tamanhos.length - 1];
+}
+function quebrar(x, txt, maxW) {
+  const p = txt.split(' '), linhas = []; let l = '';
+  for (const w of p) { const t = l ? l + ' ' + w : w; if (x.measureText(t).width > maxW && l) { linhas.push(l); l = w; } else l = t; }
+  if (l) linhas.push(l); return linhas;
+}
+async function desenharCartao(m) {
+  await Promise.all(['500', '700', '800'].map(w => document.fonts.load(`${w} 30px Manrope`).catch(() => {})));
+  const W = 1011, H = 638, c = document.createElement('canvas'); c.width = W; c.height = H; const x = c.getContext('2d');
+  const F = w => s => `${w} ${s}px Manrope, "Segoe UI", Arial, sans-serif`;
+  x.fillStyle = '#FFFFFF'; x.fillRect(0, 0, W, H);
+  // Decoração de fundo
+  x.fillStyle = 'rgba(138,194,62,.10)'; x.beginPath(); x.arc(W + 30, H + 40, 300, 0, 7); x.fill();
+  x.fillStyle = 'rgba(168,215,103,.10)'; x.beginPath(); x.arc(W - 120, H - 40, 170, 0, 7); x.fill();
+  // Cabeçalho
+  const g = x.createLinearGradient(0, 0, W, 150); g.addColorStop(0, '#006530'); g.addColorStop(1, '#34561A');
+  x.fillStyle = g; x.fillRect(0, 0, W, 150);
+  x.fillStyle = 'rgba(168,215,103,.22)'; x.beginPath(); x.arc(W - 70, 10, 160, 0, 7); x.fill();
+  x.fillStyle = 'rgba(255,255,255,.08)'; x.beginPath(); x.arc(W - 250, 150, 90, 0, 7); x.fill();
+  // Logótipo
+  const logo = await carregarImg(CFG.logo || 'icon-512.png');
+  x.fillStyle = '#fff'; rrect(x, 36, 26, 98, 98, 20); x.fill();
+  if (logo) { const s = Math.min(82 / logo.width, 82 / logo.height); x.drawImage(logo, 85 - logo.width * s / 2, 75 - logo.height * s / 2, logo.width * s, logo.height * s); }
+  x.fillStyle = '#fff'; const fn = ajustarTexto(x, CFG.nomePartido, W - 330, F(800), [40, 36, 32, 28]); x.font = F(800)(fn);
+  x.fillText(CFG.nomePartido, 156, 76);
+  x.font = F(700)(21); x.fillStyle = 'rgba(255,255,255,.85)'; if ('letterSpacing' in x) x.letterSpacing = '5px';
+  x.fillText('CARTÃO DE MILITANTE', 158, 113); if ('letterSpacing' in x) x.letterSpacing = '0px';
+  // Fotografia 3:4
+  const PX = 40, PY = 178, PW = 258, PH = 344;
+  x.save(); rrect(x, PX, PY, PW, PH, 22); x.clip();
+  const foto = await carregarImg(m.foto);
+  if (foto) { const s = Math.max(PW / foto.width, PH / foto.height); x.drawImage(foto, PX + (PW - foto.width * s) / 2, PY + (PH - foto.height * s) / 2, foto.width * s, foto.height * s); }
+  else { x.fillStyle = '#E1F4C7'; x.fillRect(PX, PY, PW, PH); x.fillStyle = '#45711F'; x.font = F(800)(96); x.textAlign = 'center'; x.fillText(iniciais(m.nomeCompleto), PX + PW / 2, PY + PH / 2 + 34); x.textAlign = 'left'; }
+  x.restore(); x.strokeStyle = '#C8E89A'; x.lineWidth = 3; rrect(x, PX, PY, PW, PH, 22); x.stroke();
+  // Dados
+  const DX = 332, DW = W - DX - 262;
+  const fNome = ajustarTexto(x, m.nomeCompleto, DW * 2 - 30, F(800), [38, 34, 30]); x.font = F(800)(fNome); x.fillStyle = '#16201A';
+  const linhas = quebrar(x, m.nomeCompleto, DW).slice(0, 2); linhas.forEach((l, i) => x.fillText(l, DX, 214 + i * (fNome + 8)));
+  let y = 214 + linhas.length * (fNome + 8) + 30;
+  const rotulo = (t, X, Y) => { x.font = F(700)(18); x.fillStyle = '#6A7464'; if ('letterSpacing' in x) x.letterSpacing = '2px'; x.fillText(t, X, Y); if ('letterSpacing' in x) x.letterSpacing = '0px'; };
+  rotulo('N.º DE MILITANTE', DX, y); x.font = F(800)(50); x.fillStyle = '#006530'; x.fillText(m.numMilitante, DX, y + 52);
+  y += 100;
+  rotulo('ADMISSÃO', DX, y); rotulo('VÁLIDO ATÉ', DX + 190, y);
+  x.font = F(700)(28); x.fillStyle = '#16201A'; x.fillText(fmtData(m.dataAdmissao), DX, y + 36); x.fillText(fmtData(m.cartao.validade), DX + 190, y + 36);
+  if (m.estrutura) { y += 74; rotulo('ESTRUTURA', DX, y); x.font = F(500)(24); x.fillStyle = '#3A4236'; x.fillText(m.estrutura.length > 34 ? m.estrutura.slice(0, 33) + '…' : m.estrutura, DX, y + 30); }
+  // QR
+  const QS = 214, QX = W - QS - 36, QY = 182;
+  x.fillStyle = '#fff'; rrect(x, QX - 8, QY - 8, QS + 16, QS + 16, 18); x.fill(); x.strokeStyle = '#D9E0D5'; x.lineWidth = 2; x.stroke();
+  desenharQR(x, payloadQR(m), QX, QY, QS);
+  x.textAlign = 'center'; x.font = F(700)(22); x.fillStyle = '#16201A'; x.fillText(fmtCod(m.cartao.codigo), QX + QS / 2, QY + QS + 40);
+  x.font = F(500)(16); x.fillStyle = '#6A7464'; x.fillText(`${m.cartao.via}.ª via · emitido ${fmtData(m.cartao.emitidoEm)}`, QX + QS / 2, QY + QS + 64); x.textAlign = 'left';
+  // Rodapé
+  x.fillStyle = '#006530'; x.fillRect(0, H - 52, W, 52);
+  x.font = F(600)(18); x.fillStyle = 'rgba(255,255,255,.92)';
+  x.fillText('Cartão pessoal e intransmissível (art. 20.º, n.º 1, da Lei Orgânica n.º 2/2003)', 40, H - 19);
+  x.textAlign = 'right'; x.font = F(800)(20); x.fillStyle = '#A8D767'; x.fillText(CFG.sigla || '', W - 36, H - 18); x.textAlign = 'left';
+  return c;
+}
+
+/* ---------- PDF ---------- */
+async function gerarPDF(militantes, modo) {
+  await carregarScript('lib/jspdf.umd.min.js');
+  const { jsPDF } = window.jspdf, CW = 85.6, CH = 53.98;
+  let doc;
+  if (modo === 'cr80') {
+    doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: [CW, CH] });
+    for (let i = 0; i < militantes.length; i++) {
+      if (i) doc.addPage([CW, CH], 'landscape');
+      const c = await desenharCartao(militantes[i]); doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', 0, 0, CW, CH);
+    }
+  } else { // A4 com 10 cartões (2 × 5) e marcas de corte
+    doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+    const gx = 6, gy = 3, x0 = (210 - 2 * CW - gx) / 2, y0 = (297 - 5 * CH - 4 * gy) / 2;
+    for (let i = 0; i < militantes.length; i++) {
+      const k = i % 10; if (i && !k) doc.addPage('a4', 'portrait');
+      const X = x0 + (k % 2) * (CW + gx), Y = y0 + Math.floor(k / 2) * (CH + gy);
+      const c = await desenharCartao(militantes[i]); doc.addImage(c.toDataURL('image/jpeg', 0.92), 'JPEG', X, Y, CW, CH);
+      doc.setDrawColor(170); doc.setLineWidth(0.1); doc.rect(X, Y, CW, CH);
+    }
+  }
+  doc.setProperties({ title: 'Cartões de militante', subject: CFG.nomePartido, creator: 'Registo de Militantes' });
+  return doc;
+}
+const nomeFicheiro = (militantes, modo) => militantes.length === 1 ? `cartao-militante_${militantes[0].numMilitante}${modo === 'a4' ? '_A4' : ''}.pdf` : `cartoes-militante_${militantes.length}_${isoDe(hoje())}_${modo}.pdf`;
+
+/* ---------- Diálogo do cartão (a partir da ficha) ---------- */
+async function dlgCartao(id) {
+  let m = LISTA.find(x => x.id === id); if (!m) return;
+  if (m.estado !== 'ativo') return toast('Só militantes com filiação ativa podem ter cartão.', true);
+  const avisos = [];
+  if (!m.foto) avisos.push('Sem fotografia — o cartão mostra as iniciais. Recomenda-se acrescentar a fotografia antes de emitir.');
+  const sq = situacaoQuotas(m); if (sq.atraso.length) avisos.push(`Quotas em atraso (${sq.atraso.length} período(s), ${eur(sq.divida)}). Verifique se os estatutos exigem quotas em dia.`);
+  const docD = diasAte(parseISO(m.validadeDoc)); if (docD < 0) avisos.push('O documento de identificação está caducado — atualize a ficha.');
+  const ec = estadoCartao(m), temValido = ec.k === 'valido' || ec.k === 'acaducar';
+  abrirDlg(`<div class="dlg-h"><h3>Cartão de militante</h3><button class="btn ghost sm" data-x aria-label="Fechar">${ICON.x}</button></div>
+    <div class="dlg-b">
+      <div class="cartao-prev" id="cPrev"><div class="muted">${temValido ? 'A gerar pré-visualização…' : 'Ainda não há cartão válido. Ao descarregar, é emitido um cartão novo.'}</div></div>
+      <div class="row" style="margin-top:14px;justify-content:center"><span class="pill ${ec.cls}">${esc(ec.txt)}</span>${m.cartao ? `<span class="muted">Código <b class="mono">${esc(fmtCod(m.cartao.codigo))}</b> · ${m.cartao.via}.ª via · válido até ${fmtData(m.cartao.validade)}</span>` : ''}</div>
+      ${avisos.map(a => `<div class="alerta warn">${esc(a)}</div>`).join('')}
+      <div class="legal" style="margin-top:12px">O código QR contém apenas a sigla, o n.º de militante e um código aleatório do cartão — nenhum dado pessoal. A verificação faz-se na aplicação, no separador <b>Cartões → Verificar</b>.</div>
+    </div>
+    <div class="dlg-f">${m.cartao ? '<button class="btn danger" id="cVia" style="margin-right:auto">Emitir nova via</button>' : ''}
+      <button class="btn" id="cA4">${ICON.print} PDF folha A4</button><button class="btn pri" id="cCR">${ICON.up} PDF cartão (CR80)</button></div>`);
+  const prev = async mm => { const c = await desenharCartao(mm); const i = new Image(); i.src = c.toDataURL('image/png'); i.alt = 'Pré-visualização do cartão'; $('#cPrev').innerHTML = ''; $('#cPrev').append(i); };
+  if (temValido) prev(m);
+  const baixar = async (modo, novaVia) => {
+    try {
+      $$('#dlgInner .dlg-f button').forEach(b => b.disabled = true);
+      const mm = await garantirCartao(m.id, novaVia); await carregarSemReordenar(); m = mm;
+      const doc = await gerarPDF([mm], modo); doc.save(nomeFicheiro([mm], modo));
+      toast(novaVia ? `Nova via emitida (${mm.cartao.via}.ª). O cartão anterior deixou de ser válido.` : 'Cartão gerado.');
+      dlgCartao(mm.id);
+    } catch (e) { toast(e.message || String(e), true); $$('#dlgInner .dlg-f button').forEach(b => b.disabled = false); }
+  };
+  $('#cCR').onclick = () => baixar('cr80', false);
+  $('#cA4').onclick = () => baixar('a4', false);
+  $('#cVia') && ($('#cVia').onclick = () => { if (confirm('Emitir uma nova via do cartão?\n\nUse em caso de perda, roubo ou alteração de dados. O cartão anterior (e o seu código QR) passa a ser INVÁLIDO.')) baixar('cr80', true); });
+}
+async function carregarSemReordenar() { await carregar(); }
+
+/* ---------- Vista: Cartões (emissão em lote e verificação) ---------- */
+let CF = { aba: 'emissao', q: '', est: '', sel: new Set() };
+let pararCamara = null;
+function vCartoes() {
+  $('#main').innerHTML = `
+  <div class="head"><div><h1>Cartões de militante</h1><p>Validade de ${+CFG.cartaoAnos || 2} ano(s) · formato CR80 (85,6 × 54 mm) ou folha A4 com 10 cartões</p></div></div>
+  <div class="tabs" role="tablist"><button role="tab" data-aba="emissao">Emissão</button><button role="tab" data-aba="verificar">Verificar cartão</button></div>
+  <div id="cConteudo"></div>`;
+  $$('.tabs button').forEach(b => b.onclick = () => { CF.aba = b.dataset.aba; desenhar(); });
+  const desenhar = () => { pararCamara?.(); $$('.tabs button').forEach(b => b.classList.toggle('on', b.dataset.aba === CF.aba)); (CF.aba === 'emissao' ? abaEmissao : abaVerificar)(); };
+  const abaEmissao = () => {
+    const ativos = LISTA.filter(m => m.estado === 'ativo');
+    const cont = k => ativos.filter(m => estadoCartao(m).k === k).length;
+    $('#cConteudo').innerHTML = `
+    <div class="kpis" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi"><div class="lbl">Sem cartão</div><div class="val">${cont('sem')}</div></div>
+      <div class="kpi"><div class="lbl">Cartões válidos</div><div class="val" style="color:var(--ok)">${cont('valido') + cont('acaducar')}</div></div>
+      <div class="kpi"><div class="lbl">A caducar (60 dias)</div><div class="val" style="color:var(--warn)">${cont('acaducar')}</div></div>
+      <div class="kpi"><div class="lbl">Caducados</div><div class="val" style="color:var(--danger)">${cont('caducado')}</div></div></div>
+    <div class="toolbar">
+      <label class="search"><span class="sr">Pesquisar</span>${ICON.search}<input id="cq" placeholder="Pesquisar militante…" value="${esc(CF.q)}"></label>
+      <select id="ce" style="width:auto"><option value="">Todos os ativos</option>${[['sem', 'Sem cartão'], ['valido', 'Válidos'], ['acaducar', 'A caducar'], ['caducado', 'Caducados']].map(([k, v]) => `<option value="${k}" ${CF.est === k ? 'selected' : ''}>${v}</option>`).join('')}</select>
+      <button class="btn" id="cbA4" disabled>${ICON.print} PDF A4</button><button class="btn pri" id="cbCR" disabled>${ICON.up} PDF cartões</button></div>
+    <div class="card" id="cTab"></div>`;
+    const rows = () => { const q = norm(CF.q); return ativos.filter(m => (!q || norm([m.nomeCompleto, m.numMilitante, m.concelho].join(' ')).includes(q)) && (!CF.est || estadoCartao(m).k === CF.est)); };
+    const botoes = () => { const n = CF.sel.size; $('#cbA4').disabled = $('#cbCR').disabled = !n; $('#cbA4').innerHTML = `${ICON.print} PDF A4${n ? ` (${n})` : ''}`; $('#cbCR').innerHTML = `${ICON.up} PDF cartões${n ? ` (${n})` : ''}`; };
+    const tab = () => {
+      const R = rows();
+      $('#cTab').innerHTML = R.length ? `<table><thead><tr><th style="width:44px"><input type="checkbox" id="cAll" aria-label="Selecionar todos" ${R.every(m => CF.sel.has(m.id)) ? 'checked' : ''}></th><th>Militante</th><th>Cartão</th><th class="hide-sm">Validade</th><th class="hide-sm">Via</th><th class="hide-sm">Fotografia</th></tr></thead><tbody>
+        ${R.map(m => { const ec = estadoCartao(m); return `<tr data-cid="${esc(m.id)}"><td><input type="checkbox" data-s="${esc(m.id)}" ${CF.sel.has(m.id) ? 'checked' : ''} aria-label="Selecionar ${esc(m.nomeCompleto)}"></td>
+          <td><div class="who">${avatar(m)}<div><b>${esc(m.nomeCompleto)}</b><small class="mono">N.º ${esc(m.numMilitante)}</small></div></div></td>
+          <td><span class="pill ${ec.cls}">${esc(ec.txt)}</span></td><td class="mono hide-sm">${m.cartao ? fmtData(m.cartao.validade) : '—'}</td>
+          <td class="hide-sm">${m.cartao ? m.cartao.via + '.ª' : '—'}</td><td class="hide-sm">${m.foto ? '<span class="pill">Sim</span>' : '<span class="pill warn">Em falta</span>'}</td></tr>`; }).join('')}</tbody></table>`
+        : `<div class="empty">${ICON.people}<div>Nenhum militante corresponde aos filtros.</div></div>`;
+      $$('#cTab [data-s]').forEach(c => c.onchange = () => { c.checked ? CF.sel.add(c.dataset.s) : CF.sel.delete(c.dataset.s); botoes(); });
+      $('#cAll') && ($('#cAll').onchange = e => { R.forEach(m => e.target.checked ? CF.sel.add(m.id) : CF.sel.delete(m.id)); tab(); });
+      $$('#cTab tr[data-cid]').forEach(tr => tr.onclick = e => { if (e.target.tagName !== 'INPUT') dlgCartao(tr.dataset.cid); });
+      botoes();
+    };
+    const lote = async modo => {
+      const ids = [...CF.sel].filter(id => LISTA.find(m => m.id === id && m.estado === 'ativo'));
+      const novos = ids.filter(id => !['valido', 'acaducar'].includes(estadoCartao(LISTA.find(m => m.id === id)).k)).length;
+      const semFoto = ids.filter(id => !LISTA.find(m => m.id === id).foto).length;
+      if (!confirm(`Gerar ${ids.length} cartão(ões)?\n\n• ${novos} cartão(ões) novo(s) serão emitidos (sem cartão ou caducados).\n• ${ids.length - novos} cartão(ões) válidos serão reimpressos com o mesmo código.${semFoto ? `\n• ${semFoto} militante(s) sem fotografia (cartão com iniciais).` : ''}`)) return;
+      const b = modo === 'a4' ? $('#cbA4') : $('#cbCR'); b.disabled = true; b.textContent = 'A gerar…';
+      try {
+        const lista = []; for (const id of ids) lista.push(await garantirCartao(id));
+        await carregar(); const doc = await gerarPDF(lista, modo); doc.save(nomeFicheiro(lista, modo));
+        toast(`${lista.length} cartão(ões) gerado(s).`); CF.sel.clear(); abaEmissao();
+      } catch (e) { toast(e.message || String(e), true); botoes(); }
+    };
+    $('#cq').oninput = e => { CF.q = e.target.value; tab(); };
+    $('#ce').onchange = e => { CF.est = e.target.value; tab(); };
+    $('#cbA4').onclick = () => lote('a4'); $('#cbCR').onclick = () => lote('cr80');
+    tab();
+  };
+  const abaVerificar = () => {
+    $('#cConteudo').innerHTML = `<div class="grid2">
+      <div class="card pad"><h2>Ler cartão</h2>
+        <p class="muted" style="margin-top:0">Aponte o código QR à câmara, use um leitor de QR USB (escreve no campo abaixo) ou escreva o código impresso no cartão.</p>
+        <div class="f"><label for="vIn">Código do cartão ou conteúdo do QR</label><input id="vIn" placeholder="ex.: K7Q2-9XMA" autocomplete="off" spellcheck="false" style="text-transform:uppercase"></div>
+        <div class="row" style="margin-top:12px"><button class="btn pri" id="vOk">Verificar</button><button class="btn" id="vCam">${ICON.cam} Usar câmara</button></div>
+        <div id="vCamBox" style="margin-top:14px"></div></div>
+      <div class="card pad" id="vRes"><h2>Resultado</h2><div class="empty">${ICON.search}<div>Ainda não foi lido nenhum cartão.</div></div></div></div>`;
+    const ir2 = () => { verificarCartao($('#vIn').value); $('#vIn').select(); };
+    $('#vIn').onkeydown = e => { if (e.key === 'Enter') ir2(); };
+    $('#vOk').onclick = ir2; $('#vIn').focus();
+    $('#vCam').onclick = () => lerQRcamara(txt => { $('#vIn').value = txt; verificarCartao(txt); });
+  };
+  desenhar();
+}
+
+function verificarCartao(entrada) {
+  const t = String(entrada || '').trim().toUpperCase(); if (!t) return;
+  let codigo, num = null;
+  const p = t.split('|'), mq = t.match(/^MIL1([A-Z0-9]{8})$/);
+  if (mq) codigo = mq[1];
+  else if (p[0] === 'MIL1' && p.length === 4) { num = p[2]; codigo = p[3]; } // formato antigo
+  else codigo = t.replace(/[\s-]/g, '');
+  const res = (cls, titulo, corpo) => { $('#vRes').innerHTML = `<h2>Resultado</h2><div class="verif ${cls}"><b>${titulo}</b></div>${corpo || ''}`; };
+  if (!/^[A-Z0-9]{8}$/.test(codigo)) return res('bad', 'Código inválido', '<p class="muted">O conteúdo lido não corresponde a um cartão desta aplicação.</p>');
+  const m = LISTA.find(x => x.cartao?.codigo === codigo);
+  if (!m) {
+    const ant = LISTA.find(x => (x.cartoesAnteriores || []).some(c => c.codigo === codigo));
+    if (ant) return res('bad', 'CARTÃO SUBSTITUÍDO — INVÁLIDO', `<p>Este cartão de <b>${esc(ant.nomeCompleto)}</b> (n.º ${esc(ant.numMilitante)}) foi substituído por uma via mais recente e já não é válido.</p>`);
+    return res('bad', 'Cartão não encontrado', '<p class="muted">O código não existe nesta base de dados. Pode ter sido emitido noutro computador ou ser falso.</p>');
+  }
+  if (num && num !== m.numMilitante) return res('bad', 'Dados não coincidem', '<p class="muted">O n.º de militante do QR não corresponde ao cartão registado.</p>');
+  const ec = estadoCartao(m), sq = situacaoQuotas(m);
+  const ok = ec.k === 'valido' || ec.k === 'acaducar';
+  res(ok ? (sq.atraso.length ? 'warn' : 'ok') : 'bad', ok ? (sq.atraso.length ? 'CARTÃO VÁLIDO — quotas em atraso' : 'CARTÃO VÁLIDO') : `CARTÃO INVÁLIDO — ${esc(ec.txt)}`,
+    `<div class="who" style="margin-top:14px">${m.foto ? `<img src="${esc(m.foto)}" alt="" style="width:96px;height:128px;border-radius:12px;object-fit:cover">` : `<div class="av" style="width:96px;height:128px;font-size:28px">${esc(iniciais(m.nomeCompleto))}</div>`}
+     <div><b style="font-size:18px">${esc(m.nomeCompleto)}</b><small class="mono" style="display:block">N.º ${esc(m.numMilitante)} · ${esc(m.concelho)}</small>
+     <div class="row" style="margin-top:8px"><span class="pill ${m.estado === 'ativo' ? '' : 'mute'}">${esc(ESTADOS[m.estado])}</span>${pillQuota(sq)}</div>
+     <small class="muted" style="display:block;margin-top:6px">Cartão ${m.cartao.via}.ª via · válido até ${fmtData(m.cartao.validade)}</small></div></div>
+     <p class="muted" style="font-size:12.5px;margin-bottom:0">Confirme que a fotografia corresponde à pessoa que apresenta o cartão.</p>`);
+}
+
+async function lerQRcamara(cb) {
+  if (!navigator.mediaDevices?.getUserMedia) return toast('A câmara não está disponível neste navegador.', true);
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false }); }
+  catch (e) { return toast('Sem acesso à câmara: ' + (e.name === 'NotAllowedError' ? 'permissão recusada.' : 'nenhuma câmara encontrada.'), true); }
+  try { await carregarScript('lib/jsQR.js'); } catch (e) { stream.getTracks().forEach(t => t.stop()); return toast(e.message, true); }
+  const box = $('#vCamBox'); box.innerHTML = '<video id="vVid" autoplay playsinline muted></video><p class="muted" style="text-align:center;font-size:13px">A procurar código QR… <button class="btn sm" id="vStop">Parar</button></p>';
+  const v = $('#vVid'); v.srcObject = stream; const cv = document.createElement('canvas'), cx = cv.getContext('2d', { willReadFrequently: true });
+  let ativo = true, ultimo = '';
+  pararCamara = () => { ativo = false; stream.getTracks().forEach(t => t.stop()); if ($('#vCamBox')) $('#vCamBox').innerHTML = ''; pararCamara = null; };
+  $('#vStop').onclick = () => pararCamara?.();
+  const loop = () => {
+    if (!ativo) return;
+    if (v.readyState >= 2 && v.videoWidth) {
+      const k = Math.min(1, 720 / v.videoWidth); cv.width = v.videoWidth * k | 0; cv.height = v.videoHeight * k | 0;
+      cx.drawImage(v, 0, 0, cv.width, cv.height);
+      const r = jsQR(cx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, { inversionAttempts: 'dontInvert' });
+      if (r?.data && r.data !== ultimo) { ultimo = r.data; cb(r.data); setTimeout(() => { ultimo = ''; }, 3000); }
+    }
+    requestAnimationFrame(loop);
+  };
+  loop();
+}
+
+/* ---------- Concelhos e freguesias oficiais (CAOP2025) ---------- */
+const CAOP_IDX = new Map((window.CAOP || []).map(c => [norm(c[1]), c]));
+const caopConc = nome => CAOP_IDX.get(norm(String(nome || '').trim()));
+const DATALIST_CONC = (window.CAOP || []).map(c => `<option value="${esc(c[1])}">${esc(c[2])}</option>`).join('');
+function optsFreguesia(conc, atual) {
+  const c = caopConc(conc), fs = c ? c[3] : [];
+  let o = `<option value="">${c ? 'Selecione…' : '— escolha primeiro o concelho —'}</option>` + fs.map(([, n]) => `<option ${n === atual ? 'selected' : ''}>${esc(n)}</option>`).join('');
+  if (atual && !fs.some(f => f[1] === atual)) o += `<option selected>${esc(atual)}</option>`;
+  return o;
 }
 
 /* ---------- Arranque ---------- */
