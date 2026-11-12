@@ -1,4 +1,4 @@
-# Registo de Militantes — Fases 1, 2 e 3
+# Registo de Militantes — Fases 1 a 4
 
 Aplicação para computador (PWA instalável, funciona sem internet) para registo de militantes de partido político em Portugal. Cores retiradas do site oficial do MPT (`https://mpt.pt/styles.css`, escala de verdes `--g-*`, e verde do logótipo `#006530`); letra Manrope, a mesma do site.
 
@@ -53,6 +53,25 @@ O IAS de cada ano é editável em *Configurações* (2026: Portaria n.º 480-A/2
 - **Concelhos e freguesias oficiais** — CAOP2025 da Direção-Geral do Território (Aviso n.º 3502/2026/2): 308 municípios e 3259 freguesias, já com as desagregações de 2025. Ao escolher o concelho, o distrito e a lista de freguesias são preenchidos automaticamente.
 - Funciona sem internet: as bibliotecas (jsPDF, qrcode-generator, jsQR) estão em `lib/` (licenças em `lib/LICENCAS.txt`).
 
+## O que faz a Fase 4 — Segurança (RGPD, arts. 5.º, 25.º, 30.º e 32.º)
+
+- **Dados cifrados** com AES-256-GCM: militantes (incluindo fotografias), recibos e registo de acessos. No disco só existe texto cifrado.
+- **Chave de dados aleatória**, protegida pela palavra-passe de cada utilizador (PBKDF2-SHA256, 600 000 iterações — recomendação OWASP). As palavras-passe **nunca são guardadas**.
+- **Configuração inicial**: cria o administrador, cifra automaticamente os dados das fases anteriores (numa só operação: ou tudo ou nada) e gera uma **chave de recuperação** (imprimir e guardar em cofre).
+- **Perfis**: Administrador (tudo), Secretaria (inscrições, fichas, cartões), Tesoureiro(a) (quotas, recibos, contabilidade), Consulta (só leitura e verificação de cartões).
+- **Utilizadores**: palavra-passe temporária obrigatoriamente alterada no primeiro acesso; repor palavra-passe; desativar (destrói a chave de acesso da conta).
+- **Política de palavras-passe** (NIST SP 800-63B): mínimo 12 caracteres, sem palavras comuns nem o nome do utilizador; medidor de força.
+- **Proteção contra tentativas**: 5 falhas em 15 minutos bloqueiam a conta por 5 minutos (tempo crescente); o utilizador é avisado das tentativas falhadas no acesso seguinte.
+- **Bloqueio automático** por inatividade (por omissão 10 minutos): a chave é apagada da memória.
+- **Registo de acessos**: início/fim de sessão, consulta de fichas, alterações, recibos, cartões, exportações, utilizadores. Cifrado, encadeado por SHA-256 (botão *Verificar integridade* deteta registos apagados ou alterados) e conservado 2 anos (configurável).
+- **Cópias de segurança cifradas** com palavra-passe própria. As cópias antigas, sem cifra, continuam a poder ser restauradas.
+
+### Limites (a ter em conta)
+
+- Os perfis controlam o uso normal da aplicação; a proteção forte é a cifra. Quem tiver acesso ao computador **com a sessão aberta** vê os dados — bloqueie o Windows (tecla Windows + L) ao afastar-se.
+- Recomenda-se também a **cifra do disco** (BitLocker no Windows): o navegador pode manter restos dos dados antigos (anteriores à cifra) nos seus ficheiros internos durante algum tempo.
+- Desativar um utilizador impede novos acessos, mas não "apaga" o que essa pessoa possa ter copiado antes.
+
 ## Base legal usada
 
 Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), com as alterações das LO n.º 2/2008 e n.º 1/2018.
@@ -68,5 +87,4 @@ Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos
 
 ## Próximas fases (proposta)
 
-- **Fase 4**: utilizadores com palavra-passe e perfis, cifra da base de dados, registo de acessos (RGPD).
 - **Fase 5**: versão `.exe` (Electron/Tauri) e sincronização entre sedes, se necessário.
