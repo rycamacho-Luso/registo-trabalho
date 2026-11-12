@@ -1,4 +1,4 @@
-# Registo de Militantes — Fases 1 a 4
+# Registo de Militantes — Fases 1 a 5
 
 Aplicação para computador (PWA instalável, funciona sem internet) para registo de militantes de partido político em Portugal. Cores retiradas do site oficial do MPT (`https://mpt.pt/styles.css`, escala de verdes `--g-*`, e verde do logótipo `#006530`); letra Manrope, a mesma do site.
 
@@ -72,6 +72,29 @@ O IAS de cada ano é editável em *Configurações* (2026: Portaria n.º 480-A/2
 - Recomenda-se também a **cifra do disco** (BitLocker no Windows): o navegador pode manter restos dos dados antigos (anteriores à cifra) nos seus ficheiros internos durante algum tempo.
 - Desativar um utilizador impede novos acessos, mas não "apaga" o que essa pessoa possa ter copiado antes.
 
+## Fase 5 — Aplicação para Windows (.exe)
+
+A pasta `desktop/` transforma a aplicação num programa de Windows (Electron 44), com instalador e versão portátil.
+
+**Obter o .exe:** no GitHub, separador *Actions* → *Compilar aplicação Windows* → última execução → *Artifacts* → `Registo-de-Militantes-Windows`. Contém:
+- `Registo-de-Militantes-1.0.0-instalador.exe` — instala no utilizador atual, cria atalhos no ambiente de trabalho e no menu Iniciar;
+- `Registo-de-Militantes-1.0.0-portatil.exe` — corre sem instalar (ex.: a partir de uma pen cifrada);
+- `SHA256SUMS.txt` — impressões digitais para confirmar que os ficheiros não foram alterados.
+
+**Segurança da versão Windows:**
+- **Não comunica com a internet**: todos os pedidos externos são bloqueados; os dados nunca saem do computador.
+- Conteúdo isolado do sistema (sem acesso ao Node.js, *sandbox*), política de segurança de conteúdo (CSP) e navegação restrita à aplicação.
+- Só a câmara (fotografias e leitura de QR) e a área de transferência são autorizadas.
+- Uma só janela aberta de cada vez; pergunta antes de fechar com alterações por guardar.
+- Letra Manrope incluída na aplicação (sem pedidos ao Google Fonts).
+- Os dados ficam em `%APPDATA%\Registo de Militantes` (menu *Ficheiro → Abrir pasta dos dados*). Desinstalar **não** apaga os dados.
+
+**Nota:** o .exe não tem assinatura digital de código, por isso o Windows SmartScreen mostra o aviso "O Windows protegeu o computador" → *Mais informações* → *Executar mesmo assim*. Para eliminar o aviso é preciso um certificado de assinatura de código (custo anual).
+
+**Mudar de computador:** criar uma cópia de segurança cifrada na versão antiga e restaurá-la na nova (*Configurações → Cópias de segurança*). Os dados da versão web (navegador) e os da versão Windows são independentes.
+
+**Programadores:** `cd desktop && npm ci && npm run iniciar` (executar) ou `npm run dist` (compilar em Windows).
+
 ## Base legal usada
 
 Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos Políticos), com as alterações das LO n.º 2/2008 e n.º 1/2018.
@@ -87,4 +110,4 @@ Fonte: versão consolidada da CNE da Lei Orgânica n.º 2/2003 (Lei dos Partidos
 
 ## Próximas fases (proposta)
 
-- **Fase 5**: versão `.exe` (Electron/Tauri) e sincronização entre sedes, se necessário.
+- Sincronização entre sedes (servidor central ou troca de ficheiros cifrados), se necessária.
