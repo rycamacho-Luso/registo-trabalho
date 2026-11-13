@@ -27,6 +27,7 @@ Aplicação para computador (PWA instalável, funciona sem internet) para regist
 - Registo de pagamentos (quota, donativo, contribuição de eleito), com escolha dos períodos a pagar, incluindo atrasos e adiantamentos.
 - **Recibos** numerados por ano (`2026/0001`), sem saltos nem repetições, com valor por extenso; impressão em A4 com original e duplicado.
 - Recibos **nunca são apagados**: só anulados, com motivo, data e hora. Ao eliminar um militante, os recibos são conservados.
+- **Valor diferente do devido** pelos períodos escolhidos (a mais ou a menos): o recibo só é emitido com o motivo escrito nas *Observações* (mínimo 10 caracteres), que fica impresso no recibo (versão 1.1.1).
 - Exportação para a contabilidade (CSV com a classificação legal de cada receita) e mapa de quotas em atraso.
 - Cópia de segurança inclui os recibos. As bases de dados da Fase 1 são atualizadas automaticamente, sem perda de dados.
 
@@ -77,8 +78,8 @@ O IAS de cada ano é editável em *Configurações* (2026: Portaria n.º 480-A/2
 A pasta `desktop/` transforma a aplicação num programa de Windows (Electron 44), com instalador e versão portátil.
 
 **Obter o .exe:** no GitHub, separador *Actions* → *Compilar aplicação Windows* → última execução → *Artifacts* → `Registo-de-Militantes-Windows`. Contém:
-- `Registo-de-Militantes-1.0.0-instalador.exe` — instala no utilizador atual, cria atalhos no ambiente de trabalho e no menu Iniciar;
-- `Registo-de-Militantes-1.0.0-portatil.exe` — corre sem instalar (ex.: a partir de uma pen cifrada);
+- `Registo-de-Militantes-<versão>-instalador.exe` — instala no utilizador atual, cria atalhos no ambiente de trabalho e no menu Iniciar;
+- `Registo-de-Militantes-<versão>-portatil.exe` — corre sem instalar (ex.: a partir de uma pen cifrada);
 - `SHA256SUMS.txt` — impressões digitais para confirmar que os ficheiros não foram alterados.
 
 **Segurança da versão Windows:**

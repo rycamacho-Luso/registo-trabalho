@@ -1384,7 +1384,16 @@ function dlgPagamento(militanteId, tipoIni = 'quota') {
     const p = dados(), m = mil(); const { erros, avisos } = verificarLegal(p);
     if (!m) erros.unshift('Selecione o militante.');
     if (tipo === 'quota' && m && !sel.size && situacaoQuotas(m).isento === undefined) erros.push('Selecione pelo menos um período.');
-    if (tipo === 'quota' && m && sel.size && p.valor > 0 && Math.abs(p.valor - r2(sel.size * valorQuota(m))) > 0.004) avisos.unshift(`O valor difere do previsto (${sel.size} × ${eur(valorQuota(m))} = ${eur(sel.size * valorQuota(m))}). Justifique nas observações.`);
+    /* Valor diferente do devido pelos períodos escolhidos: só com justificação (fica impressa no recibo),
+       para nenhum militante ficar "em dia" sem pagar o devido nem ficar registado porquê. */
+    if (tipo === 'quota' && m && sel.size && p.valor > 0) {
+      const previsto = r2(sel.size * valorQuota(m)), dif = r2(p.valor - previsto);
+      if (Math.abs(dif) > 0.004) {
+        const txt = `O valor ${dif < 0 ? 'é inferior' : 'é superior'} ao devido pelos períodos escolhidos (${sel.size} × ${eur(valorQuota(m))} = ${eur(previsto)}; diferença de ${eur(Math.abs(dif))}).`;
+        if (p.observacoes.length < 10) erros.unshift(`${txt} Ajuste os períodos ou o valor, ou escreva o motivo nas Observações (pelo menos 10 caracteres) — fica impresso no recibo.`);
+        else avisos.unshift(`${txt} Motivo indicado nas Observações.`);
+      }
+    }
     if (!parseISO(p.dataPagamento) || parseISO(p.dataPagamento) > hoje()) erros.push('Data de pagamento inválida.');
     $('#pg_legal').innerHTML = (p.valor > 0 ? `<div class="legal" style="margin-bottom:8px"><b>${eur(p.valor)}</b> — ${esc(porExtenso(p.valor))}</div>` : '')
       + erros.map(e => `<div class="alerta bad">${esc(e)}</div>`).join('') + avisos.map(a => `<div class="alerta warn">${esc(a)}</div>`).join('');
@@ -1399,7 +1408,7 @@ function dlgPagamento(militanteId, tipoIni = 'quota') {
     desenharPeriodos(); calcular();
   });
   $('#pg_v').oninput = () => { valorManual = true; verificar(); };
-  ['#pg_met', '#pg_d', '#pg_ref'].forEach(id => $(id).addEventListener('input', verificar));
+  ['#pg_met', '#pg_d', '#pg_ref', '#pg_obs'].forEach(id => $(id).addEventListener('input', verificar));
   $('#pg_m').onchange(); 
   $('#pg_ok').onclick = async () => {
     if (!verificar()) return;
