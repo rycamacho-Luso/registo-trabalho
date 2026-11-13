@@ -1,0 +1,7 @@
+Bibliotecas de terceiros incluídas (para funcionar sem internet):
+
+- jsPDF 2.5.2 — licença MIT — (c) 2010-2021 James Hall, (c) 2015-2021 yWorks GmbH — https://github.com/parallax/jsPDF
+- qrcode-generator 1.4.4 — licença MIT — (c) 2009 Kazuhiko Arase — https://github.com/kazuhikoarase/qrcode-generator
+- jsQR 1.4.0 — licença Apache-2.0 — (c) Cosmo Wolfe — https://github.com/cozmo/jsQR
+
+Dados geográficos: CAOP2025 — Direção-Geral do Território (dados abertos).
