@@ -304,7 +304,7 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
-const VERSAO='2026.11.22-o';
+const VERSAO='2026.11.22-p';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -858,6 +858,7 @@ function mesesPorPagar(cid){const M={};
     const x=M[m]??={m,n:0,min:0,val:0,por:{},loc:{}};x.n++;x.min+=d;x.val+=g;const y=x.por[t.colabId]??={n:0,min:0,val:0};y.n++;y.min+=d;y.val+=g;
     const l=x.loc[t.localId||'']??={n:0,min:0,val:0,por:{}};l.n++;l.min+=d;l.val+=g;const lc=l.por[t.colabId]??={n:0,min:0,val:0};lc.n++;lc.min+=d;lc.val+=g}
   return Object.values(M).sort((a,b)=>a.m.localeCompare(b.m))}
+const ordemPP=L=>{const ma=hoje().slice(0,7),k=m=>m===ma?0:m<ma?1:2;return [...L].sort((a,b)=>k(a.m)-k(b.m)||(k(a.m)===1?b.m.localeCompare(a.m):a.m.localeCompare(b.m)))};
 const locsOrd=x=>Object.entries(x.loc).sort((a,b)=>b[1].val-a[1].val);
 const rotMes=m=>cap(nomeMes(m))+(m===hoje().slice(0,7)?' (mês atual)':m>hoje().slice(0,7)?' (futuro)':'');
 const cidPP=()=>fR.colab||(perm('verTodos')?'':meuColab());
@@ -869,7 +870,7 @@ function cartaoPorPagar(){
   const G=porPagarSep(fR.colab||(perm('verTodos')?'':meuColab()));const ma=hoje().slice(0,7);
   if(G.total<0.005)return `<div class="info ok">${ic('check')}<span style="flex:1">Não há nada por pagar${fR.colab?' a '+esc(colabN(fR.colab)):''}.</span></div>`;
   const linhas=cids.map(c=>({c,p:porPagarSep(c)})).filter(x=>x.p.total>0.004).sort((a,b)=>b.p.ant.val-a.p.ant.val||b.p.total-a.p.total);
-  const MP=mesesPorPagar(cidPP());
+  const MP=ordemPP(mesesPorPagar(cidPP()));
   let h=`<div class="card"><h2>Por pagar</h2>
     <div class="stats s4" style="margin-bottom:.9rem"><div class="stat ${G.mes.val>0.004?'warn':''}"><div class="k">Este mês (${MESES[+ma.slice(5)-1]})</div><div class="v">${eur(G.mes.val)}</div><div class="x">${G.mes.n} serviços</div></div>
     <div class="stat ${G.ant.val>0.004?'warn ant':''}"><div class="k">Meses anteriores</div><div class="v">${eur(G.ant.val)}</div><div class="x">${G.ant.n} serviços</div></div>
@@ -982,9 +983,14 @@ function textoResumo(curto){
   const R=dadosRel();let s=`*${S.cfg.empresa||'Relatório de trabalho'} – ${nomePer()}*\n\n*Totais por colaborador*\n`;
   totaisColab(R).forEach(x=>s+=`${colabN(x.cid)}: ${x.n} serviços · ${hfmt(x.min)} · ${eur(x.val)}${x.por>0.004?' · por pagar '+eur(x.por):' · pago'}\n`);
   s+=`\n*Total global: ${hfmt(R.min)} · ${eur(R.val)}*${R.por>0.004?`\nPor pagar: ${eur(R.por)}`:''}\n`;
-  {const MP=mesesPorPagar(fR.colab||'');if(MP.length){const tot=MP.reduce((a,x)=>a+x.val,0);
-    s+=`\n*Meses que falta pagar (total ${eur(tot)})*\n`+MP.map(x=>`- ${rotMes(x.m)}: ${eur(x.val)}`+(Object.keys(x.por).length>1?' ('+Object.entries(x.por).map(([c,y])=>colabN(c)+' '+eur(y.val)).join(', ')+')':'')
-      +'\n'+locsOrd(x).map(([l,y])=>`   · ${localN(l)}: ${eur(y.val)} (${y.n} serv.)`).join('\n')).join('\n')+'\n'}}
+  {const MP=ordemPP(mesesPorPagar(fR.colab||''));if(MP.length){const tot=MP.reduce((a,x)=>a+x.val,0),ma=hoje().slice(0,7);
+    const linha=x=>`- ${cap(nomeMes(x.m))}: ${eur(x.val)}`+(Object.keys(x.por).length>1?' ('+Object.entries(x.por).map(([c,y])=>colabN(c)+' '+eur(y.val)).join(', ')+')':'')
+      +'\n'+locsOrd(x).map(([l,y])=>`   · ${localN(l)}: ${eur(y.val)} (${y.n} serv.)`).join('\n');
+    const at=MP.find(x=>x.m===ma),fa=MP.filter(x=>x.m!==ma);
+    s+=`\n*SITUAÇÃO DE PAGAMENTOS (${dataPT(hoje())})*\n`;
+    s+=`\n*Mês atual*\n`+(at?linha(at):'- Nada por pagar')+'\n';
+    s+=`\n*Meses em falta*\n`+(fa.length?fa.map(linha).join('\n'):'- Nenhum')+'\n';
+    s+=`\n*Total por pagar: ${eur(tot)}*\n`}}
   if(curto)return s+'\n(Detalhe no PDF em anexo)';
   s+=`\n*Detalhe dos serviços*\n`;
   for(const x of totaisColab(R)){s+=`\n${colabN(x.cid)}\n`;
@@ -1000,49 +1006,113 @@ function carregarPDF(){
     .catch(e=>{pdfLib=null;throw e});
 }
 const eurP=v=>eur(v).replace(/[\u00a0\u202f]/g,' ');
+/* =================== PDF profissional ===================
+   Ordem: cabeçalho e resumo do período · situação de pagamentos (mês atual primeiro, depois os meses em falta)
+   · totais por colaborador · detalhe (mês atual primeiro, depois os meses em falta) · rodapé com páginas */
 async function gerarPDF(descarregar){
-  const R=dadosRel();if(!R.n){toast('Sem serviços concluídos neste período');return null}
+  const R=dadosRel();const MP=ordemPP(mesesPorPagar(fR.colab||''));
+  if(!R.n&&!MP.length){toast('Sem serviços para este relatório');return null}
   try{await carregarPDF()}catch(e){toast('Sem internet para gerar o PDF — use Imprimir › Guardar como PDF');return null}
-  const doc=new jspdf.jsPDF({orientation:'landscape'});const PH=doc.internal.pageSize.getHeight();
-  doc.setFontSize(16);doc.text(`${S.cfg.empresa||'Relatório de trabalho'} - ${nomePer()}${fR.per==='mes'&&fechado(fR.mes)?' (mês fechado)':''}`,14,16);
-  doc.setFontSize(10);doc.setTextColor(90);doc.text(`Total: ${hfmt(R.min)}  |  ${eurP(R.val)}  |  Pago: ${eurP(R.pago)}  |  Por pagar: ${eurP(R.por)}  |  ${R.n} serviços  |  Emitido em ${dataPT(hoje())}`,14,23);doc.setTextColor(0);
-  const est={headStyles:{fillColor:[19,32,42]},footStyles:{fillColor:[227,243,239],textColor:20},theme:'grid'};
-  doc.autoTable({...est,startY:29,head:[[{content:'Totais por colaborador',colSpan:6,styles:{fillColor:[14,124,107]}}],['Colaborador','Serviços','Horas','Valor','Pago','Por pagar']],
-    body:totaisColab(R).map(x=>[colabN(x.cid),x.n,hfmt(x.min),eurP(x.val),eurP(x.pago),eurP(x.por)]),foot:[['Total global',R.n,hfmt(R.min),eurP(R.val),eurP(R.pago),eurP(R.por)]],
-    styles:{fontSize:10},tableWidth:200});
-  let y=doc.lastAutoTable.finalY+10;
-  {const MP=mesesPorPagar(fR.colab||'');if(MP.length){
-    const cs=[...new Set(MP.flatMap(x=>Object.keys(x.por)))].sort((a,b)=>colabN(a).localeCompare(colabN(b))),porCol=cs.length>1&&cs.length<=6;
-    const cab_=['Mês',...(porCol?cs.map(colabN):[]),'Serviços','Horas','Por pagar'];
-    const tot=c=>MP.reduce((a,x)=>a+((x.por[c]||{}).val||0),0);
-    if(y>PH-40){doc.addPage();y=15}
-    doc.autoTable({...est,startY:y,head:[[{content:'Meses que falta pagar (situação em '+dataPT(hoje())+')',colSpan:cab_.length,styles:{fillColor:[194,87,12]}}],cab_],
-      body:MP.map(x=>[rotMes(x.m),...(porCol?cs.map(c=>x.por[c]?eurP(x.por[c].val):'-'):[]),x.n,hfmt(x.min),eurP(x.val)]),
-      foot:[['Total por pagar',...(porCol?cs.map(c=>eurP(tot(c))):[]),MP.reduce((a,x)=>a+x.n,0),hfmt(MP.reduce((a,x)=>a+x.min,0)),eurP(MP.reduce((a,x)=>a+x.val,0))]],
-      styles:{fontSize:10},tableWidth:Math.min(270,110+cs.length*(porCol?30:0))});
-    y=doc.lastAutoTable.finalY+8;
-    const linhas=[];for(const x of MP){locsOrd(x).forEach(([l,v],i)=>linhas.push([i?'':rotMes(x.m),localN(l),Object.entries(v.por).map(([c,z])=>colabN(c)+' '+eurP(z.val)).join(', '),v.n,hfmt(v.min),eurP(v.val)]))}
-    if(y>PH-40){doc.addPage();y=15}
-    doc.autoTable({...est,startY:y,head:[[{content:'Por pagar por mês e local',colSpan:6,styles:{fillColor:[194,87,12]}}],['Mês','Local','Colaboradores','Serviços','Horas','Por pagar']],
-      body:linhas,styles:{fontSize:9},columnStyles:{0:{fontStyle:'bold'}},tableWidth:250});
-    y=doc.lastAutoTable.finalY+10}}
-  for(const x of totaisColab(R)){const T=R.grupos[x.cid];
-    doc.autoTable({...est,startY:y,head:[[{content:colabN(x.cid),colSpan:11,styles:{fillColor:[14,124,107]}}],['Data','Local','Entrada','Saída','Retoma: entrada','Retoma: saída','Trabalho efetuado','Horas','€/h','Valor','Pagamento']],
-      body:T.map(t=>[dataPT(t.data),localN(t.localId),t.ini,sai1(t),ent2(t)||'-',sai2(t)||'-',t.trabalho||'',hfmt(dur(t)),eurP(t.valor),eurP(ganho(t)),t.pago?'Pago '+dataPT(t.pago):'Por pagar']),
-      foot:[['Total','','','','','','',hfmt(x.min),'',eurP(x.val),'']],styles:{fontSize:8.5}});
-    y=doc.lastAutoTable.finalY+6;
-    const ea=fR.per==='mes'?estadoAssin(x):null;
-    if(ea){const w=55,hh=w*0.33;if(y+hh+12>PH-10){doc.addPage();y=15}
-      doc.setFontSize(9);doc.text(`Assinado por ${colabN(x.cid)} em ${new Date(ea.a.em).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'})}${ea.a.origem==='imagem'?' (imagem carregada)':''}${ea.ok?'':' (valores alterados depois da assinatura)'}`,14,y+4);
-      try{const p=doc.getImageProperties(ea.a.img);doc.addImage(ea.a.img,'JPEG',14,y+6,w,w*p.height/p.width);y+=w*p.height/p.width+12}catch(e){y+=10}}
-    else y+=4;
+  const doc=new jspdf.jsPDF({unit:'mm',format:'a4'});const W=210,H=297,M=14,CW=W-2*M;
+  const C={verde:[14,124,107],verdeEsc:[10,82,71],tinta:[19,32,42],cinza:[93,109,117],linha:[224,231,228],claro:[243,247,246],laranja:[194,87,12],laranjaClaro:[253,239,227],verm:[192,54,44]};
+  const ma=hoje().slice(0,7),agora=new Date();
+  const empresa=S.cfg.empresa||'Registo de Trabalho';
+  const titulo=fR.per==='porpagar'?'Serviços por pagar':fR.per==='mes'?'Relatório mensal de trabalho':fR.per==='ano'?'Relatório anual de trabalho':'Relatório de trabalho';
+  const periodo=fR.per==='porpagar'?'Situação em '+dataPT(hoje()):fR.per==='mes'?cap(nomeMes(fR.mes)):fR.per==='ano'?'Ano de '+fR.mes.slice(0,4):'Todo o período';
+  const alvo=fR.colab?colabN(fR.colab):'Todos os colaboradores';
+  const fill=c=>doc.setFillColor(...c),cor=c=>doc.setTextColor(...c),draw=c=>doc.setDrawColor(...c);
+  const fonte=(t,sz)=>{doc.setFont('helvetica',t);doc.setFontSize(sz)};
+  const TOP=24;let y;
+  // Cabeçalho das páginas seguintes (faixa fina)
+  function cabCurto(){fill(C.verde);doc.rect(0,0,W,12,'F');fonte('bold',9);cor([255,255,255]);doc.text(empresa,M,7.8);fonte('normal',9);doc.text(titulo+' · '+periodo,W-M,7.8,{align:'right'});cor(C.tinta)}
+  function novaPag(){doc.addPage();cabCurto();y=TOP-4}
+  function espaco(h){if(y+h>H-18)novaPag()}
+  function secao(t,sub){espaco(45);fonte('bold',12.5);cor(C.tinta);doc.text(t,M,y);if(sub){fonte('normal',8.5);cor(C.cinza);doc.text(sub,W-M,y,{align:'right'})}
+    draw(C.verde);doc.setLineWidth(.6);doc.line(M,y+2,M+18,y+2);draw(C.linha);doc.setLineWidth(.2);doc.line(M+18,y+2,W-M,y+2);y+=7;cor(C.tinta)}
+  function subtitulo(t,c=C.tinta){espaco(32);fonte('bold',10);cor(c);doc.text(t,M,y);y+=3;cor(C.tinta)}
+  const base={theme:'plain',margin:{left:M,right:M,top:TOP-4,bottom:18},styles:{font:'helvetica',fontSize:8.6,cellPadding:{top:1.9,bottom:1.9,left:2,right:2},textColor:C.tinta,lineColor:C.linha,lineWidth:{bottom:.15}},
+    headStyles:{fillColor:C.tinta,textColor:[255,255,255],fontStyle:'bold',fontSize:8},alternateRowStyles:{fillColor:C.claro},
+    footStyles:{fillColor:[227,243,239],textColor:C.verdeEsc,fontStyle:'bold'},showFoot:'lastPage',rowPageBreak:'avoid',didDrawPage:d=>{if(d.pageNumber>1&&doc.internal.getCurrentPageInfo().pageNumber>1)cabCurto()}};
+  const tabela=o=>{espaco(24);const cs=o.columnStyles||{},prev=o.didParseCell;
+    doc.autoTable({...base,startY:y,...o,styles:{...base.styles,...(o.styles||{})},headStyles:{...base.headStyles,...(o.headStyles||{})},
+      didParseCell:d=>{const st=cs[d.column.index];if(st&&st.halign&&d.section!=='body')d.cell.styles.halign=st.halign;if(prev)prev(d)}});y=doc.lastAutoTable.finalY+7};
+  const dir=(...idx)=>Object.fromEntries(idx.map(i=>[i,{halign:'right'}]));
+
+  // ---- Página 1: cabeçalho ----
+  fill(C.verde);doc.rect(0,0,W,34,'F');fill(C.verdeEsc);doc.rect(0,34,W,1.2,'F');
+  fonte('bold',17);cor([255,255,255]);doc.text(empresa,M,14);
+  fonte('normal',10);doc.text(titulo,M,21.5);
+  fonte('bold',11);doc.text(periodo,W-M,14,{align:'right'});
+  fonte('normal',8.5);doc.text(alvo,W-M,21.5,{align:'right'});
+  doc.text('Emitido em '+agora.toLocaleDateString('pt-PT')+' às '+agora.toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'}),W-M,27.5,{align:'right'});
+  y=45;cor(C.tinta);
+
+  // ---- Resumo (cartões) ----
+  const G=porPagarSep(fR.colab||'');
+  const kpi=fR.per==='porpagar'
+    ?[['Mês atual por pagar',eurP(G.mes.val),G.mes.n+' serviços',C.laranja],['Meses em falta',eurP(G.ant.val),G.ant.n+' serviços',C.verm],['Total por pagar',eurP(G.total),(G.mes.n+G.ant.n)+' serviços',C.tinta],['Horas por pagar',hfmt(R.min),'',C.tinta]]
+    :[['Horas trabalhadas',hfmt(R.min),R.n+' serviços',C.tinta],['Valor do período',eurP(R.val),'',C.verde],['Pago',eurP(R.pago),'',C.tinta],['Por pagar',eurP(R.por),'',R.por>0.004?C.laranja:C.tinta]];
+  const bw=(CW-3*4)/4;kpi.forEach(([k,v,x,c],i)=>{const bx=M+i*(bw+4);fill(C.claro);draw(C.linha);doc.setLineWidth(.2);doc.roundedRect(bx,y,bw,22,2,2,'FD');fill(c);doc.rect(bx,y+3,1.2,16,'F');
+    fonte('normal',7.2);cor(C.cinza);doc.text(k.toUpperCase(),bx+4,y+6.5);fonte('bold',13.5);cor(c);doc.text(v,bx+4,y+14.5);if(x){fonte('normal',7.5);cor(C.cinza);doc.text(x,bx+4,y+19.3)}});
+  y+=31;cor(C.tinta);
+
+  // ---- 1. Situação de pagamentos: mês atual primeiro, depois meses em falta ----
+  if(MP.length){
+    secao('Situação de pagamentos','Em '+dataPT(hoje()));
+    const atual=MP.find(x=>x.m===ma),falta=MP.filter(x=>x.m!==ma);
+    const linhasMes=x=>locsOrd(x).map(([l,v],i)=>[i?'':cap(nomeMes(x.m)),localN(l),Object.entries(v.por).sort((a,b)=>b[1].val-a[1].val).map(([c,z])=>colabN(c)+'  '+eurP(z.val)).join('\n'),v.n,hfmt(v.min),eurP(v.val)]);
+    const cab=[['Mês','Local','Colaboradores','Serv.','Horas','Por pagar']];
+    const colsPP={0:{cellWidth:30,fontStyle:'bold'},1:{cellWidth:38},3:{halign:'right',cellWidth:12},4:{halign:'right',cellWidth:16},5:{halign:'right',cellWidth:24,fontStyle:'bold'}};
+    subtitulo('Mês atual — '+cap(nomeMes(ma)),C.laranja);
+    if(atual)tabela({head:cab,body:linhasMes(atual),foot:[['Total do mês atual','','',atual.n,hfmt(atual.min),eurP(atual.val)]],columnStyles:colsPP,headStyles:{fillColor:C.laranja}});
+    else{fonte('italic',9);cor(C.cinza);doc.text('Nada por pagar no mês atual.',M,y+3);y+=10;cor(C.tinta)}
+    subtitulo('Meses em falta'+(falta.length?' — '+falta.length+(falta.length>1?' meses':' mês'):''),C.verm);
+    if(falta.length){const tf=falta.reduce((a,x)=>({n:a.n+x.n,min:a.min+x.min,val:a.val+x.val}),{n:0,min:0,val:0});
+      tabela({head:cab,body:falta.flatMap(linhasMes),foot:[['Total em falta','','',tf.n,hfmt(tf.min),eurP(tf.val)]],columnStyles:colsPP,headStyles:{fillColor:C.verm}})}
+    else{fonte('italic',9);cor(C.cinza);doc.text('Não há meses anteriores em falta.',M,y+3);y+=10;cor(C.tinta)}
+    espaco(12);fill(C.laranjaClaro);doc.roundedRect(M,y-2,CW,10,1.5,1.5,'F');fonte('bold',10);cor(C.laranja);doc.text('Total por pagar',M+4,y+4.5);doc.text(eurP(MP.reduce((a,x)=>a+x.val,0)),W-M-4,y+4.5,{align:'right'});y+=16;cor(C.tinta);
   }
-  const nome=`relatorio-${slugPer()}${fR.colab?'-'+colabN(fR.colab).normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^\w]+/g,'_'):''}.pdf`;
+
+  // ---- 2. Totais por colaborador (período) ----
+  if(R.n&&fR.per!=='porpagar'){
+    secao('Totais por colaborador',periodo);
+    tabela({head:[['Colaborador','Serviços','Horas','Valor','Pago','Por pagar']],body:totaisColab(R).map(x=>[colabN(x.cid),x.n,hfmt(x.min),eurP(x.val),eurP(x.pago),eurP(x.por)]),
+      foot:[['Total',R.n,hfmt(R.min),eurP(R.val),eurP(R.pago),eurP(R.por)]],columnStyles:{0:{fontStyle:'bold'},...dir(1,2,3,4,5)}});
+  }
+
+  // ---- 3. Detalhe dos serviços ----
+  const detalhe=(L,comColab)=>{const head=[['Data',...(comColab?['Colaborador']:[]),'Local','Horário','Retoma','Serviço','Horas','Valor','Estado']];
+    const body=L.map(t=>[diaSem(t.data)+' '+dataPT(t.data).slice(0,5),...(comColab?[colabN(t.colabId)]:[]),localN(t.localId),t.ini+'–'+sai1(t),ent2(t)?ent2(t)+'–'+sai2(t):'—',t.trabalho||'',hfmt(dur(t)),eurP(ganho(t)),t.pago?'Pago '+dataPT(t.pago).slice(0,5):'Por pagar']);
+    const s=soma(L);const n=head[0].length;
+    tabela({head,body,foot:[['Total',...Array(n-4).fill(''),hfmt(s.min),eurP(s.val),'']],styles:{fontSize:7.8},
+      columnStyles:Object.assign({0:{cellWidth:17}},comColab?{1:{cellWidth:22},2:{cellWidth:29},3:{cellWidth:20},4:{cellWidth:17}}:{1:{cellWidth:34},2:{cellWidth:21},3:{cellWidth:20}},
+        {[n-3]:{halign:'right',cellWidth:13},[n-2]:{halign:'right',cellWidth:18,fontStyle:'bold'},[n-1]:{cellWidth:20}}),
+      didParseCell:d=>{if(d.section==='body'&&d.column.index===n-1){d.cell.styles.textColor=String(d.cell.raw).startsWith('Pago')?C.verde:C.laranja;d.cell.styles.fontStyle='bold'}}})};
+  const assinatura=x=>{const ea=fR.per==='mes'?estadoAssin(x):null;if(!ea)return;espaco(30);
+    fonte('normal',8);cor(C.cinza);doc.text(`Assinado por ${colabN(x.cid)} em ${new Date(ea.a.em).toLocaleString('pt-PT',{dateStyle:'short',timeStyle:'short'})}${ea.a.origem==='imagem'?' (imagem carregada)':''}${ea.ok?'':' — valores alterados depois da assinatura'}`,M,y);
+    try{const p=doc.getImageProperties(ea.a.img),w=50,h=w*p.height/p.width;doc.addImage(ea.a.img,'JPEG',M,y+2,w,h);draw(C.linha);doc.line(M,y+3+h,M+70,y+3+h);y+=h+10}catch(e){y+=6}cor(C.tinta)};
+  const porMes=L=>{const g={};L.forEach(t=>(g[t.data.slice(0,7)]??=[]).push(t));return ordemPP(Object.keys(g).map(m=>({m}))).map(({m})=>[m,g[m].sort((a,b)=>(a.data+a.ini).localeCompare(b.data+b.ini))])};
+  if(fR.per==='porpagar'){
+    secao('Detalhe dos serviços por pagar','Mês atual primeiro, depois os meses em falta');
+    for(const [m,L] of porMes(R.L)){subtitulo(cap(nomeMes(m))+(m===ma?' — mês atual':' — em falta'),m===ma?C.laranja:C.verm);detalhe(L,!fR.colab)}
+  }else if(R.n){
+    secao('Detalhe dos serviços',periodo);
+    for(const x of totaisColab(R)){subtitulo(colabN(x.cid)+'   ·   '+x.n+' serviços   ·   '+hfmt(x.min)+'   ·   '+eurP(x.val));detalhe(R.grupos[x.cid],false);assinatura(x)}
+    // relatório do mês atual: acrescenta a seguir os serviços dos meses em falta
+    if(fR.per==='mes'&&fR.mes===ma){const F=concluidos(t=>!t.pago&&t.data.slice(0,7)<ma&&(!fR.colab||t.colabId===fR.colab));
+      if(F.length){secao('Serviços por pagar de meses anteriores','Meses em falta');for(const [m,L] of porMes(F)){subtitulo(cap(nomeMes(m))+' — em falta',C.verm);detalhe(L,!fR.colab)}}}
+  }
+
+  // ---- Rodapé em todas as páginas ----
+  const np=doc.internal.getNumberOfPages();
+  for(let i=1;i<=np;i++){doc.setPage(i);draw(C.linha);doc.setLineWidth(.2);doc.line(M,H-12,W-M,H-12);fonte('normal',7.5);cor(C.cinza);
+    doc.text(empresa+'  ·  '+titulo+'  ·  '+periodo+'  ·  Registo de Trabalho v'+VERSAO,M,H-7.5);doc.text('Página '+i+' de '+np,W-M,H-7.5,{align:'right'})}
+  const nome=`relatorio-${slugPer()}${fR.colab?'-'+colabN(fR.colab).normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^\w]+/g,'_'):''}.pdf`;
   if(descarregar)doc.save(nome);
   return new File([doc.output('blob')],nome,{type:'application/pdf'});
 }
 async function partilhar(canal){
-  const R=dadosRel();if(!R.n){toast('Sem serviços concluídos neste período');return}
+  const R=dadosRel();if(!R.n&&!mesesPorPagar(fR.colab||'').length){toast('Sem serviços para este relatório');return}
   const pdf=await gerarPDF(false);
   if(pdf&&navigator.canShare&&navigator.canShare({files:[pdf]})){
     try{await navigator.share({files:[pdf],title:'Relatório '+nomePer(),text:textoResumo(true)});return}
@@ -1065,7 +1135,7 @@ function exportCSV(){
   rows.push([],['Totais por colaborador','','','','','','','Serviços','Horas','Pago','Valor','Por pagar']);
   totaisColab(R).forEach(x=>rows.push([colabN(x.cid),'','','','','','',x.n,nn(x.min/60),nn(x.pago),nn(x.val),nn(x.por)]));
   rows.push(['Total global','','','','','','',R.n,nn(R.min/60),nn(R.pago),nn(R.val),nn(R.por)]);
-  {const MP=mesesPorPagar(fR.colab||'');if(MP.length){
+  {const MP=ordemPP(mesesPorPagar(fR.colab||''));if(MP.length){
     rows.push([],['Meses que falta pagar (situação em '+dataPT(hoje())+')','Colaborador','','','','','','Serviços','Horas','','Por pagar']);
     rows[rows.length-1][2]='Local';
     for(const x of MP){for(const [l,v] of locsOrd(x))for(const [c,y] of Object.entries(v.por).sort((a,b)=>colabN(a[0]).localeCompare(colabN(b[0]))))rows.push([rotMes(x.m),colabN(c),localN(l),'','','','',y.n,nn(y.min/60),'',nn(y.val)]);
