@@ -304,7 +304,7 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
-const VERSAO='2026.11.22-n';
+const VERSAO='2026.11.22-o';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -448,7 +448,8 @@ function dur(t,ateAgora){
     if(pfRaw!=null){const a=rel(pi);let b=t.pFim?rel(pfRaw):Math.max(a,pfRaw-ini);if(b<a)b=a;total-=(b-a)}}
   return Math.max(0,total);
 }
-const ganho=t=>dur(t)/60*(+t.valor||0);
+/* Valor de cada serviço arredondado ao cêntimo: assim os totais são sempre a soma exata das linhas mostradas */
+const ganho=t=>Math.round(dur(t)/60*(+t.valor||0)*100+1e-9)/100;
 const sai1=t=>t.pIni||t.fim||'';
 const ent2=t=>t.pIni?(t.pFim||''):'';
 const sai2=t=>t.pIni?(t.fim||''):'';
