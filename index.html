@@ -47,7 +47,8 @@ svg.i{width:20px;height:20px;flex:none}
 .nb:hover{opacity:1;background:rgba(255,255,255,.06)}
 .nb.on{opacity:1;background:rgba(255,255,255,.12)}
 .nb.on svg{color:#5ED3BF}
-.side .foot{margin-top:auto;font-size:.8rem;opacity:.5;padding:.5rem}
+.side .foot{margin-top:auto;font-size:.8rem;opacity:.5;padding:.5rem .5rem 1.6rem}
+.vtag{position:fixed;left:.9rem;bottom:.55rem;z-index:40;font-size:.72rem;font-weight:600;letter-spacing:.02em;color:var(--side-ink);opacity:.55;pointer-events:none;font-variant-numeric:tabular-nums}
 main{padding:1.8rem clamp(1rem,3.5vw,2.8rem) 5rem;max-width:1180px;width:100%;min-width:0}
 .card,.tw{min-width:0;max-width:100%}
 .head{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;flex-wrap:wrap;margin-bottom:1.4rem}
@@ -212,6 +213,7 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
   .app{grid-template-columns:minmax(0,1fr)}
   .side{position:fixed;inset:auto 0 0 0;height:auto;flex-direction:row;padding:.35rem .3rem calc(.35rem + env(safe-area-inset-bottom,0px));z-index:30;gap:0;box-shadow:0 -4px 20px rgba(0,0,0,.12)}
   .logo,.side .foot{display:none}
+  .vtag{color:var(--muted);opacity:.9;left:.6rem;bottom:calc(4.4rem + env(safe-area-inset-bottom,0px));background:var(--bg);padding:.05rem .45rem;border-radius:99px;font-size:.68rem}
   .nb{flex-direction:column;gap:.15rem;font-size:.62rem;padding:.4rem .2rem;flex:1;align-items:center;text-align:center}
   main{padding:1.1rem 1rem 8rem}
   .head h1{font-size:1.75rem}
@@ -232,7 +234,7 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 }
 @media (max-width:420px){.fgrid{grid-template-columns:1fr}}
 @media print{
-  .side,.fab,.noprint,.toast,.head>.row{display:none!important}
+  .side,.fab,.noprint,.toast,.vtag,.head>.row{display:none!important}
   .app{display:block} body{background:#fff;color:#000} main{padding:0}
   .card,.stat{box-shadow:none;border-color:#ccc}
 }
@@ -298,10 +300,11 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <datalist id="dlS"></datalist>
 <input type="file" id="sincF" accept=".json,application/json,text/plain" multiple hidden>
 <div class="toast" id="toast" role="status"></div>
+<div class="vtag" id="vtag" aria-label="Versão da aplicação"></div>
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
-const VERSAO='2026.11.22-m';
+const VERSAO='2026.11.22-n';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -1738,6 +1741,7 @@ async function arrancar(){
   fbIniciar();
 }
 arrancar();
+$('#vtag').textContent='v'+VERSAO;
 /* Ícone no ecrã e funcionamento sem internet (só quando a app está num endereço https) */
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}
 </script>
