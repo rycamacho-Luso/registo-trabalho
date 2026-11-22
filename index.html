@@ -191,6 +191,10 @@ tfoot td{font-weight:700;border-bottom:0;background:var(--surface-2)}
 .fab[hidden]{display:none!important}
 .nb[hidden]{display:none!important}
 .info[hidden],.banner[hidden],.card[hidden]{display:none!important}
+.stat.ant{border-color:var(--warn)}
+.stat.ant .k{color:var(--warn)}
+.pp-mes td{font-size:.9rem}
+@media (max-width:760px){.stats.s4{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .chip.conf{background:var(--warn-2);color:var(--warn)}
 .perm-l{display:grid;gap:.45rem;margin-top:.4rem}
 .hist-row{display:grid;grid-template-columns:auto 1fr;gap:.2rem .8rem;padding:.6rem 0;border-bottom:1px solid var(--line);font-size:.9rem}
@@ -293,7 +297,7 @@ fieldset:disabled .tb,fieldset:disabled .f{opacity:.75}
 <script>
 /* =================== Dados =================== */
 const KEY='registoTrabalho_v1';
-const VERSAO='2026.11.04-i';
+const VERSAO='2026.11.22-k';
 const COLS=['colab','locais','turnos','fechos','assin'];
 const def=()=>({cfg:{empresa:'',valorHora:5,upd:0},colab:[],locais:[],turnos:[],fechos:[],assin:[],apagados:{}});
 const defLoc=()=>({clientId:'',ultimoBackup:null,ultimoLocal:'',ultimaSync:null,syncAuto:false,pinHash:'',pinSalt:'',pinLen:0,bioId:''});
@@ -444,6 +448,11 @@ const sai2=t=>t.pIni?(t.fim||''):'';
 const aberto=t=>t.estado==='curso'||t.estado==='pausa';
 function soma(L){const r={n:L.length,min:0,val:0,pago:0};for(const t of L){const g=ganho(t);r.min+=dur(t);r.val+=g;if(t.pago)r.pago+=g}r.por=r.val-r.pago;return r}
 const concluidos=f=>S.turnos.filter(t=>t.estado==='concluido'&&(!f||f(t)));
+/* Por pagar separado: mês atual vs meses anteriores (cid opcional = um colaborador) */
+function porPagarSep(cid){const ma=hoje().slice(0,7);const r={mes:{val:0,n:0},ant:{val:0,n:0,meses:{}}};
+  for(const t of concluidos(t=>!t.pago&&(!cid||t.colabId===cid))){const g=ganho(t),m=t.data.slice(0,7);
+    if(m<ma){r.ant.val+=g;r.ant.n++;const x=r.ant.meses[m]??={val:0,n:0,min:0};x.val+=g;x.n++;x.min+=dur(t)}else{r.mes.val+=g;r.mes.n++}}
+  r.total=r.mes.val+r.ant.val;return r}
 /* Meses fechados e prazo legal */
 const fechado=mes=>S.fechos.some(f=>f.id===mes);
 const turnoFechado=t=>fechado((t.data||'').slice(0,7));
@@ -494,10 +503,12 @@ function vPonto(){
   if(fbAtivo()&&fb.regrasEmFalta)h+=`<div class="banner"><span>${ic('lock')} Falta publicar as regras de segurança do Firebase — os dados não estão a sincronizar.</span><button class="btn s p" onclick="ir('config')">Resolver</button></div>`;
   if(!fbAtivo()&&temPasta()&&pastaH&&!permPasta)h+=`<div class="banner"><span>${ic('sync')} A sincronização com o Drive está em pausa: o Chrome pede autorização sempre que a app é aberta.</span><button class="btn s p" onclick="sincPasta(false)">${ic('sync')}Retomar sincronização</button></div>`;
   if(semCopia)h+=`<div class="banner"><span>${LOC.ultimoBackup?'Já passou mais de uma semana desde a última cópia de segurança.':'Ainda não fez nenhuma cópia de segurança.'}</span><button class="btn s" onclick="ir('config')">${ic('cloud')}Fazer cópia</button></div>`;
-  h+=`<div class="stats">
+  const PP=porPagarSep(perm('verTodos')?'':meuColab());
+  h+=`<div class="stats s4">
     <div class="stat hl"><div class="k">Hoje</div><div class="v">${hfmt(H.min)}</div><div class="x">${eur(H.val)}</div></div>
     <div class="stat"><div class="k">Este mês</div><div class="v">${hfmt(M.min)}</div><div class="x">${eur(M.val)}</div></div>
-    <div class="stat ${P.por>0?'warn':''}" style="cursor:pointer" onclick="fT.pag='por';fT.mes='';ir('servicos')"><div class="k">Por pagar</div><div class="v">${eur(P.por)}</div><div class="x">${concluidos(t=>!t.pago).length} serviços</div></div></div>`;
+    <div class="stat ${PP.mes.val>0.004?'warn':''}" style="cursor:pointer" onclick="fT.pag='porMes';fT.mes='';ir('servicos')"><div class="k">Por pagar · este mês</div><div class="v">${eur(PP.mes.val)}</div><div class="x">${PP.mes.n} serviço${PP.mes.n===1?'':'s'}</div></div>
+    <div class="stat ${PP.ant.val>0.004?'warn ant':''}" style="cursor:pointer" onclick="${perm('relatorios')?"ir('relatorios')":"fT.pag='porAnt';fT.mes='';ir('servicos')"}"><div class="k">Por pagar · meses anteriores</div><div class="v">${eur(PP.ant.val)}</div><div class="x">${Object.keys(PP.ant.meses).length?Object.keys(PP.ant.meses).sort().map(m=>MESES[+m.slice(5)-1]+(m.slice(0,4)!==hoje().slice(0,4)?' '+m.slice(2,4):'')).join(', '):'nada em atraso'}</div></div></div>`;
   if(!S.colab.length){
     h+=`<div class="card"><h2>Bem-vindo, vamos começar</h2><p class="muted" style="margin-top:0">Adicione os colaboradores e os locais de trabalho. Depois pode iniciar turnos aqui com um toque.</p>
       <button class="btn p big" onclick="ir('equipa')">${ic('users')}Adicionar colaboradores</button></div>`;
@@ -653,19 +664,19 @@ function vServicos(){
   h+=`<div class="filters"><div class="f"><label for="tM">Mês</label><input type="month" id="tM" value="${fT.mes}"></div>
    <div class="f"><label for="tC">Colaborador</label><select id="tC">${opts(S.colab,fT.colab,'Todos')}</select></div>
    <div class="f"><label for="tE">Estado</label><select id="tE"><option value="">Todos</option>${[['curso','Em curso'],['concluido','Concluídos'],['confirmar','Por confirmar']].map(([v,n])=>`<option value="${v}" ${fT.estado===v?'selected':''}>${n}</option>`).join('')}</select></div>
-   <div class="f"><label for="tP">Pagamento</label><select id="tP"><option value="">Todos</option>${[['por','Por pagar'],['pago','Pagos']].map(([v,n])=>`<option value="${v}" ${fT.pag===v?'selected':''}>${n}</option>`).join('')}</select></div>
+   <div class="f"><label for="tP">Pagamento</label><select id="tP"><option value="">Todos</option>${[['por','Por pagar (todos)'],['porMes','Por pagar · este mês'],['porAnt','Por pagar · meses anteriores'],['pago','Pagos']].map(([v,n])=>`<option value="${v}" ${fT.pag===v?'selected':''}>${n}</option>`).join('')}</select></div>
    <div class="f"><label for="tQ">Pesquisar</label><input id="tQ" type="search" placeholder="Local ou serviço…" value="${esc(fT.q)}"></div></div>`;
   if(fT.mes&&fechado(fT.mes))h+=`<div class="info">${ic('lock')}<span style="flex:1">${cap(nomeMes(fT.mes))} está fechado — os serviços só podem ser consultados.</span></div>`;
   const q=fT.q.toLowerCase();
   const L=S.turnos.filter(t=>(!fT.mes||t.data.startsWith(fT.mes))&&(!fT.colab||t.colabId===fT.colab)
       &&(!fT.estado||(fT.estado==='curso'?aberto(t):fT.estado==='confirmar'?t.confirmado===false:t.estado===fT.estado))
-      &&(!fT.pag||(t.estado==='concluido'&&(fT.pag==='pago'?!!t.pago:!t.pago)))
+      &&(!fT.pag||(t.estado==='concluido'&&(fT.pag==='pago'?!!t.pago:!t.pago&&(fT.pag==='porMes'?t.data.slice(0,7)>=hoje().slice(0,7):fT.pag==='porAnt'?t.data.slice(0,7)<hoje().slice(0,7):true))))
       &&(!q||(t.trabalho||'').toLowerCase().includes(q)||localN(t.localId).toLowerCase().includes(q)||colabN(t.colabId).toLowerCase().includes(q)))
     .sort((a,b)=>(b.data+b.ini).localeCompare(a.data+a.ini));
   const T=soma(L.filter(t=>t.estado==='concluido'));
   h+=`<div class="stats"><div class="stat"><div class="k">Horas</div><div class="v">${hfmt(T.min)}</div><div class="x">${L.length} serviços</div></div>
     <div class="stat hl"><div class="k">Valor</div><div class="v">${eur(T.val)}</div></div>
-    <div class="stat ${T.por>0?'warn':''}"><div class="k">Por pagar</div><div class="v">${eur(T.por)}</div></div></div>`;
+    <div class="stat ${T.por>0?'warn':''}"><div class="k">Por pagar</div><div class="v">${eur(T.por)}</div>${(()=>{const ma=hoje().slice(0,7),C=L.filter(t=>t.estado==='concluido'&&!t.pago),a=soma(C.filter(t=>t.data.slice(0,7)<ma)).val;return a>0.004?`<div class="x">este mês ${eur(T.por-a)} · anteriores <b style="color:var(--warn)">${eur(a)}</b></div>`:''})()}</div></div>`;
   const porConf=L.filter(t=>t.confirmado===false);
   if(ehAdmin()&&porConf.length)h+=`<div class="banner"><span>${porConf.length} serviço${porConf.length>1?'s':''} registado${porConf.length>1?'s':''} por colaboradores à espera de confirmação.</span><span class="row"><button class="btn s" onclick="fT.estado='confirmar';vServicos()">Ver</button><button class="btn s p" onclick="confirmarTodos()">${ic('check')}Confirmar todos</button></span></div>`;
   if(!L.length)h+=`<div class="card">${vazio('list','Sem serviços para estes filtros.',`<button class="btn p" onclick="editTurno()">${ic('plus')}Adicionar serviço</button>`)}</div>`;
@@ -681,11 +692,11 @@ function vServicos(){
 
 /* =================== Colaboradores =================== */
 function cartaoColab(c){const mes=hoje().slice(0,7);
-  const M=soma(concluidos(t=>t.colabId===c.id&&t.data.startsWith(mes))),P=soma(concluidos(t=>t.colabId===c.id));
+  const M=soma(concluidos(t=>t.colabId===c.id&&t.data.startsWith(mes))),PP=porPagarSep(c.id);
   return `<div class="tc ${c.arquivado?'arch':''}"><div class="top">${av(c.id,'lg')}<div style="flex:1;min-width:0"><div style="font-weight:700">${esc(c.nome)}</div><div class="meta">${eur(valorDe(c))} / hora${c.arquivado?' · arquivado':''}</div></div>
     <button class="btn g s" onclick="editColab('${c.id}')" aria-label="Editar ${esc(c.nome)}">${ic('edit')}</button></div>
     ${c.tel||c.email?`<div class="meta">${c.tel?ic('phone')+esc(c.tel):''}${c.tel&&c.email?' · ':''}${c.email?ic('mail')+esc(c.email):''}</div>`:''}
-    <div class="mini"><div><b>${M.n}</b><span>Serviços mês</span></div><div><b>${hfmt(M.min)}</b><span>Horas mês</span></div><div><b style="${P.por>0?'color:var(--warn)':''}">${eur(P.por).replace(/\s?€/,'€')}</b><span>Por pagar</span></div></div></div>`}
+    <div class="mini"><div><b>${hfmt(M.min)}</b><span>Horas mês</span></div><div><b style="${PP.mes.val>0.004?'color:var(--warn)':''}">${eur(PP.mes.val).replace(/\s?€/,'€')}</b><span>Pagar mês</span></div><div><b style="${PP.ant.val>0.004?'color:var(--danger)':''}">${eur(PP.ant.val).replace(/\s?€/,'€')}</b><span>Meses ant.</span></div></div></div>`}
 function vEquipa(){
   const at=S.colab.filter(c=>!c.arquivado),ar=S.colab.filter(c=>c.arquivado);
   let h=cab('Colaboradores','Colaboradores e locais de trabalho',`<button class="btn p" onclick="editColab()">${ic('plus')}Adicionar colaborador</button>`);
@@ -756,15 +767,15 @@ async function delLocal(id){const l=S.locais.find(x=>x.id===id);const n=S.turnos
 /* =================== Relatórios =================== */
 let fR={mes:hoje().slice(0,7),colab:'',per:'mes',met:'val'};
 function dadosRel(){
-  const L=concluidos(t=>(fR.per==='tudo'||t.data.startsWith(fR.per==='ano'?fR.mes.slice(0,4):fR.mes))&&(!fR.colab||t.colabId===fR.colab))
+  const L=concluidos(t=>(fR.per==='tudo'||(fR.per==='porpagar'?!t.pago:t.data.startsWith(fR.per==='ano'?fR.mes.slice(0,4):fR.mes)))&&(!fR.colab||t.colabId===fR.colab))
     .sort((a,b)=>(a.data+a.ini).localeCompare(b.data+b.ini));
   const grupos={};L.forEach(t=>{(grupos[t.colabId]??=[]).push(t)});
   return{L,grupos,...soma(L)};
 }
 const cap=x=>x.charAt(0).toUpperCase()+x.slice(1);
 const nomeMes=m=>new Date(m+'-15T12:00').toLocaleDateString('pt-PT',{month:'long',year:'numeric'});
-const nomePer=()=>fR.per==='tudo'?'todo o período':fR.per==='ano'?'ano de '+fR.mes.slice(0,4):nomeMes(fR.mes);
-const slugPer=()=>fR.per==='tudo'?'total':fR.per==='ano'?fR.mes.slice(0,4):fR.mes;
+const nomePer=()=>fR.per==='porpagar'?'serviços por pagar (situação em '+dataPT(hoje())+')':fR.per==='tudo'?'todo o período':fR.per==='ano'?'ano de '+fR.mes.slice(0,4):nomeMes(fR.mes);
+const slugPer=()=>fR.per==='porpagar'?'por-pagar-'+hoje():fR.per==='tudo'?'total':fR.per==='ano'?fR.mes.slice(0,4):fR.mes;
 function totaisColab(R){return Object.keys(R.grupos).map(cid=>({cid,...soma(R.grupos[cid])})).sort((a,b)=>b.val-a.val)}
 const assinDe=(cid,mes)=>S.assin.find(a=>a.id===cid+'|'+mes);
 function estadoAssin(x){const a=assinDe(x.cid,fR.mes);if(!a)return null;
@@ -773,8 +784,8 @@ function vRel(){
   carregarPDF().catch(()=>{});
   const R=dadosRel(),mensal=fR.per==='mes',fch=mensal&&fechado(fR.mes);
   let h=cab('Relatórios e totais',esc(S.cfg.empresa||'Relatório de trabalho')+' · '+nomePer()+(fch?' · fechado':''));
-  h+=`<div class="filters noprint"><div class="f"><label for="rP">Período</label><select id="rP">${[['mes','Mês'],['ano','Ano'],['tudo','Todo o período']].map(([v,n])=>`<option value="${v}" ${fR.per===v?'selected':''}>${n}</option>`).join('')}</select></div>
-    ${fR.per==='tudo'?'':fR.per==='ano'?`<div class="f"><label for="rA">Ano</label><input type="number" id="rA" min="2000" max="2100" value="${fR.mes.slice(0,4)}"></div>`
+  h+=`<div class="filters noprint"><div class="f"><label for="rP">Período</label><select id="rP">${[['mes','Mês'],['ano','Ano'],['tudo','Todo o período'],['porpagar','Só o que falta pagar']].map(([v,n])=>`<option value="${v}" ${fR.per===v?'selected':''}>${n}</option>`).join('')}</select></div>
+    ${fR.per==='tudo'||fR.per==='porpagar'?'':fR.per==='ano'?`<div class="f"><label for="rA">Ano</label><input type="number" id="rA" min="2000" max="2100" value="${fR.mes.slice(0,4)}"></div>`
       :`<div class="f"><label for="rM">Mês</label><input type="month" id="rM" value="${fR.mes}"></div>`}
     <div class="f"><label for="rC">Colaborador</label><select id="rC">${opts(S.colab,fR.colab,'Todos')}</select></div></div>`;
   h+=`<div class="tools noprint">
@@ -787,6 +798,7 @@ function vRel(){
   h+=`<div class="stats"><div class="stat"><div class="k">Horas trabalhadas</div><div class="v">${hfmt(R.min)}</div><div class="x">${R.n} serviços</div></div>
     <div class="stat hl"><div class="k">Valor total</div><div class="v">${eur(R.val)}</div><div class="x">Pago ${eur(R.pago)}</div></div>
     <div class="stat ${R.por>0.004?'warn':''}"><div class="k">Por pagar</div><div class="v">${eur(R.por)}</div></div></div>`;
+  h+=cartaoPorPagar();
   if(!R.n){h+=`<div class="card">${vazio('chart','Sem serviços concluídos neste período.')}</div>`;}
   else{const TC=totaisColab(R);
     h+=`<div class="card"><h2>Totais por colaborador</h2><div class="tw"><table><thead><tr><th>Colaborador</th><th class="n">Serviços</th><th class="n">Horas</th><th class="n">Valor</th><th class="n">Pago</th><th class="n">Por pagar</th><th class="noprint"></th>${mensal?'<th>Assinatura</th>':''}</tr></thead><tbody>
@@ -831,6 +843,46 @@ function cartaoGraficos(R,TC){
     <div class="charts"><div class="chart"><p class="chart-t">${met==='val'?'Ganhos':'Horas'} por mês — ${ano}${fR.colab?' · '+esc(colabN(fR.colab)):''}</p>${svg}</div>
     <div><p class="chart-t">Por colaborador — ${nomePer()}</p>${barras(colab)}<p class="chart-t" style="margin-top:1.1rem">Por local — ${nomePer()}</p>${barras(locais)}</div></div></div>`;
 }
+
+/* Lista de todos os meses com serviços por pagar (o mês atual incluído), por colaborador */
+function mesesPorPagar(cid){const M={};
+  for(const t of concluidos(t=>!t.pago&&(!cid||t.colabId===cid))){const m=t.data.slice(0,7),g=ganho(t),d=dur(t);
+    const x=M[m]??={m,n:0,min:0,val:0,por:{}};x.n++;x.min+=d;x.val+=g;const y=x.por[t.colabId]??={n:0,min:0,val:0};y.n++;y.min+=d;y.val+=g}
+  return Object.values(M).sort((a,b)=>a.m.localeCompare(b.m))}
+const rotMes=m=>cap(nomeMes(m))+(m===hoje().slice(0,7)?' (mês atual)':m>hoje().slice(0,7)?' (futuro)':'');
+const cidPP=()=>fR.colab||(perm('verTodos')?'':meuColab());
+
+/* Por pagar: mês atual e meses anteriores, sempre separados */
+function cartaoPorPagar(){
+  if(!perm('verValores'))return '';
+  const cids=(fR.colab?[fR.colab]:[...new Set(concluidos(t=>!t.pago).map(t=>t.colabId))]).filter(c=>perm('verTodos')||c===meuColab());
+  const G=porPagarSep(fR.colab||(perm('verTodos')?'':meuColab()));const ma=hoje().slice(0,7);
+  if(G.total<0.005)return `<div class="info ok">${ic('check')}<span style="flex:1">Não há nada por pagar${fR.colab?' a '+esc(colabN(fR.colab)):''}.</span></div>`;
+  const linhas=cids.map(c=>({c,p:porPagarSep(c)})).filter(x=>x.p.total>0.004).sort((a,b)=>b.p.ant.val-a.p.ant.val||b.p.total-a.p.total);
+  const MP=mesesPorPagar(cidPP());
+  let h=`<div class="card"><h2>Por pagar</h2>
+    <div class="stats s4" style="margin-bottom:.9rem"><div class="stat ${G.mes.val>0.004?'warn':''}"><div class="k">Este mês (${MESES[+ma.slice(5)-1]})</div><div class="v">${eur(G.mes.val)}</div><div class="x">${G.mes.n} serviços</div></div>
+    <div class="stat ${G.ant.val>0.004?'warn ant':''}"><div class="k">Meses anteriores</div><div class="v">${eur(G.ant.val)}</div><div class="x">${G.ant.n} serviços</div></div>
+    <div class="stat"><div class="k">Total por pagar</div><div class="v">${eur(G.total)}</div></div></div>
+    <div class="tw"><table><thead><tr><th>Colaborador</th><th class="n">Este mês</th><th class="n">Meses anteriores</th><th class="n">Total</th></tr></thead><tbody>
+    ${linhas.map(x=>`<tr><td><div class="who">${av(x.c)}${esc(colabN(x.c))}</div></td><td class="n">${eur(x.p.mes.val)}</td><td class="n" style="${x.p.ant.val>0.004?'color:var(--danger);font-weight:700':''}">${eur(x.p.ant.val)}</td><td class="n"><b>${eur(x.p.total)}</b></td></tr>`).join('')}
+    </tbody>${linhas.length>1?`<tfoot><tr><td>Total</td><td class="n">${eur(G.mes.val)}</td><td class="n">${eur(G.ant.val)}</td><td class="n">${eur(G.total)}</td></tr></tfoot>`:''}</table></div>`;
+  const varios=new Set(MP.flatMap(x=>Object.keys(x.por))).size>1;
+  h+=`<div class="row" style="justify-content:space-between;margin-top:1.1rem"><h2 style="font-size:1.1rem;margin:0">Meses que falta pagar</h2>
+    ${fR.per!=='porpagar'?`<button class="btn s noprint" onclick="fR.per='porpagar';vRel()">${ic('file')}Relatório só do que falta pagar</button>`:''}</div>
+    <div class="tw" style="margin-top:.5rem"><table class="pp-mes"><thead><tr><th>Mês</th>${varios?'<th>Por colaborador</th>':''}<th class="n">Serviços</th><th class="n">Horas</th><th class="n">Por pagar</th><th class="noprint"></th></tr></thead><tbody>
+    ${MP.map(x=>{const atraso=x.m<ma;return `<tr><td style="white-space:nowrap">${rotMes(x.m)}</td>
+      ${varios?`<td>${Object.entries(x.por).sort((a,b)=>b[1].val-a[1].val).map(([c,y])=>`${esc(colabN(c))} <b>${eur(y.val)}</b>`).join('<br>')}</td>`:''}
+      <td class="n">${x.n}</td><td class="n">${hfmt(x.min)}</td><td class="n" style="font-weight:700;color:var(${atraso?'--danger':'--warn'})">${eur(x.val)}</td>
+      <td class="noprint" style="white-space:nowrap"><button class="btn s g" onclick="fR.per='mes';fR.mes='${x.m}';vRel()">Ver mês</button>${ehAdmin()?` <button class="btn s p" onclick="pagarMesAnterior('${x.m}')">${ic('euro')}Pagar</button>`:''}</td></tr>`}).join('')}</tbody>
+    <tfoot><tr><td>Total</td>${varios?'<td></td>':''}<td class="n">${MP.reduce((a,x)=>a+x.n,0)}</td><td class="n">${hfmt(MP.reduce((a,x)=>a+x.min,0))}</td><td class="n">${eur(G.total)}</td><td class="noprint"></td></tr></tfoot></table></div>`;
+  return h+`</div>`;
+}
+async function pagarMesAnterior(m){
+  const L=concluidos(t=>!t.pago&&t.data.startsWith(m)&&(!fR.colab||t.colabId===fR.colab));if(!L.length)return;
+  const v=L.reduce((a,t)=>a+ganho(t),0);
+  if(!await confirmar(`Marcar como pagos ${L.length} serviço${L.length>1?'s':''} de ${nomeMes(m)}${fR.colab?' de '+colabN(fR.colab):' (todos os colaboradores)'}?\nTotal: ${eur(v)}`,'Marcar como pago'))return;
+  L.forEach(t=>t.pago=hoje());save();vRel();toast('Pagamento registado')}
 
 /* Pagamentos */
 async function pagarColab(cid){const T=dadosRel().grupos[cid]||[];const por=T.filter(t=>!t.pago);
@@ -919,6 +971,8 @@ function textoResumo(curto){
   const R=dadosRel();let s=`*${S.cfg.empresa||'Relatório de trabalho'} – ${nomePer()}*\n\n*Totais por colaborador*\n`;
   totaisColab(R).forEach(x=>s+=`${colabN(x.cid)}: ${x.n} serviços · ${hfmt(x.min)} · ${eur(x.val)}${x.por>0.004?' · por pagar '+eur(x.por):' · pago'}\n`);
   s+=`\n*Total global: ${hfmt(R.min)} · ${eur(R.val)}*${R.por>0.004?`\nPor pagar: ${eur(R.por)}`:''}\n`;
+  {const MP=mesesPorPagar(fR.colab||'');if(MP.length){const tot=MP.reduce((a,x)=>a+x.val,0);
+    s+=`\n*Meses que falta pagar (total ${eur(tot)})*\n`+MP.map(x=>`- ${rotMes(x.m)}: ${eur(x.val)}`+(Object.keys(x.por).length>1?' ('+Object.entries(x.por).map(([c,y])=>colabN(c)+' '+eur(y.val)).join(', ')+')':'')).join('\n')+'\n'}}
   if(curto)return s+'\n(Detalhe no PDF em anexo)';
   s+=`\n*Detalhe dos serviços*\n`;
   for(const x of totaisColab(R)){s+=`\n${colabN(x.cid)}\n`;
@@ -945,6 +999,16 @@ async function gerarPDF(descarregar){
     body:totaisColab(R).map(x=>[colabN(x.cid),x.n,hfmt(x.min),eurP(x.val),eurP(x.pago),eurP(x.por)]),foot:[['Total global',R.n,hfmt(R.min),eurP(R.val),eurP(R.pago),eurP(R.por)]],
     styles:{fontSize:10},tableWidth:200});
   let y=doc.lastAutoTable.finalY+10;
+  {const MP=mesesPorPagar(fR.colab||'');if(MP.length){
+    const cs=[...new Set(MP.flatMap(x=>Object.keys(x.por)))].sort((a,b)=>colabN(a).localeCompare(colabN(b))),porCol=cs.length>1&&cs.length<=6;
+    const cab_=['Mês',...(porCol?cs.map(colabN):[]),'Serviços','Horas','Por pagar'];
+    const tot=c=>MP.reduce((a,x)=>a+((x.por[c]||{}).val||0),0);
+    if(y>PH-40){doc.addPage();y=15}
+    doc.autoTable({...est,startY:y,head:[[{content:'Meses que falta pagar (situação em '+dataPT(hoje())+')',colSpan:cab_.length,styles:{fillColor:[194,87,12]}}],cab_],
+      body:MP.map(x=>[rotMes(x.m),...(porCol?cs.map(c=>x.por[c]?eurP(x.por[c].val):'-'):[]),x.n,hfmt(x.min),eurP(x.val)]),
+      foot:[['Total por pagar',...(porCol?cs.map(c=>eurP(tot(c))):[]),MP.reduce((a,x)=>a+x.n,0),hfmt(MP.reduce((a,x)=>a+x.min,0)),eurP(MP.reduce((a,x)=>a+x.val,0))]],
+      styles:{fontSize:10},tableWidth:Math.min(270,110+cs.length*(porCol?30:0))});
+    y=doc.lastAutoTable.finalY+10}}
   for(const x of totaisColab(R)){const T=R.grupos[x.cid];
     doc.autoTable({...est,startY:y,head:[[{content:colabN(x.cid),colSpan:11,styles:{fillColor:[14,124,107]}}],['Data','Local','Entrada','Saída','Retoma: entrada','Retoma: saída','Trabalho efetuado','Horas','€/h','Valor','Pagamento']],
       body:T.map(t=>[dataPT(t.data),localN(t.localId),t.ini,sai1(t),ent2(t)||'-',sai2(t)||'-',t.trabalho||'',hfmt(dur(t)),eurP(t.valor),eurP(ganho(t)),t.pago?'Pago '+dataPT(t.pago):'Por pagar']),
@@ -984,6 +1048,11 @@ function exportCSV(){
   rows.push([],['Totais por colaborador','','','','','','','Serviços','Horas','Pago','Valor','Por pagar']);
   totaisColab(R).forEach(x=>rows.push([colabN(x.cid),'','','','','','',x.n,nn(x.min/60),nn(x.pago),nn(x.val),nn(x.por)]));
   rows.push(['Total global','','','','','','',R.n,nn(R.min/60),nn(R.pago),nn(R.val),nn(R.por)]);
+  {const MP=mesesPorPagar(fR.colab||'');if(MP.length){
+    rows.push([],['Meses que falta pagar (situação em '+dataPT(hoje())+')','Colaborador','','','','','','Serviços','Horas','','Por pagar']);
+    for(const x of MP){for(const [c,y] of Object.entries(x.por).sort((a,b)=>colabN(a[0]).localeCompare(colabN(b[0]))))rows.push([rotMes(x.m),colabN(c),'','','','','',y.n,nn(y.min/60),'',nn(y.val)]);
+      rows.push(['Total '+nomeMes(x.m),'','','','','','',x.n,nn(x.min/60),'',nn(x.val)])}
+    rows.push(['Total por pagar','','','','','','',MP.reduce((a,x)=>a+x.n,0),nn(MP.reduce((a,x)=>a+x.min,0)/60),'',nn(MP.reduce((a,x)=>a+x.val,0))])}}
   baixar('\ufeff'+rows.map(r=>r.map(q).join(';')).join('\r\n'),`relatorio-${slugPer()}.csv`,'text/csv;charset=utf-8');
 }
 function baixar(conteudo,nome,tipo){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([conteudo],{type:tipo}));a.download=nome;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),8000)}
